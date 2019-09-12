@@ -1,0 +1,18 @@
+{% extends "project_specific\base_generic.html" %}
+
+{% block content %}
+	<h1>Home Page</h1>
+	<p>welcome!  {{ name }}</p>
+
+	<form action="" method="post">
+    {% csrf_token %}
+    <input type="submit" name="swap" value="swap shift">
+	</form>
+
+	<h2>shift start</h2>
+	<li>{{ shift_start }}</li>
+	<h2>shift end</h2>
+	<li>{{ shift_end }}</li>
+	
+
+{% endblock %}

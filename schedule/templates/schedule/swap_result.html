@@ -1,0 +1,18 @@
+{% extends "schedule/base_generic.html" %}
+
+{% block content %}
+	<h1>Swap Result</h1>
+	<p>below are possible shifts you can swap with</p>
+	{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+		{% endfor %}
+    </ul>
+	{% endif %}
+	<form action="" method="get">
+	{% csrf_token %}
+	<input type="submit" name="restart" value="restart">
+	</form>
+
+{% endblock %}

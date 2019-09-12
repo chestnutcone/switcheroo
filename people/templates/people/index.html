@@ -1,0 +1,12 @@
+{% extends "people/base_generic.html" %}
+
+{% block content %}
+	<h1>Home</h1>
+	<p>welcome!</p>
+	<h2>Dynamic content</h2>
+	<p>individual counts</p>
+	<ul>
+		<li><strong>People:</strong>{{ num_people }}</li>
+	</ul>
+	
+{% endblock %}

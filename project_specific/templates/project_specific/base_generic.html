@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block title %}<title>Switcheroo Login</title>{% endblock %}
+</head>
+<body>
+  {% block sidebar %}<!-- insert default navigation text for every page -->{% endblock %}
+  {% block content %}<!-- default content text (typically empty) -->{% endblock %}
+<form action="" method="post">
+{% csrf_token %}
+<input type="submit" name="logout" value="logout">
+</form>
+</body>
+</html>
