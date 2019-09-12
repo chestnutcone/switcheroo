@@ -3,17 +3,33 @@ from django.contrib.auth import get_user_model
 # Create your models here.
 
 class Position(models.Model):
+    """This will be a list of positions that employees will occupy
+    """
     position_choice = models.CharField(max_length=50)
     def __str__(self):
         return self.position_choice
     
 class Unit(models.Model):
+    """This will be a list of units that employees will occupy
+    """
     unit_choice = models.CharField(max_length=50)
     def __str__(self):
         return self.unit_choice
     
 class Individual(models.Model):
+    """Individual will have one to one relationship with users. Each individual
+    instance must have a user to be defined first. Which means employee should
+    be registered as users before admin can assign them to roles.
     
+    Employee ID is used as primary key, which means it must be unique and 
+    not empty, since it is used to fetch the object
+    
+    Purpose of Individual is to assign each user to a role 
+    
+    accept_swap is for the person to choose whether or not to accept shifts 
+    even when they are not activing requesting swaps. This will be controlled
+    by the employee and not the admin
+    """
     user = models.OneToOneField(get_user_model(),
                                on_delete=models.CASCADE,
                                unique=True)

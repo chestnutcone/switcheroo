@@ -11,6 +11,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import logout
 
+"""This is for the superuser only"""
+
+
 @user_passes_test(lambda u: u.is_superuser)
 def assign_view(request):
     
@@ -18,19 +21,13 @@ def assign_view(request):
         # if it is a post method, then process form data
 
         form = AssignForm(request.POST)
-#        form = AssignForm(request.POST)
-        
-#        print('#####POST request reached')
 #        print('form valid or no', form.is_valid())
 #        print(form.errors)
 
-        if form.is_valid():
-#            person_name = form.cleaned_data['person_name']
-            
+        if form.is_valid():        
             employee_id = form.cleaned_data['employee_id']
             shift_id = form.cleaned_data['shift_pattern']
             start_date = form.cleaned_data['start_date']
-            
             
             person_instance = get_object_or_404(Individual, pk=employee_id)
             
@@ -39,15 +36,11 @@ def assign_view(request):
             shift_pattern = get_object_or_404(Schedule, pk=shift_id)
             shift_pattern.mk_ls()
             
-#            status = person_instance.set_schedule(start_date, shift_pattern)
-#            person_instance.save()
-            
             status = set_schedule(person=person_instance,
                                          start_date = start_date,
                                          shift_pattern = shift_pattern)
             get_schedule(person=person_instance)
-            # get info after modifying
-#            person_instance.get_info()
+
             if status:
                 # succeed
                 messages.add_message(request, 
@@ -65,9 +58,6 @@ def assign_view(request):
             return render(request, 'schedule/swap.html',context=context)
     else:
         # if it is GET, create default form
-#        print('########get request reached')
-#        form = AssignForm(initial={'person_name':'Enter name',
-#                                   'employee_id':000000})
         form = AssignForm(initial={'employee_id':0})
         context = {'form':form,
                    }
@@ -75,6 +65,7 @@ def assign_view(request):
     
 @user_passes_test(lambda u: u.is_superuser)
 def assign_result_view(request):
+    """redirected from assign_view"""
     if request.method == 'POST':
         if request.POST.get("logout"):
                 logout(request)
@@ -117,6 +108,7 @@ def schedule_view(request):
 
 @user_passes_test(lambda u: u.is_superuser)
 def schedule_result_view(request):
+    """redirected from schedule_view"""
     if request.method == 'POST':
         if request.POST.get("logout"):
                 logout(request)
@@ -145,29 +137,19 @@ def swap_view(request):
             if result['success'] == True:
                 if result['available_shifts']:
                     # pass as list
-    #                match_info = {}
                     display_info = []
                     for match in result['available_shifts']:
-                        # key of assign object primary key
-    #                    match_info[match.id] = {'shift_start':match.shift_start,
-    #                              'shift_end':match.shift_end,
-    #                              'individual':match.individual.employee_id,
-    #                              }
                         display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
                                             match.shift_start, match.shift_end))
                     messages.add_message(request, 
                                          messages.INFO, 
                                          display_info)
-                    # the datetime objects is now str
-                    # use datetime.datetime.strptime() to convert str back
-                    # then use pytz to make it timezone aware (UTC)
+
                 elif len(result['free_people']) != 0:
-#                    print('in free people part')
                     display_info = [str(p) for p in result['free_people']]
                     messages.add_message(request, 
                                          messages.INFO, 
                                          display_info)
-                
             else:
                 messages.add_message(request,
                                      messages.INFO,
@@ -189,6 +171,7 @@ def swap_view(request):
     
 @user_passes_test(lambda u: u.is_superuser)
 def swap_result_view(request):
+    """redirected from swap view"""
     if request.method == 'POST':
         if request.POST.get("logout"):
             logout(request)

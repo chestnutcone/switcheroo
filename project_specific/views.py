@@ -12,8 +12,11 @@ from django.contrib import messages
 from project_specific.forms import SwapForm
 from schedule.models import swap
 
+"""this is for the average employee view"""
+
 @login_required
 def profile_view(request):
+    """main page of employee. Redirect to here after login"""
     if request.method == 'POST':
         
         if request.POST.get("logout"):
@@ -64,29 +67,19 @@ def swap_view(request):
             if result['success'] == True:
                 if result['available_shifts']:
                     # pass as list
-    #                match_info = {}
                     display_info = []
                     for match in result['available_shifts']:
-                        # key of assign object primary key
-    #                    match_info[match.id] = {'shift_start':match.shift_start,
-    #                              'shift_end':match.shift_end,
-    #                              'individual':match.individual.employee_id,
-    #                              }
                         display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
                                             match.shift_start, match.shift_end))
                     messages.add_message(request, 
                                          messages.INFO, 
                                          display_info)
-                    # the datetime objects is now str
-                    # use datetime.datetime.strptime() to convert str back
-                    # then use pytz to make it timezone aware (UTC)
+
                 elif len(result['free_people']) != 0:
-#                    print('in free people part')
                     display_info = [str(p) for p in result['free_people']]
                     messages.add_message(request, 
                                          messages.INFO, 
                                          display_info)
-                
             else:
                 messages.add_message(request,
                                      messages.INFO,
@@ -108,10 +101,19 @@ def swap_view(request):
     
 @login_required
 def swap_result_view(request):
+    """redirect here after swap_view"""
     if request.method == 'POST':
         if request.POST.get("logout"):
-                logout(request)
-                return render(request, 'registration/logged_out.html')
+            logout(request)
+            return render(request, 'registration/logged_out.html')
+        if request.POST.get("swap"):
+            index = request.POST['swap_box']
+            print(index)
+            
+            
+            
+            
+            return HttpResponseRedirect(reverse('swap'))
     else:
         if request.GET.get("home"):
             return HttpResponseRedirect(reverse('profile'))
