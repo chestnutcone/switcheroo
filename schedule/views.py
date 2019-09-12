@@ -85,17 +85,6 @@ def assign_result_view(request):
         else:
             return render(request, 'schedule/assign_result.html')
 
-@user_passes_test(lambda u: u.is_superuser)
-def swap_result_view(request):
-    if request.method == 'POST':
-        if request.POST.get("logout"):
-                logout(request)
-                return render(request, 'registration/logged_out.html')
-    else:
-        if request.GET.get("restart"):
-            return HttpResponseRedirect(reverse('swap'))
-        else:
-            return render(request, 'schedule/swap_result.html')
 
 @user_passes_test(lambda u: u.is_superuser)
 def schedule_view(request):
@@ -126,7 +115,7 @@ def schedule_view(request):
                    }
         return render(request, 'schedule/schedule_view.html',context=context)
 
-    
+@user_passes_test(lambda u: u.is_superuser)
 def schedule_result_view(request):
     if request.method == 'POST':
         if request.POST.get("logout"):
@@ -152,25 +141,32 @@ def swap_view(request):
             person_instance = get_object_or_404(Individual, pk=employee_id)
             result = swap(person=person_instance, swap_shift_start=swap_shift_start)
             # result is dictionary with key 
+
             if result['success'] == True:
-                # pass as list
-#                match_info = {}
-                display_info = []
-                for match in result['available_shifts']:
-                    # key of assign object primary key
-#                    match_info[match.id] = {'shift_start':match.shift_start,
-#                              'shift_end':match.shift_end,
-#                              'individual':match.individual.employee_id,
-#                              }
-                    display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
-                                        match.shift_start, match.shift_end))
-                messages.add_message(request, 
-                                     messages.INFO, 
-                                     display_info)
-                # the datetime objects is now str
-                # use datetime.datetime.strptime() to convert str back
-                # then use pytz to make it timezone aware (UTC)
-                
+                if result['available_shifts']:
+                    # pass as list
+    #                match_info = {}
+                    display_info = []
+                    for match in result['available_shifts']:
+                        # key of assign object primary key
+    #                    match_info[match.id] = {'shift_start':match.shift_start,
+    #                              'shift_end':match.shift_end,
+    #                              'individual':match.individual.employee_id,
+    #                              }
+                        display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
+                                            match.shift_start, match.shift_end))
+                    messages.add_message(request, 
+                                         messages.INFO, 
+                                         display_info)
+                    # the datetime objects is now str
+                    # use datetime.datetime.strptime() to convert str back
+                    # then use pytz to make it timezone aware (UTC)
+                elif len(result['free_people']) != 0:
+#                    print('in free people part')
+                    display_info = [str(p) for p in result['free_people']]
+                    messages.add_message(request, 
+                                         messages.INFO, 
+                                         display_info)
                 
             else:
                 messages.add_message(request,
@@ -190,3 +186,19 @@ def swap_view(request):
         context = {'form':form,
                    }
         return render(request, 'schedule/swap.html',context=context)
+    
+@user_passes_test(lambda u: u.is_superuser)
+def swap_result_view(request):
+    if request.method == 'POST':
+        if request.POST.get("logout"):
+            logout(request)
+            return render(request, 'registration/logged_out.html')
+        if request.POST.get("swap"):
+            index = request.POST['swap_box']
+            print(index)
+            return HttpResponseRedirect(reverse('swap'))
+    else:
+        if request.GET.get("restart"):
+            return HttpResponseRedirect(reverse('swap'))
+        else:
+            return render(request, 'schedule/swap_result.html')

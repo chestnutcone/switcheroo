@@ -62,15 +62,30 @@ def swap_view(request):
             result = swap(person=person_instance, swap_shift_start=swap_shift_start)
             # result is dictionary with key 
             if result['success'] == True:
-                # pass as list
-#                match_info = {}
-                display_info = []
-                for match in result['available_shifts']:
-                    display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
-                                        match.shift_start, match.shift_end))
-                messages.add_message(request, 
-                                     messages.INFO, 
-                                     display_info)
+                if result['available_shifts']:
+                    # pass as list
+    #                match_info = {}
+                    display_info = []
+                    for match in result['available_shifts']:
+                        # key of assign object primary key
+    #                    match_info[match.id] = {'shift_start':match.shift_start,
+    #                              'shift_end':match.shift_end,
+    #                              'individual':match.individual.employee_id,
+    #                              }
+                        display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
+                                            match.shift_start, match.shift_end))
+                    messages.add_message(request, 
+                                         messages.INFO, 
+                                         display_info)
+                    # the datetime objects is now str
+                    # use datetime.datetime.strptime() to convert str back
+                    # then use pytz to make it timezone aware (UTC)
+                elif len(result['free_people']) != 0:
+#                    print('in free people part')
+                    display_info = [str(p) for p in result['free_people']]
+                    messages.add_message(request, 
+                                         messages.INFO, 
+                                         display_info)
                 
             else:
                 messages.add_message(request,

@@ -6,6 +6,8 @@ import pytz
 from django.utils import timezone
 from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+
 # Create your models here.
 class Shift(models.Model):
     # correspond to datetime.time object
@@ -54,7 +56,7 @@ class Assign(models.Model):
     shift_end = models.DateTimeField()
     
     individual = models.ForeignKey(Individual,
-                               on_delete=models.SET_NULL,
+                               on_delete=models.CASCADE,
                                null=True)
     # for switching shifts
     switch = models.BooleanField(default=False)
@@ -68,7 +70,29 @@ class Assign(models.Model):
         result['individual'] = self.individual == individual
         return result
         
-        
+class Request(models.Model):
+    requester = models.ForeignKey(Individual,
+                                  on_delete=models.CASCADE,
+                                  null=True,
+                                  related_name="requester")
+    receiver = models.ForeignKey(Individual,
+                                 on_delete=models.CASCADE,
+                                 null=True,
+                                 related_name="receiver")
+    requester_shift = models.ForeignKey(Assign,
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              related_name="requester_shift")
+    receiver_shift = models.ForeignKey(Assign,
+                                       on_delete=models.SET_NULL,
+                                       null=True,
+                                       related_name="receiver_shift")
+    # did the receiver accept the proposed swap?
+    accept = models.BooleanField(default=False)
+    # is the action done?
+    done = models.BooleanField(default=False)
+#    
+    
 def get_schedule(person):
     """get a person's schedules sorted by date"""
     existing_schedule = Assign.objects.filter(individual__exact=person).order_by('shift_start')
@@ -188,8 +212,13 @@ def del_schedule(person, date):
     
         
 def swap(person, swap_shift_start):
+    """first checks people that are currently swapping,
+    then check people that are open to swap (even if not currently swapping)
+    then check people that are open to swap but are not working (no shifts offered
+    in return. Acceptor does not offer shift in return on last case"""
     print(person)
     success = True
+    output = None
     
     # try to see if the schedule exist
     swap_day = Assign.objects.filter(individual__exact=person).filter(shift_start__exact=swap_shift_start)
@@ -228,32 +257,65 @@ def swap(person, swap_shift_start):
     else:
         # get from people that are accepting shifts
         acceptors = Individual.objects.filter(accept_swap__exact=True)
-#        print('acceptors', acceptors)
+        print('acceptors', acceptors)
         # find people that are accepting shifts who are not working on that day
         backup_swapper_shifts = Assign.objects.exclude(individual__exact=person).filter(individual__in=acceptors).exclude(shift_start__exact=swap_shift_start)
 #        backup_swapper_shifts = backup_swapper_shifts.exclude(shift_start__in=person_schedule.values_list('shift_start'))
 #        print('backup shifts pre', backup_swapper_shifts)
+        
+        # looking for possble trades on the accepting swaps
         for start, end in zip(person_schedule.values_list('shift_start'),person_schedule.values_list('shift_end')):
             backup_swapper_shifts = backup_swapper_shifts.exclude(
                     shift_start__range=(start[0],end[0])).exclude(
                             shift_end__range=(start[0],end[0]))
+            if backup_swapper_shifts.count() == 0:
+                break
 #            print('checking', start, end)
 #            print('in loop', backup_swapper_shifts)
+
         if backup_swapper_shifts.count() > 0:
             # this gives available shifts to swap
             for backup in backup_swapper_shifts:
                 print('backup swappers', backup.individual, backup.shift_start)
                 
             output = backup_swapper_shifts
+    
         else:
-            print('no people are available to swap')
-            success = False
-            output = None
-            # go into queue of holding, wait till database updates, then run rechecks
+            # look for people that are accepting shifts but not offering anything
+            # in return. Which means people who are accepting shifts but that
+            # are not working that day
+            free_people = []
+            for acceptor in acceptors:
+                # check if person has shift on that day
+                acceptor_shift = Assign.objects.filter(individual__exact=acceptor).filter(shift_start__exact=swap_shift_start)
+                if acceptor_shift.count() == 0:
+                    # if acceptor not working that day
+                    free_people.append(acceptor)
+            if len(free_people) != 0:
+                # if there are free people that day
+                for p in free_people:
+                    print('{} is free to work'.format(str(p)))
+                
+            else:
+                print('no people are available to swap')
+                success = False
+                
+                # go into queue of holding, wait till database updates, then run rechecks
+#    print(success, output, free_people)
     return {'success':success,
-            'available_shifts':output,}
+            'available_shifts':output,
+            'free_people':free_people}
             
-        
-        
+def send_email(subject,
+               msg,
+               sender_address,
+               receiver_list):
+    """subject, msg, sender_address in str,
+    receiver_list in list of str"""
+    success = send_mail(subject=subject,
+              message=msg,
+              from_email=sender_address,
+              recipient_list=receiver_list)
+    return success
         
         

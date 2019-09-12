@@ -9,7 +9,18 @@
             <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
 		{% endfor %}
     </ul>
+
+    <p>enter the index you want to swap with</p>
+	<form action="" method="post">
+	{% csrf_token %}
+	<input type="number" name="swap_box">
+	<input type="submit" name="swap" value="swap">
+	</form>
+	
 	{% endif %}
+
+
+
 	<form action="" method="get">
 	{% csrf_token %}
 	<input type="submit" name="home" value="home">

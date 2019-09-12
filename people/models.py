@@ -12,14 +12,6 @@ class Unit(models.Model):
     def __str__(self):
         return self.unit_choice
     
-#class ScheduleDict(models.Model):
-#    employee_id = models.IntegerField(primary_key=True,
-#                                      help_text='enter employee id to queue')
-#    
-#class KeyVal(models.Model):
-#    container = models.ForeignKey(ScheduleDict, db_index=True)
-    
-    
 class Individual(models.Model):
     
     user = models.OneToOneField(get_user_model(),
