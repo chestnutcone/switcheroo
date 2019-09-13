@@ -1,11 +1,15 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from user.models import Session
 # Create your models here.
 
 class Position(models.Model):
     """This will be a list of positions that employees will occupy
     """
     position_choice = models.CharField(max_length=50)
+    session = models.ForeignKey(Session,
+                                on_delete=models.SET_NULL,
+                                null=True)
     def __str__(self):
         return self.position_choice
     
@@ -13,6 +17,9 @@ class Unit(models.Model):
     """This will be a list of units that employees will occupy
     """
     unit_choice = models.CharField(max_length=50)
+    session = models.ForeignKey(Session,
+                                on_delete=models.SET_NULL,
+                                null=True)
     def __str__(self):
         return self.unit_choice
     
@@ -48,6 +55,9 @@ class Individual(models.Model):
     # aka available for accepting shifts
     accept_swap = models.BooleanField(default=False)
 
+    session = models.ForeignKey(Session,
+                                on_delete=models.SET_NULL,
+                                null=True)
     
     def get_info(self):
         print('   ')

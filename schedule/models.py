@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from user.models import Session
 
 # Create your models here.
 class Shift(models.Model):
@@ -24,6 +25,9 @@ class Shift(models.Model):
     shift_duration = models.DurationField(help_text='enter format hh:mm:ss') 
     shift_name = models.CharField(max_length=20)
     
+    session = models.ForeignKey(Session,
+                                on_delete=models.SET_NULL,
+                                null=True)
     def __str__(self):
         return self.shift_name
     
@@ -60,6 +64,9 @@ class Schedule(models.Model):
                              on_delete=models.SET_NULL, 
                              null=True,
                              blank=True)
+    session = models.ForeignKey(Session,
+                                on_delete=models.SET_NULL,
+                                null=True)
     def mk_ls(self):
         self.day_list = [self.day_1, self.day_2, self.day_3]
         self.day_list = self.day_list[:self.cycle]
@@ -91,6 +98,10 @@ class Assign(models.Model):
                                null=True)
     # for switching shifts
     switch = models.BooleanField(default=False)
+    
+    session = models.ForeignKey(Session,
+                                on_delete=models.SET_NULL,
+                                null=True)
     def same(self, shift_start, individual):
         """return dictionary with bool value 
         whether the attributes match up to query"""

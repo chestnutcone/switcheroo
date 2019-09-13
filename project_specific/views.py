@@ -5,12 +5,16 @@ from django.contrib.auth import logout
 # Create your views here.
 from schedule.models import get_schedule
 from people.models import Individual
+from user.models import Session
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 
 from project_specific.forms import SwapForm
 from schedule.models import swap
+
+from .forms import SessionCreateForm, SessionJoinForm
+
 
 """this is for the average employee view"""
 
@@ -27,8 +31,15 @@ def profile_view(request):
     else:
         current_user = request.user
         if current_user.is_superuser:
-            # hardcoded...
+            # if superuser, skip session join/create
+            # superuser is not manager, and will not have session assigned
             return HttpResponseRedirect('/admin/')
+        else:
+            if not request.user.session:
+                # cannot find session id because session doesnt exist yet
+                return HttpResponseRedirect(reverse('session'))
+    
+    #### log into session, row permission
     
         # will throw index error if the user is not registered under Individual
         current_indv = Individual.objects.filter(user__exact=current_user)[0]
@@ -91,7 +102,7 @@ def swap_view(request):
             context = {'form':form,
                    }
             messages.add_message(request, messages.INFO,'please enter valid info')
-            return render(request, 'schedule/swap.html',context=context)
+            return render(request, 'project_specific/swap.html',context=context)
     else:
 
         form = SwapForm()
@@ -119,3 +130,41 @@ def swap_result_view(request):
             return HttpResponseRedirect(reverse('profile'))
         else:
             return render(request, 'project_specific/swap_result.html')
+        
+def session_view(request):
+    if request.method == 'POST':
+        if request.POST.get('create_submit'):
+            form = SessionCreateForm(request.POST)
+            if form.is_valid():
+                password = form.cleaned_data['password']
+                session = Session(owner=request.user, password=password)
+                session.save()
+                print('session id:', session.id)
+                request.user.session = session
+                request.user.save()
+                
+                # return to join session page
+                return HttpResponseRedirect(reverse('profile'))
+        elif request.POST.get('join_submit'):
+            form = SessionJoinForm(request.POST)
+            if form.is_valid():
+                session_id = form.cleaned_data['session_id']
+                
+                session = Session.objects.get(pk=session_id)
+                
+                request.user.session = session
+                request.user.save()
+                print('session joined')
+                return HttpResponseRedirect(reverse('profile'))
+                
+    else:
+        if request.user.is_manager:
+            # render a session creating form
+            form = SessionCreateForm()
+            context = {'form':form}
+            return render(request, 'project_specific/session_create.html', context=context)
+        else:
+            # render a join session form
+            form = SessionJoinForm()
+            context = {'form':form}
+            return render(request, 'project_specific/session_join.html',context=context)
