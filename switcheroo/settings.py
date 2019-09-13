@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'people',
     'schedule',
     'project_specific',
+    'user.apps.UserConfig',
 ]
 
 MIDDLEWARE = [
@@ -124,5 +125,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+AUTH_USER_MODEL = 'user.CustomUser'
 ## Redirect to home URL after login (Default redirects to /accounts/profile/)
 LOGIN_REDIRECT_URL = '/main/'
+LOGOUT_REDIRECT_URL = 'home'
