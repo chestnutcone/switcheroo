@@ -277,8 +277,8 @@ def clear_schedule(person):
     
     while True:
         try:
-            option = input("This will delete all the person's schedule.\
-                           Choose an option to proceed [y/N]: ").lower()
+            option = input("This will delete all the person's schedule."\
+                           "Choose an option to proceed [y/N]: ").lower()
             if option in ['y','n']:
                 break
         except:
@@ -286,8 +286,8 @@ def clear_schedule(person):
     if option == 'y':
         while True:
             try:
-                employee_id = input("The schedule will be permanently deleted. \
-                                    Are you sure? Enter employee ID if you\
+                employee_id = input("The schedule will be permanently deleted."\
+                                    "Are you sure? Enter employee ID if you\
                                     want to delete schedule: ").lower()
                 
                 if employee_id.isdigit() and int(employee_id) == person.employee_id:
@@ -312,12 +312,12 @@ def del_schedule(person, date):
         for n, s in enumerate(schedule):
             print('id: {}, start time: {}, end time: {}'.format(n, s.shift_start, s.shift_end))
         
-        print("there are more than one schedule on this day. \
-                  Which one would you like to delete?")
+        print("there are more than one schedule on this day." \
+                  "Which one would you like to delete?")
         while True:
             try:
-                option = input('Please enter a valid index (int) \
-                  of the object you want to delete ')
+                option = input('Please enter a valid index (int)' \
+                  'of the object you want to delete ')
                 if option.isdigit() and int(option) <= schedule.count():
                     break
             except:

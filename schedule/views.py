@@ -28,6 +28,7 @@ def assign_view(request):
             employee_id = form.cleaned_data['employee_id']
             shift_id = form.cleaned_data['shift_pattern']
             start_date = form.cleaned_data['start_date']
+            repeat = form.cleaned_data['repeat']
             
             person_instance = get_object_or_404(Individual, pk=employee_id)
             
@@ -38,7 +39,8 @@ def assign_view(request):
             
             status = set_schedule(person=person_instance,
                                          start_date = start_date,
-                                         shift_pattern = shift_pattern)
+                                         shift_pattern = shift_pattern,
+                                         repeat=repeat)
             get_schedule(person=person_instance)
 
             if status:
@@ -52,13 +54,13 @@ def assign_view(request):
                                      'shifts adding not successful')
             return HttpResponseRedirect(reverse('assign_result'))
         else:
-            form = AssignForm(initial={'employee_id':0})
+            form = AssignForm(initial={'employee_id':0,'repeat':1})
             context = {'form':form,
                    }
             return render(request, 'schedule/swap.html',context=context)
     else:
         # if it is GET, create default form
-        form = AssignForm(initial={'employee_id':0})
+        form = AssignForm(initial={'employee_id':0,'repeat':1})
         context = {'form':form,
                    }
         return render(request, 'schedule/assign.html',context=context)
