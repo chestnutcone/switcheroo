@@ -38,25 +38,31 @@ def profile_view(request):
             if not request.user.session:
                 # cannot find session id because session doesnt exist yet
                 return HttpResponseRedirect(reverse('session'))
-    
+            elif current_user.is_manager:
+                # if not superuser and is manager, and has a session, redirect to admin
+                return HttpResponseRedirect('/admin/')
+                
     #### log into session, row permission
     
         # will throw index error if the user is not registered under Individual
-        current_indv = Individual.objects.filter(user__exact=current_user)[0]
-            
-        schedule = get_schedule(current_indv)
-        dates = []
-        shift_start = []
-        shift_end = []
-        for s in schedule:
-            dates.append(s.start_date.strftime("%Y/%m/%d"))
-            
-            shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
-            shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
-        context = {'dates':dates,
-                   'shift_start':shift_start,
-                   'shift_end':shift_end,
-                   'name':current_user.first_name}
+        try:
+            current_indv = Individual.objects.filter(user__exact=current_user)[0]
+                
+            schedule = get_schedule(current_indv)
+            dates = []
+            shift_start = []
+            shift_end = []
+            for s in schedule:
+                dates.append(s.start_date.strftime("%Y/%m/%d"))
+                
+                shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
+                shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
+            context = {'dates':dates,
+                       'shift_start':shift_start,
+                       'shift_end':shift_end,
+                       'name':current_user.first_name}
+        except IndexError:
+            context = {'name':'Please register user in Individual'}
         return render(request, 'project_specific/profile.html', context=context)
 
 @login_required
@@ -131,6 +137,7 @@ def swap_result_view(request):
         else:
             return render(request, 'project_specific/swap_result.html')
         
+@login_required
 def session_view(request):
     if request.method == 'POST':
         if request.POST.get('create_submit'):
