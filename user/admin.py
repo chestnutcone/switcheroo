@@ -4,8 +4,8 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 
-from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import CustomUser
+from .forms import CustomUserCreationForm, CustomUserChangeForm, GroupForm
+from .models import CustomUser, Group
 
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
@@ -27,4 +27,12 @@ class CustomUserAdmin(UserAdmin):
         if request.user.is_superuser:
             return qs
         return qs.filter(group=request.user.group)
+    
+class GroupAdmin(admin.ModelAdmin):
+    form = GroupForm
+    list_display = ('name', 'id', 'owner')
+    label = {'id': 'Group ID'}
+    
+    
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(Group, GroupAdmin)

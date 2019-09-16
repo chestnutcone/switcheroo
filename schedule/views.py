@@ -3,7 +3,7 @@ from django.shortcuts import render
 # Create your views here.
 from schedule.models import Schedule, set_schedule, get_schedule, swap
 from schedule.forms import AssignForm, SwapForm, ViewScheduleForm
-from people.models import Individual
+from people.models import Employee
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -30,7 +30,7 @@ def assign_view(request):
             start_date = form.cleaned_data['start_date']
             repeat = form.cleaned_data['repeat']
             
-            person_instance = get_object_or_404(Individual, pk=employee_id)
+            person_instance = get_object_or_404(Employee, pk=employee_id)
             
             # get info before modifying
             person_instance.get_info()
@@ -86,11 +86,11 @@ def schedule_view(request):
         form = ViewScheduleForm(request.POST)
         if form.is_valid():
             employee_id = form.cleaned_data['employee_id']
-            person_instance = get_object_or_404(Individual, pk=employee_id)
+            person_instance = get_object_or_404(Employee, pk=employee_id)
             schedule = get_schedule(person=person_instance)
             display_info = []
             for s in schedule:
-                display_info.append('{}, start: {}, end: {}'.format(s.individual.user.first_name+" "+s.individual.user.last_name,
+                display_info.append('{}, start: {}, end: {}'.format(s.employee.user.first_name+" "+s.employee.user.last_name,
                                     s.shift_start, s.shift_end))
             messages.add_message(request, 
                                  messages.INFO, 
@@ -132,7 +132,7 @@ def swap_view(request):
             employee_id = form.cleaned_data['employee_id']
             swap_shift_start = form.cleaned_data['swap_shift_start']
             
-            person_instance = get_object_or_404(Individual, pk=employee_id)
+            person_instance = get_object_or_404(Employee, pk=employee_id)
             result = swap(person=person_instance, swap_shift_start=swap_shift_start)
             # result is dictionary with key 
 
@@ -141,7 +141,7 @@ def swap_view(request):
                     # pass as list
                     display_info = []
                     for match in result['available_shifts']:
-                        display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
+                        display_info.append('{}, start: {}, end: {}'.format(match.employee.person_name,
                                             match.shift_start, match.shift_end))
                     messages.add_message(request, 
                                          messages.INFO, 

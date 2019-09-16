@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 # Create your views here.
 from schedule.models import get_schedule
-from people.models import Individual
+from people.models import Employee
 from user.models import Group
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -44,9 +44,9 @@ def profile_view(request):
                 
     #### log into group, row permission
     
-        # will throw index error if the user is not registered under Individual
+        # will throw index error if the user is not registered under Employee
         try:
-            current_indv = Individual.objects.filter(user__exact=current_user)[0]
+            current_indv = Employee.objects.filter(user__exact=current_user)[0]
                 
             schedule = get_schedule(current_indv)
             dates = []
@@ -62,7 +62,7 @@ def profile_view(request):
                        'shift_end':shift_end,
                        'name':current_user.first_name}
         except IndexError:
-            context = {'name':'Please register user in Individual'}
+            context = {'name':'Please register user in Employee'}
         return render(request, 'project_specific/profile.html', context=context)
 
 @login_required
@@ -75,7 +75,7 @@ def swap_view(request):
             return render(request, 'registration/logged_out.html')
         if form.is_valid():
             current_user = request.user
-            person_instance = Individual.objects.filter(user__exact=current_user)[0]
+            person_instance = Employee.objects.filter(user__exact=current_user)[0]
 
             swap_shift_start = form.cleaned_data['swap_shift_start']
 
@@ -86,7 +86,7 @@ def swap_view(request):
                     # pass as list
                     display_info = []
                     for match in result['available_shifts']:
-                        display_info.append('{}, start: {}, end: {}'.format(match.individual.person_name,
+                        display_info.append('{}, start: {}, end: {}'.format(match.employee.person_name,
                                             match.shift_start, match.shift_end))
                     messages.add_message(request, 
                                          messages.INFO, 
@@ -144,7 +144,8 @@ def group_view(request):
             form = GroupCreateForm(request.POST)
             if form.is_valid():
                 password = form.cleaned_data['password']
-                group = Group(owner=request.user, password=password)
+                name = form.cleaned_data['name']
+                group = Group(owner=request.user, name=name, password=password)
                 group.save()
                 print('group id:', group.id)
                 request.user.group = group

@@ -5,12 +5,12 @@ Created on Fri Sep 13 23:47:03 2019
 @author: Oliver
 """
 from django import forms
-from people.models import Position, Unit, Individual
+from people.models import Position, Unit, Employee
 from user.models import CustomUser
 
-class IndividualForm(forms.ModelForm):
+class EmployeeForm(forms.ModelForm):
     class Meta:
-        model = Individual
+        model = Employee
         fields = ['user','employee_id','person_position','person_unit', 'group']
         labels = {'user':'Employee',
                   'employee_id': 'Employee ID',
@@ -18,7 +18,7 @@ class IndividualForm(forms.ModelForm):
                   'person_unit': 'Unit',}
 #    def __init__(self, *args, **kwargs):
 ##        user = kwargs.pop('user')
-#        super(IndividualForm, self).__init__(*args, **kwargs)
+#        super(EmployeeForm, self).__init__(*args, **kwargs)
 #        print('current instance', self.instance.group)
 #        
 #        self.fields['user'].queryset = CustomUser.objects.filter(group=self.instance.group)

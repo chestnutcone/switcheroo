@@ -25,15 +25,15 @@ class Unit(models.Model):
     def __str__(self):
         return self.unit_choice
     
-class Individual(models.Model):
-    """Individual will have one to one relationship with users. Each individual
+class Employee(models.Model):
+    """Employee will have one to one relationship with users. Each employee
     instance must have a user to be defined first. Which means employee should
     be registered as users before admin can assign them to roles.
     
     Employee ID is used as primary key, which means it must be unique and 
     not empty, since it is used to fetch the object
     
-    Purpose of Individual is to assign each user to a role 
+    Purpose of Employee is to assign each user to a role 
     
     accept_swap is for the person to choose whether or not to accept shifts 
     even when they are not activing requesting swaps. This will be controlled

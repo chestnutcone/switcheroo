@@ -13,8 +13,10 @@ class SwapForm(forms.Form):
     swap_shift_start = forms.DateTimeField(help_text='2006-10-25 14:30:59')
     
 class GroupCreateForm(forms.Form):
-    password = forms.CharField(max_length=50)
-    password_conf = forms.CharField(max_length=50)
+    name = forms.CharField(max_length=50)
+    password = forms.CharField(max_length=50, widget=forms.PasswordInput)
+    password_conf = forms.CharField(max_length=50, widget=forms.PasswordInput)
+    
     
     def clean(self):
         cleaned_data = super(GroupCreateForm, self).clean()
@@ -28,7 +30,7 @@ class GroupCreateForm(forms.Form):
     
 class GroupJoinForm(forms.Form):
     group_id = forms.IntegerField(min_value=0)
-    password = forms.CharField(max_length=50)
+    password = forms.CharField(max_length=50, widget=forms.PasswordInput)
     
     def clean(self):
         cleaned_data = super(GroupJoinForm, self).clean()

@@ -1,16 +1,16 @@
 from django.contrib import admin
 
 # Register your models here.
-from people.models import Position, Unit, Individual
-from .forms import IndividualForm, PositionForm, UnitForm
+from people.models import Position, Unit, Employee
+from .forms import EmployeeForm, PositionForm, UnitForm
 
 #admin.site.register(Position)
 #admin.site.register(Unit)
-#admin.site.register(Individual)
+#admin.site.register(Employee)
 
         
         
-class IndividualAdmin(admin.ModelAdmin):
+class EmployeeAdmin(admin.ModelAdmin):
     list_display = ('get_user', 
                     'person_position', 
                     'employee_id', 
@@ -24,7 +24,7 @@ class IndividualAdmin(admin.ModelAdmin):
     get_user.admin_order_field = 'user'
     get_user.short_description = 'Name'
     
-    form = IndividualForm
+    form = EmployeeForm
     
     def save_model(self, request, obj, form, change):
         obj.group = request.user.group
@@ -65,6 +65,6 @@ class UnitAdmin(admin.ModelAdmin):
             return qs
         return qs.filter(group=request.user.group)
         
-admin.site.register(Individual, IndividualAdmin)
+admin.site.register(Employee, EmployeeAdmin)
 admin.site.register(Position, PositionAdmin)
 admin.site.register(Unit, UnitAdmin) 

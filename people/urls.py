@@ -11,4 +11,4 @@ urlpatterns = [
 #        path('', views.index, name='index'),
         
         ]
-#path('list/', views.IndividualListView.as_view(), name='ind')
+#path('list/', views.EmployeeListView.as_view(), name='ind')
