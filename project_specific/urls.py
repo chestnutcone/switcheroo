@@ -12,6 +12,6 @@ urlpatterns = [
         path('', views.profile_view, name='profile'),
         path('swap/', views.swap_view, name='swap'),
         path('swap/result',views.swap_result_view, name='swap_result'),
-        path('session', views.session_view, name='session'),
+        path('group', views.group_view, name='group'),
         ]
         

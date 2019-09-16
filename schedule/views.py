@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 from schedule.models import Schedule, set_schedule, get_schedule, swap
-from schedule.forms import AssignForm, SwapForm, ScheduleForm
+from schedule.forms import AssignForm, SwapForm, ViewScheduleForm
 from people.models import Individual
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
@@ -83,7 +83,7 @@ def assign_result_view(request):
 def schedule_view(request):
     if request.method == 'POST':
         # if it is a post method, then process form data
-        form = ScheduleForm(request.POST)
+        form = ViewScheduleForm(request.POST)
         if form.is_valid():
             employee_id = form.cleaned_data['employee_id']
             person_instance = get_object_or_404(Individual, pk=employee_id)
@@ -98,12 +98,12 @@ def schedule_view(request):
             
             return HttpResponseRedirect(reverse('schedule_result'))
         else:
-            form = ScheduleForm(initial={'employee_id':0})
+            form = ViewScheduleForm(initial={'employee_id':0})
             context = {'form':form,
                    }
             return render(request, 'schedule/schedule_view.html',context=context)
     else:
-        form = ScheduleForm(initial={'employee_id':0})
+        form = ViewScheduleForm(initial={'employee_id':0})
         context = {'form':form,
                    }
         return render(request, 'schedule/schedule_view.html',context=context)

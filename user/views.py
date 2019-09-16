@@ -25,23 +25,32 @@ class SignUpView(CreateView):
             username = form.cleaned_data['username']
             is_manager = form.cleaned_data['is_manager']
             email = form.cleaned_data['email']
+            first_name = form.cleaned_data['first_name']
+            last_name = form.cleaned_data['last_name']
 
             password = form.cleaned_data['password2']
             password = make_password(password)
             user = CustomUser(username=username,
                               email=email,
+                              first_name=first_name,
+                              last_name=last_name,
                               is_manager=is_manager,
                               password = password)
+            if is_manager:
+                user.is_staff = True
             user.save()
 #            print('is manager', is_manager)
             if is_manager:
                 # if is manager is true
+                
                 manager_group = Group.objects.get(name='Manager') 
                 manager_group.user_set.add(user)
+                
             else:
                 # if employee
                 employee_group = Group.objects.get(name='Employee')
                 employee_group.user_set.add(user)
+            
             
             return HttpResponseRedirect(reverse('login'))
         

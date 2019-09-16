@@ -5,7 +5,7 @@ from django.contrib.auth import logout
 # Create your views here.
 from schedule.models import get_schedule
 from people.models import Individual
-from user.models import Session
+from user.models import Group
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
@@ -13,7 +13,7 @@ from django.contrib import messages
 from project_specific.forms import SwapForm
 from schedule.models import swap
 
-from .forms import SessionCreateForm, SessionJoinForm
+from .forms import GroupCreateForm, GroupJoinForm
 
 
 """this is for the average employee view"""
@@ -31,18 +31,18 @@ def profile_view(request):
     else:
         current_user = request.user
         if current_user.is_superuser:
-            # if superuser, skip session join/create
-            # superuser is not manager, and will not have session assigned
+            # if superuser, skip group join/create
+            # superuser is not manager, and will not have group assigned
             return HttpResponseRedirect('/admin/')
         else:
-            if not request.user.session:
-                # cannot find session id because session doesnt exist yet
-                return HttpResponseRedirect(reverse('session'))
+            if not request.user.group:
+                # cannot find group id because group doesnt exist yet
+                return HttpResponseRedirect(reverse('group'))
             elif current_user.is_manager:
-                # if not superuser and is manager, and has a session, redirect to admin
+                # if not superuser and is manager, and has a group, redirect to admin
                 return HttpResponseRedirect('/admin/')
                 
-    #### log into session, row permission
+    #### log into group, row permission
     
         # will throw index error if the user is not registered under Individual
         try:
@@ -138,40 +138,40 @@ def swap_result_view(request):
             return render(request, 'project_specific/swap_result.html')
         
 @login_required
-def session_view(request):
+def group_view(request):
     if request.method == 'POST':
         if request.POST.get('create_submit'):
-            form = SessionCreateForm(request.POST)
+            form = GroupCreateForm(request.POST)
             if form.is_valid():
                 password = form.cleaned_data['password']
-                session = Session(owner=request.user, password=password)
-                session.save()
-                print('session id:', session.id)
-                request.user.session = session
+                group = Group(owner=request.user, password=password)
+                group.save()
+                print('group id:', group.id)
+                request.user.group = group
                 request.user.save()
                 
-                # return to join session page
+                # return to join group page
                 return HttpResponseRedirect(reverse('profile'))
         elif request.POST.get('join_submit'):
-            form = SessionJoinForm(request.POST)
+            form = GroupJoinForm(request.POST)
             if form.is_valid():
-                session_id = form.cleaned_data['session_id']
+                group_id = form.cleaned_data['group_id']
                 
-                session = Session.objects.get(pk=session_id)
+                group = Group.objects.get(pk=group_id)
                 
-                request.user.session = session
+                request.user.group = group
                 request.user.save()
-                print('session joined')
+                print('group joined')
                 return HttpResponseRedirect(reverse('profile'))
                 
     else:
         if request.user.is_manager:
-            # render a session creating form
-            form = SessionCreateForm()
+            # render a group creating form
+            form = GroupCreateForm()
             context = {'form':form}
-            return render(request, 'project_specific/session_create.html', context=context)
+            return render(request, 'project_specific/group_create.html', context=context)
         else:
-            # render a join session form
-            form = SessionJoinForm()
+            # render a join group form
+            form = GroupJoinForm()
             context = {'form':form}
-            return render(request, 'project_specific/session_join.html',context=context)
+            return render(request, 'project_specific/group_join.html',context=context)

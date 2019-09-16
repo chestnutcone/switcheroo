@@ -11,14 +11,20 @@ class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = CustomUser
-    list_display = ['username', 'email','first_name', 'last_name','is_staff', 'get_session']
+    list_display = ['username', 'email','first_name', 'last_name','is_staff', 'get_group']
 #
-    def get_session(self, user):
+    def get_group(self, user):
         try:
-            output = user.session.id
+            output = user.group.id
         except AttributeError:
             output = 'N/A'
         return output
-    get_session.admin_order_field = 'session'
-    get_session.short_description = 'Session ID'
+    get_group.admin_order_field = 'group'
+    get_group.short_description = 'Group ID'
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(group=request.user.group)
 admin.site.register(CustomUser, CustomUserAdmin)
