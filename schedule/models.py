@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from user.models import Group
 
+
 # Create your models here.
 class Shift(models.Model):
     """The shift model is suppose to register common shifts. Ie morning/night 
@@ -20,18 +21,20 @@ class Shift(models.Model):
     Shift name is just a reference name ie morning shift
     """
     # correspond to datetime.time object
-    shift_start = models.TimeField(help_text='enter format hh:mm:ss') 
+    shift_start = models.TimeField(help_text='enter format hh:mm:ss')
     # correspond to datetime.timedelta
-    shift_duration = models.DurationField(help_text='enter format hh:mm:ss') 
+    shift_duration = models.DurationField(help_text='enter format hh:mm:ss')
     shift_name = models.CharField(max_length=20)
-    
+
     group = models.ForeignKey(Group,
-                                on_delete=models.SET_NULL,
-                                null=True,
-                                blank=True)
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
+
     def __str__(self):
         return self.shift_name
-    
+
+
 class Schedule(models.Model):
     """
     The schedule model is suppose to register common schedule pattern. For
@@ -50,33 +53,33 @@ class Schedule(models.Model):
     cycle = models.PositiveSmallIntegerField(MaxValueValidator(10),
                                              help_text='how many days is the shift pattern cycle')
 
-    day_1 = models.ForeignKey(Shift, 
+    day_1 = models.ForeignKey(Shift,
                               related_name='%(app_label)s_%(class)s_1',
-                             on_delete=models.SET_NULL, 
-                             null=True,
-                             blank=True)
-    day_2 = models.ForeignKey(Shift, 
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
+    day_2 = models.ForeignKey(Shift,
                               related_name='%(app_label)s_%(class)s_2',
-                             on_delete=models.SET_NULL, 
-                             null=True,
-                             blank=True)
-    day_3 = models.ForeignKey(Shift, 
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
+    day_3 = models.ForeignKey(Shift,
                               related_name='%(app_label)s_%(class)s_3',
-                             on_delete=models.SET_NULL, 
-                             null=True,
-                             blank=True)
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
     group = models.ForeignKey(Group,
-                                on_delete=models.SET_NULL,
-                                null=True,
-                                blank=True)
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
+
     def mk_ls(self):
         self.day_list = [self.day_1, self.day_2, self.day_3]
         self.day_list = self.day_list[:self.cycle]
-    
-    
+
     def __str__(self):
         return self.schedule_name
-    
+
 
 class Assign(models.Model):
     """Assign model is made to assign schedule to employee. It will store
@@ -91,30 +94,47 @@ class Assign(models.Model):
     """
     # correspond to datetime.date
     start_date = models.DateField(help_text='start day for shift')
-    
+
     shift_start = models.DateTimeField()
     shift_end = models.DateTimeField()
-    
+
     employee = models.ForeignKey(Employee,
-                               on_delete=models.CASCADE,
-                               null=True)
+                                 on_delete=models.CASCADE,
+                                 null=True)
     # for switching shifts
     switch = models.BooleanField(default=False)
-    
+
     group = models.ForeignKey(Group,
-                                on_delete=models.SET_NULL,
-                                null=True,
-                                blank=True)
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
+
     def same(self, shift_start, employee):
         """return dictionary with bool value 
         whether the attributes match up to query"""
         result = {}
-#        result['start_date'] = self.start_date == start_date
+        #        result['start_date'] = self.start_date == start_date
         result['shift_start'] = self.shift_start == shift_start
-#        result['shift_end'] = self.shift_end == shift_end
+        #        result['shift_end'] = self.shift_end == shift_end
         result['employee'] = self.employee == employee
         return result
-        
+
+
+class Vacation(models.Model):
+    """
+    Vacation model is made to store vacation days or days off for employees
+    """
+
+    date = models.DateField(help_text='Day Off')
+    employee = models.ForeignKey(Employee,
+                                 on_delete=models.CASCADE,
+                                 null=True)
+    group = models.ForeignKey(Group,
+                              on_delete=models.SET_NULL,
+                              null=True,
+                              blank=True)
+
+
 class Request(models.Model):
     """This Request model is designed to hold those schedules that are currently
     requesting the receiver for a swap. It happens after the requester selects
@@ -134,33 +154,34 @@ class Request(models.Model):
                                  null=True,
                                  related_name="receiver")
     applicant_schedule = models.ForeignKey(Assign,
-                              on_delete=models.SET_NULL,
-                              null=True,
-                              related_name="requester_shift")
+                                           on_delete=models.SET_NULL,
+                                           null=True,
+                                           related_name="requester_shift")
     receiver_schedule = models.ForeignKey(Assign,
-                                       on_delete=models.SET_NULL,
-                                       null=True,
-                                       related_name="receiver_shift")
+                                          on_delete=models.SET_NULL,
+                                          null=True,
+                                          related_name="receiver_shift")
     # get creation timestamp for timeout purpose later
     created = models.DateTimeField(auto_now_add=True)
-    
+
     # did the receiver accept the proposed swap?
     accept = models.BooleanField(default=False)
     # is the action done?
     done = models.BooleanField(default=False)
 
-    
+
 def get_schedule(person):
     """
     get a person's schedules sorted by date
     
     person is Employee instance"""
     existing_schedule = Assign.objects.filter(employee__exact=person).order_by('shift_start')
-#    print('fetching schedule for', person.user.first_name, 
-#          person.user.last_name)
-#    for schedule in existing_schedule:
-#        print(schedule.shift_start, schedule.shift_end)
+    #    print('fetching schedule for', person.user.first_name,
+    #          person.user.last_name)
+    #    for schedule in existing_schedule:
+    #        print(schedule.shift_start, schedule.shift_end)
     return existing_schedule
+
 
 def set_schedule_day(person, start_day, shift):
     """
@@ -176,16 +197,19 @@ def set_schedule_day(person, start_day, shift):
     # shift_start and shift_end tzinfo is UTC
     shift_start = datetime.datetime.combine(start_day, shift_time)
     shift_end = shift_start + shift_dur
-        
+
     # register dates
-    # check if there are any shift conflicts
+    # check if there are any shift conflicts and vacation days
     existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=start_day)
-  
+    vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(start_date__exacct=start_day)
+    existing_schedule.union(vacation_schedule)
+
     if not existing_schedule:
-        schedule = Assign(start_date = start_day,
-                          shift_start = shift_start,
-                          shift_end = shift_end,
-                          employee = person)
+        schedule = Assign(start_date=start_day,
+                          shift_start=shift_start,
+                          shift_end=shift_end,
+                          employee=person,
+                          group=person.group)
         schedule.save()
         status = True
     else:
@@ -197,24 +221,25 @@ def set_schedule_day(person, start_day, shift):
             if overlap:
                 # if found an overlap
                 break
-            
+
         if overlap:
             # if there is overlap of shifts
             print('registraion failed due to schedule conflict')
             status = False
         else:
             # if no overlap (but allow double shifts ie shift continuation)
-            schedule = Assign(start_date = start_day,
-                          shift_start = shift_start,
-                          shift_end = shift_end,
-                          employee = person)
+            schedule = Assign(start_date=start_day,
+                              shift_start=shift_start,
+                              shift_end=shift_end,
+                              employee=person,
+                              group=person.group)
             schedule.save()
             status = True
     if status:
         print('schedule resgistered')
     return status
-    
-    
+
+
 def set_schedule(person, start_date, shift_pattern, repeat=1):
     """
     This function sets a person's schedule
@@ -223,16 +248,15 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
     start_date is datetime.date object
     shift is shift pattern from Schedule
     """
-    
+
     # shift_start is datetime.time
     not_registered = []
-    working_days = len(shift_pattern.day_list)*repeat
+    working_days = len(shift_pattern.day_list) * repeat
     working_dates = []
     for i in range(working_days):
         working_dates.append(start_date + datetime.timedelta(days=i))
 
-
-    for pattern, dates in zip(shift_pattern.day_list*repeat, working_dates):
+    for pattern, dates in zip(shift_pattern.day_list * repeat, working_dates):
         if pattern is None:
             # if it is a rest day, go to next iteration to set schedule
             continue
@@ -246,12 +270,15 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
         # register dates
         # check if there are any shift conflicts
         existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=dates)
-      
+        vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(start_date__exacct=start_day)
+        existing_schedule.union(vacation_schedule)
+
         if not existing_schedule:
-            schedule = Assign(start_date = dates,
-                              shift_start = shift_start,
-                              shift_end = shift_end,
-                              employee = person)
+            schedule = Assign(start_date=dates,
+                              shift_start=shift_start,
+                              shift_end=shift_end,
+                              employee=person,
+                              group=person.group)
             schedule.save()
         else:
             # else if there is already a schedule
@@ -262,18 +289,19 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
                 if overlap:
                     # if found an overlap
                     break
-                
+
             if overlap:
                 # if there is overlap of shifts
                 not_registered.append((dates, pattern))
             else:
                 # if no overlap (but allow double shifts ie shift continuation)
-                schedule = Assign(start_date = dates,
-                              shift_start = shift_start,
-                              shift_end = shift_end,
-                              employee = person)
+                schedule = Assign(start_date=dates,
+                                  shift_start=shift_start,
+                                  shift_end=shift_end,
+                                  employee=person,
+                                  group=person.group)
                 schedule.save()
-        
+
     if not not_registered:
         # if all are successful
         print('schedule set')
@@ -282,28 +310,29 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
         print('following dates did not register schedule due to schedule conflicts:')
         for failed_d, failed_p in not_registered:
             print(failed_d, failed_p)
-    
+
     status = not not_registered
     return status
 
+
 def clear_schedule(person):
     """clear all a person's schedule"""
-    
+
     while True:
         try:
-            option = input("This will delete all the person's schedule."\
+            option = input("This will delete all the person's schedule." \
                            "Choose an option to proceed [y/N]: ").lower()
-            if option in ['y','n']:
+            if option in ['y', 'n']:
                 break
         except:
             pass
     if option == 'y':
         while True:
             try:
-                employee_id = input("The schedule will be permanently deleted."\
+                employee_id = input("The schedule will be permanently deleted." \
                                     "Are you sure? Enter employee ID if you\
                                     want to delete schedule: ").lower()
-                
+
                 if employee_id.isdigit() and int(employee_id) == person.employee_id:
                     Assign.objects.filter(employee__exact=person).delete()
                     break
@@ -314,7 +343,8 @@ def clear_schedule(person):
                 pass
     else:
         print("person's schedule not deleted")
-        
+
+
 def del_schedule(person, date):
     """delete a person's schedule on a particular date
     person is Employee instance
@@ -325,23 +355,23 @@ def del_schedule(person, date):
         # if there are more than one schedule on that date
         for n, s in enumerate(schedule):
             print('id: {}, start time: {}, end time: {}'.format(n, s.shift_start, s.shift_end))
-        
+
         print("there are more than one schedule on this day." \
-                  "Which one would you like to delete?")
+              "Which one would you like to delete?")
         while True:
             try:
                 option = input('Please enter a valid index (int)' \
-                  'of the object you want to delete ')
+                               'of the object you want to delete ')
                 if option.isdigit() and int(option) <= schedule.count():
                     break
             except:
                 pass
-            
+
         schedule[option].delete()
     else:
         schedule.delete()
-    
-        
+
+
 def swap(person, swap_shift_start):
     """
     this function will check if swap shift is possible
@@ -374,35 +404,35 @@ def swap(person, swap_shift_start):
     print(person)
     success = True
     output = None
-    
+
     # try to see if the schedule exist
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start__exact=swap_shift_start)
     # if there are no schedule that day, it will not find it
     if swap_day.count() == 0:
-        raise ValidationError('There are no schedule for '+str(swap_shift_start))
-    
+        raise ValidationError('There are no schedule for ' + str(swap_shift_start))
+
     # there should only be one schedule with 
     # that one shift start date for that person
-    result = swap_day[0].same(shift_start=swap_shift_start,employee=person)
+    result = swap_day[0].same(shift_start=swap_shift_start, employee=person)
     assert all(result.values()) and swap_day.count() == 1
     # make the switch attribute True
     swap_day[0].switch = True
     swap_day[0].save()
-    
+
     # person's schedule not including the day requesting to be swapped
     person_schedule = Assign.objects.filter(employee__exact=person)
 
     # not itself, of those swapping as well, those that dont have the same shift
-    swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(switch__exact=True).exclude(shift_start__exact=swap_shift_start)
+    swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(switch__exact=True).exclude(
+        shift_start__exact=swap_shift_start)
     # get shifts that are not in the person's schedule already
-    for start, end in zip(person_schedule.values_list('shift_start'),person_schedule.values_list('shift_end')):        
+    for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
         # range is inclusive....that means no double shift allowed unless change syntax
         swapper_shifts = swapper_shifts.exclude(
-                shift_start__range=(start[0],end[0])).exclude(
-                        shift_end__range=(start[0],end[0]))
+            shift_start__range=(start[0], end[0])).exclude(
+            shift_end__range=(start[0], end[0]))
 
-#    swapper_shifts = swapper_shifts.exclude(shift_start__in=person_schedule.values_list('shift_start'))
-        
+    #    swapper_shifts = swapper_shifts.exclude(shift_start__in=person_schedule.values_list('shift_start'))
 
     if swapper_shifts.count() > 0:
         # if we have some swappers, swap them
@@ -414,27 +444,28 @@ def swap(person, swap_shift_start):
         acceptors = Employee.objects.filter(accept_swap__exact=True)
         print('acceptors', acceptors)
         # find people that are accepting shifts who are not working on that day
-        backup_swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(employee__in=acceptors).exclude(shift_start__exact=swap_shift_start)
-#        backup_swapper_shifts = backup_swapper_shifts.exclude(shift_start__in=person_schedule.values_list('shift_start'))
-#        print('backup shifts pre', backup_swapper_shifts)
-        
+        backup_swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(employee__in=acceptors).exclude(
+            shift_start__exact=swap_shift_start)
+        # backup_swapper_shifts = backup_swapper_shifts.exclude(shift_start__in=person_schedule.values_list(
+        # 'shift_start')) print('backup shifts pre', backup_swapper_shifts)
+
         # looking for possble trades on the accepting swaps
-        for start, end in zip(person_schedule.values_list('shift_start'),person_schedule.values_list('shift_end')):
+        for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
             backup_swapper_shifts = backup_swapper_shifts.exclude(
-                    shift_start__range=(start[0],end[0])).exclude(
-                            shift_end__range=(start[0],end[0]))
+                shift_start__range=(start[0], end[0])).exclude(
+                shift_end__range=(start[0], end[0]))
             if backup_swapper_shifts.count() == 0:
                 break
-#            print('checking', start, end)
-#            print('in loop', backup_swapper_shifts)
+        #            print('checking', start, end)
+        #            print('in loop', backup_swapper_shifts)
 
         if backup_swapper_shifts.count() > 0:
             # this gives available shifts to swap
             for backup in backup_swapper_shifts:
                 print('backup swappers', backup.employee, backup.shift_start)
-                
+
             output = backup_swapper_shifts
-    
+
         else:
             # look for people that are accepting shifts but not offering anything
             # in return. Which means people who are accepting shifts but that
@@ -442,7 +473,8 @@ def swap(person, swap_shift_start):
             free_people = []
             for acceptor in acceptors:
                 # check if person has shift on that day
-                acceptor_shift = Assign.objects.filter(employee__exact=acceptor).filter(shift_start__exact=swap_shift_start)
+                acceptor_shift = Assign.objects.filter(employee__exact=acceptor).filter(
+                    shift_start__exact=swap_shift_start)
                 if acceptor_shift.count() == 0:
                     # if acceptor not working that day
                     free_people.append(acceptor)
@@ -450,30 +482,31 @@ def swap(person, swap_shift_start):
                 # if there are free people that day
                 for p in free_people:
                     print('{} is free to work'.format(str(p)))
-                
+
             else:
                 print('no people are available to swap')
                 success = False
-                
+
                 # go into queue of holding, wait till database updates, then run rechecks
-#    print(success, output, free_people)
-    return {'success':success,
-            'available_shifts':output,
-            'free_people':free_people}
-            
-def send_email(subject,
-               msg,
-               sender_address,
-               receiver_list):
+    #    print(success, output, free_people)
+    return {'success': success,
+            'available_shifts': output,
+            'free_people': free_people}
+
+
+def send_email(subject, msg, sender_address, receiver_list):
     """
     This function will send email
     
     subject, msg, sender_address in str,
     receiver_list in list of str"""
     success = send_mail(subject=subject,
-              message=msg,
-              from_email=sender_address,
-              recipient_list=receiver_list)
+                        message=msg,
+                        from_email=sender_address,
+                        recipient_list=receiver_list)
     return success
-        
-        
+
+
+def set_vacation(person, date):
+    _, created = Vacation.objects.get_or_create(date=date, employee=person, group=person.group)
+    return created
