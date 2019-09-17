@@ -11,10 +11,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import logout
 
-"""This is for the superuser only"""
+"""This is for the superuser or manager only"""
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Manager').exists())
 def assign_view(request):
     if request.method == 'POST':
         # if it is a post method, then process form data
@@ -25,7 +25,7 @@ def assign_view(request):
 
         if form.is_valid():
             employee_id = form.cleaned_data['employee_id']
-            shift_id = form.cleaned_data['shift_pattern']
+            shift_name = form.cleaned_data['shift_pattern']
             start_date = form.cleaned_data['start_date']
             repeat = form.cleaned_data['repeat']
 
@@ -33,14 +33,16 @@ def assign_view(request):
 
             # get info before modifying
             person_instance.get_info()
-            shift_pattern = get_object_or_404(Schedule, pk=shift_id)
+            shift_pattern = Schedule.objects.filter(group=request.user.group).get(schedule_name__exact=shift_name)
+            # shift_pattern = get_object_or_404(Schedule, pk=shift_id)
             shift_pattern.mk_ls()
 
             status = set_schedule(person=person_instance,
                                   start_date=start_date,
                                   shift_pattern=shift_pattern,
                                   repeat=repeat)
-            get_schedule(person=person_instance)
+            # print('status', status)
+            # get_schedule(person=person_instance)
 
             if status:
                 # succeed
@@ -65,7 +67,7 @@ def assign_view(request):
         return render(request, 'schedule/assign.html', context=context)
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Manager').exists())
 def assign_result_view(request):
     """redirected from assign_view"""
     if request.method == 'POST':
@@ -79,7 +81,7 @@ def assign_result_view(request):
             return render(request, 'schedule/assign_result.html')
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Manager').exists())
 def schedule_view(request):
     if request.method == 'POST':
         # if it is a post method, then process form data
@@ -110,7 +112,7 @@ def schedule_view(request):
         return render(request, 'schedule/schedule_view.html', context=context)
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Manager').exists())
 def schedule_result_view(request):
     """redirected from schedule_view"""
     if request.method == 'POST':
@@ -124,7 +126,7 @@ def schedule_result_view(request):
             return render(request, 'schedule/schedule_result_view.html')
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Manager').exists())
 def swap_view(request):
     if request.method == 'POST':
         # if it is a post method, then process form data
@@ -175,7 +177,7 @@ def swap_view(request):
         return render(request, 'schedule/swap.html', context=context)
 
 
-@user_passes_test(lambda u: u.is_superuser)
+@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Manager').exists())
 def swap_result_view(request):
     """redirected from swap view"""
     if request.method == 'POST':
@@ -191,3 +193,4 @@ def swap_result_view(request):
             return HttpResponseRedirect(reverse('swap'))
         else:
             return render(request, 'schedule/swap_result.html')
+

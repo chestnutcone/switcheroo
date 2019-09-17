@@ -1,0 +1,19 @@
+{% extends "project_specific\base_generic.html" %}
+
+{% block content %}
+	<h1>Home Page</h1>
+	<p>welcome!  {{ name }}</p>
+
+	<h2>employee schedule below</h2>
+	{% if schedules %}
+		{% for schedule in schedules %}
+			<h3>name</h3>
+			{{ schedule.name }}
+			<h3>shift start</h3>
+			{{ schedule.shift_start }}
+			<h3>shift end</h3>
+			{{ schedule.shift_end }}
+		{% endfor %}
+	{% endif %}
+
+{% endblock %}

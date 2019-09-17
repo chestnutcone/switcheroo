@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.urls import reverse
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
 # Create your views here.
 from schedule.models import get_schedule
@@ -20,7 +20,10 @@ from .forms import GroupCreateForm, GroupJoinForm
 
 @login_required
 def profile_view(request):
-    """main page of employee. Redirect to here after login"""
+    """
+    main page of employee. Redirect to here after login. If user is superuser, will redirect to /admin/ page for now.
+    If user is manager or employee and logging in for the first time, will redirect to group to register which group
+    they are under. """
     if request.method == 'POST':
         
         if request.POST.get("logout"):
@@ -41,8 +44,6 @@ def profile_view(request):
             elif current_user.is_manager:
                 # if not superuser and is manager, and has a group, redirect to admin
                 return HttpResponseRedirect('/admin/')
-                
-    #### log into group, row permission
     
         # will throw index error if the user is not registered under Employee
         try:
@@ -67,6 +68,7 @@ def profile_view(request):
 
 @login_required
 def swap_view(request):
+    """the view page for swapping shift"""
     if request.method == 'POST':
         # if it is a post method, then process form data
         form = SwapForm(request.POST)
@@ -139,6 +141,7 @@ def swap_result_view(request):
         
 @login_required
 def group_view(request):
+    """this page is to register the group if the user is currently unregistered. Note superuser remains unregistered"""
     if request.method == 'POST':
         if request.POST.get('create_submit'):
             form = GroupCreateForm(request.POST)
@@ -176,3 +179,44 @@ def group_view(request):
             form = GroupJoinForm()
             context = {'form':form}
             return render(request, 'project_specific/group_join.html',context=context)
+
+
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def schedule_view(request):
+    """
+    schedule view is for manager only
+
+    :param request:
+    :return:
+    """
+    if request.method == "POST":
+        if request.POST.get("logout"):
+            logout(request)
+            return render(request, 'registration/logged_out.html')
+
+    else:
+        # get employee belonging to manager
+        print('requester', request.user.first_name)
+        employees = Employee.objects.all().filter(group=request.user.group)
+        total_schedule = {'name': request.user.first_name, 'schedules':[]}
+        for employee in employees:
+            try:
+                schedule = get_schedule(employee)
+                dates = []
+                shift_start = []
+                shift_end = []
+                for s in schedule:
+                    dates.append(s.start_date.strftime("%Y/%m/%d"))
+
+                    shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
+                    shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
+                context = {'dates': dates,
+                           'shift_start': shift_start,
+                           'shift_end': shift_end,
+                           'name': str(employee),
+                           }
+                total_schedule['schedules'].append(context)
+            except IndexError:
+                raise IndexError('some error occured in schedule_view')
+        print('page display', total_schedule)
+        return render(request, 'project_specific/manager_schedules_view.html', context=total_schedule)

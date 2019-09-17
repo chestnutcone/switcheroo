@@ -55,6 +55,14 @@ class SignUpView(CreateView):
                                 print('Permission not found with name:',name)
                                 continue
                             manager_group.permissions.add(model_add_perm)
+                    # do for view employee
+                    name = 'Can {} {}'.format('view', 'user')
+                    try:
+                        model_add_perm = Permission.objects.get(name=name)
+                    except Permission.DoesNotExist:
+                        print('Permission not found with name:', name)
+                    manager_group.permissions.add(model_add_perm)
+
                 manager_group.user_set.add(user)
                 
             else:

@@ -3,6 +3,8 @@ from django.contrib import admin
 # Register your models here.
 from people.models import Position, Unit, Employee
 from .forms import EmployeeForm, PositionForm, UnitForm
+from user.models import CustomUser
+import copy
 
 #admin.site.register(Position)
 #admin.site.register(Unit)
@@ -36,11 +38,9 @@ class EmployeeAdmin(admin.ModelAdmin):
             return qs
         return qs.filter(group=request.user.group)
 
-#    def get_form(self, request, obj=None, **kwargs):
-#        kwargs['user'] = request.user
-#        return super().get_form(request, obj, **kwargs)
 class PositionAdmin(admin.ModelAdmin):
     form = PositionForm
+    list_display = ('position_choice', 'group')
     exclude = ('group',)
     def save_model(self, request, obj, form, change):
         obj.group = request.user.group
@@ -54,6 +54,7 @@ class PositionAdmin(admin.ModelAdmin):
     
 class UnitAdmin(admin.ModelAdmin):
     form = UnitForm
+    list_display = ('unit_choice', 'group')
     exclude = ('group',)
     def save_model(self, request, obj, form, change):
         obj.group = request.user.group
