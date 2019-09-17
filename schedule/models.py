@@ -50,8 +50,10 @@ class Schedule(models.Model):
     
     """
     schedule_name = models.CharField(max_length=20, primary_key=True)
-    cycle = models.PositiveSmallIntegerField(MaxValueValidator(10),
-                                             help_text='how many days is the shift pattern cycle')
+    cycle = models.PositiveSmallIntegerField(verbose_name='cycle',
+                                             validators=[MaxValueValidator(10)],
+                                             help_text='how many days is the shift pattern cycle',
+                                             )
 
     day_1 = models.ForeignKey(Shift,
                               related_name='%(app_label)s_%(class)s_1',
@@ -202,9 +204,8 @@ def set_schedule_day(person, start_day, shift):
     # check if there are any shift conflicts and vacation days
     existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=start_day)
     vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(start_date__exacct=start_day)
-    existing_schedule.union(vacation_schedule)
 
-    if not existing_schedule:
+    if not (existing_schedule or vacation_schedule):
         schedule = Assign(start_date=start_day,
                           shift_start=shift_start,
                           shift_end=shift_end,
@@ -216,15 +217,18 @@ def set_schedule_day(person, start_day, shift):
         # else if there is already a schedule
         # find all schedule time
         overlap = False
-        for exist_shift in existing_schedule:
-            overlap = exist_shift.shift_start <= shift_start < exist_shift.shift_end
-            if overlap:
-                # if found an overlap
-                break
+        if vacation_schedule.exists():
+            overlap = True
+        else:
+            for exist_shift in existing_schedule:
+                overlap = exist_shift.shift_start <= shift_start < exist_shift.shift_end
+                if overlap:
+                    # if found an overlap
+                    break
 
         if overlap:
             # if there is overlap of shifts
-            print('registraion failed due to schedule conflict')
+            print('registration failed due to schedule conflict')
             status = False
         else:
             # if no overlap (but allow double shifts ie shift continuation)
@@ -236,7 +240,7 @@ def set_schedule_day(person, start_day, shift):
             schedule.save()
             status = True
     if status:
-        print('schedule resgistered')
+        print('schedule registered')
     return status
 
 
@@ -270,10 +274,9 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
         # register dates
         # check if there are any shift conflicts
         existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=dates)
-        vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(start_date__exacct=start_day)
-        existing_schedule.union(vacation_schedule)
+        vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(start_date__exacct=dates)
 
-        if not existing_schedule:
+        if not (existing_schedule or vacation_schedule):
             schedule = Assign(start_date=dates,
                               shift_start=shift_start,
                               shift_end=shift_end,
@@ -284,11 +287,14 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
             # else if there is already a schedule
             # find all schedule time
             overlap = False
-            for exist_shift in existing_schedule:
-                overlap = exist_shift.shift_start <= shift_start < exist_shift.shift_end
-                if overlap:
-                    # if found an overlap
-                    break
+            if vacation_schedule.exists():
+                overlap = True
+            else:
+                for exist_shift in existing_schedule:
+                    overlap = exist_shift.shift_start <= shift_start < exist_shift.shift_end
+                    if overlap:
+                        # if found an overlap
+                        break
 
             if overlap:
                 # if there is overlap of shifts
