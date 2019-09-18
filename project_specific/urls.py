@@ -15,4 +15,3 @@ urlpatterns = [
         path('group/', views.group_view, name='group'),
         path('schedule/', views.schedule_view, name='schedule_view'),
         ]
-        

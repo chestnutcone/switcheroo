@@ -191,4 +191,3 @@ def swap_result_view(request):
             return HttpResponseRedirect(reverse('swap'))
         else:
             return render(request, 'schedule/swap_result.html')
-
