@@ -13,13 +13,13 @@ from .models import CustomUser, Group
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm):
         model = CustomUser
-        fields = ('email', 'first_name', 'last_name', 'is_manager')
+        fields = ('email', 'first_name', 'last_name')
 
 
 class CustomUserChangeForm(UserChangeForm):
     class Meta(UserChangeForm):
         model = CustomUser
-        fields = ('email', 'first_name', 'last_name', 'is_manager')
+        fields = ('email', 'first_name', 'last_name')
 
 
 class GroupForm(forms.ModelForm):

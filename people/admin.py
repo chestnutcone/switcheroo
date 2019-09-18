@@ -6,7 +6,7 @@ from .forms import EmployeeForm, PositionForm, UnitForm
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = ('get_user',
                     'person_position',
-                    'employee_id',
+                    'get_employee_id',
                     'person_unit',
                     'group')
     list_filter = ('person_unit', 'person_position', 'group')
@@ -14,6 +14,9 @@ class EmployeeAdmin(admin.ModelAdmin):
 
     def get_user(self, indv):
         return indv.user.first_name + " " + indv.user.last_name
+
+    def get_employee_id(self, indv):
+        return indv.user.employee_detail.employee_id
 
     get_user.admin_order_field = 'user'
     get_user.short_description = 'Name'

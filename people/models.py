@@ -46,8 +46,6 @@ class Employee(models.Model):
     user = models.OneToOneField(get_user_model(),
                                 on_delete=models.CASCADE,
                                 unique=True)
-    employee_id = models.IntegerField(primary_key=True,
-                                      help_text='enter unique employee id')
 
     person_position = models.ForeignKey(Position,
                                         on_delete=models.SET_NULL,
@@ -71,7 +69,6 @@ class Employee(models.Model):
         print('printing all info.....')
         print('name', self.user.first_name, self.user.last_name)
         print('email', self.user.email)
-        print('id', self.employee_id)
         print('position', self.person_position)
         print('unit', self.person_unit)
         print('accept shifts', self.accept_swap)

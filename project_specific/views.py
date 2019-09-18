@@ -30,7 +30,7 @@ def profile_view(request):
             if not request.user.group:
                 # cannot find group id because group doesnt exist yet
                 return HttpResponseRedirect(reverse('group'))
-            elif current_user.is_manager:
+            elif current_user.employee_detail.is_manager:
                 # if not superuser and is manager, and has a group, redirect to admin
                 return HttpResponseRedirect('/admin/')
 
@@ -158,7 +158,7 @@ def group_view(request):
                 return HttpResponseRedirect(reverse('profile'))
 
     else:
-        if request.user.is_manager:
+        if request.user.employee_detail.is_manager:
             # render a group creating form
             form = GroupCreateForm()
             context = {'form': form}

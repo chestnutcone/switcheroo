@@ -337,7 +337,7 @@ def clear_schedule(person):
                                     "Are you sure? Enter employee ID if you\
                                     want to delete schedule: ").lower()
 
-                if employee_id.isdigit() and int(employee_id) == person.employee_id:
+                if employee_id.isdigit() and int(employee_id) == person.user.employee_detail.employee_id:
                     Assign.objects.filter(employee__exact=person).delete()
                     break
                 else:

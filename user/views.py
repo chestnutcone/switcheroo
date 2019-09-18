@@ -19,7 +19,6 @@ class SignUpView(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if form.is_valid():
-            is_manager = form.cleaned_data['is_manager']
             email = form.cleaned_data['email']
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
@@ -29,13 +28,12 @@ class SignUpView(CreateView):
             user = CustomUser(username=email,
                               first_name=first_name,
                               last_name=last_name,
-                              is_manager=is_manager,
                               password=password)
-            if is_manager:
+            if user.employee_detail.is_manager:
                 user.is_staff = True
             user.save()
             #            print('is manager', is_manager)
-            if is_manager:
+            if user.employee_detail.is_manager:
                 # if is manager is true
                 manager_group, created = Group.objects.get_or_create(name="Manager")
                 if created:

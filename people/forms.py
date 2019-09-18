@@ -11,9 +11,8 @@ from people.models import Position, Unit, Employee
 class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
-        fields = ['user', 'employee_id', 'person_position', 'person_unit', 'group']
+        fields = ['user', 'person_position', 'person_unit', 'group']
         labels = {'user': 'Employee',
-                  'employee_id': 'Employee ID',
                   'person_position': 'Position',
                   'person_unit': 'Unit', }
 
