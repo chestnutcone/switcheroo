@@ -1,6 +1,4 @@
 from django.shortcuts import render
-
-# Create your views here.
 from schedule.models import Schedule, set_schedule, get_schedule, swap
 from schedule.forms import AssignForm, SwapForm, ViewScheduleForm
 from people.models import Employee
@@ -141,7 +139,7 @@ def swap_view(request):
             result = swap(person=person_instance, swap_shift_start=swap_shift_start)
             # result is dictionary with key 
 
-            if result['success'] == True:
+            if result['success']:
                 if result['available_shifts']:
                     # pass as list
                     display_info = []

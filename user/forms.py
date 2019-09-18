@@ -9,18 +9,19 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import CustomUser, Group
 
-class CustomUserCreationForm(UserCreationForm):
 
+class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm):
         model = CustomUser
-        fields = ('email', 'first_name','last_name', 'is_manager')
+        fields = ('email', 'first_name', 'last_name', 'is_manager')
+
 
 class CustomUserChangeForm(UserChangeForm):
-
     class Meta(UserChangeForm):
         model = CustomUser
-        fields = ('email','first_name','last_name', 'is_manager')
-        
+        fields = ('email', 'first_name', 'last_name', 'is_manager')
+
+
 class GroupForm(forms.ModelForm):
     class Meta:
         model = Group

@@ -3,14 +3,12 @@ from django.db import models
 from people.models import Employee
 import datetime
 import pytz
-from django.utils import timezone
 from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from user.models import Group
 
 
-# Create your models here.
 class Shift(models.Model):
     """The shift model is suppose to register common shifts. Ie morning/night 
     shifts, to avoid keep typing the same thing. It becomes a reusable object
