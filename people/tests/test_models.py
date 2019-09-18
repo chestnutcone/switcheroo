@@ -6,9 +6,9 @@ Created on Wed Sep 11 10:19:42 2019
 """
 
 from django.test import TestCase
-from people.models import Individual, Position, Unit
+from people.models import Employee, Position, Unit
 # Create your tests here.
-class IndividualModelTest(TestCase):
+class EmployeeModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
 #       "setUpTestData: Run once to set up non-modified data for all class methods.")

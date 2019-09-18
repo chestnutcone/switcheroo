@@ -24,7 +24,7 @@ urlpatterns = [
 urlpatterns += [
         path('people/',include('people.urls')),
         path('schedule/',include('schedule.urls')),
-#        path('accounts/',include('django.contrib.auth.urls')),
+       path('accounts/',include('django.contrib.auth.urls')),
         path('main/', include('project_specific.urls')),
         path('', TemplateView.as_view(template_name='home.html'), name='home'),
         path('users/', include('user.urls')),

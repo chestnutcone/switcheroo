@@ -16,4 +16,3 @@ urlpatterns = [
         path('swap/',views.swap_view, name='swap'),
         path('swap/result',views.swap_result_view, name='swap_result'),
         ]
-        
