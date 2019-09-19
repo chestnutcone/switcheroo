@@ -21,6 +21,7 @@ class EmployeeAdmin(admin.ModelAdmin):
     get_user.admin_order_field = 'user'
     get_user.short_description = 'Name'
 
+    get_employee_id.short_description = "Employee ID"
     form = EmployeeForm
 
     def save_model(self, request, obj, form, change):

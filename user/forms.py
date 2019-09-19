@@ -11,6 +11,9 @@ from .models import CustomUser, Group
 
 
 class CustomUserCreationForm(UserCreationForm):
+    employee_id = forms.IntegerField(min_value=0)
+    is_manager = forms.BooleanField(required=False)
+
     class Meta(UserCreationForm):
         model = CustomUser
         fields = ('email', 'first_name', 'last_name')

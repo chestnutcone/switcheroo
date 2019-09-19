@@ -17,6 +17,7 @@ class CustomUser(AbstractUser):
                               null=True)
     employee_detail = models.OneToOneField(EmployeeID,
                                            on_delete=models.SET_NULL,
+                                           null=True,
                                            unique=True
                                            )
 

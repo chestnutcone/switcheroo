@@ -29,6 +29,27 @@ class Unit(models.Model):
         return self.unit_choice
 
 
+class Weekday(models.Model):
+    name = models.CharField(max_length=5)
+    day = models.PositiveSmallIntegerField(primary_key=True)
+    # 0 = monday, 6 = sunday etc
+
+    @staticmethod
+    def _set_weekday():
+        if not Weekday.objects.filter(pk=6).exists():
+            weekdays = ['Mon','Tues','Wed','Thurs', 'Fri', 'Sat','Sun']
+            for day, name in enumerate(weekdays):
+                weekday, created = Weekday.objects.get_or_create(name=name, day=day)
+                weekday.save()
+
+    def __str__(self):
+        return self.name
+
+
+# execute to ensure the weekday objects exist. Need to find out how to register once only.
+Weekday._set_weekday()
+
+
 class Employee(models.Model):
     """Employee will have one to one relationship with users. Each employee
     instance must have a user to be defined first. Which means employee should
@@ -63,6 +84,9 @@ class Employee(models.Model):
                               on_delete=models.SET_NULL,
                               null=True,
                               blank=True)
+    weekday = models.ManyToManyField(Weekday,
+                                     blank=True,
+                                     help_text="availability")
 
     def get_info(self):
         print('   ')
