@@ -35,13 +35,11 @@ def assign_view(request):
             # get info before modifying
             person_instance.get_info()
             shift_pattern = Schedule.objects.filter(group=request.user.group).get(schedule_name__exact=shift_name)
-            # shift_pattern = get_object_or_404(Schedule, pk=shift_id)
-            shift_pattern.mk_ls()
 
-            status = set_schedule(person=person_instance,
-                                  start_date=start_date,
-                                  shift_pattern=shift_pattern,
-                                  repeat=repeat)
+            status, not_registered = set_schedule(person=person_instance,
+                                                  start_date=start_date,
+                                                  shift_pattern=shift_pattern,
+                                                  repeat=repeat)
             # print('status', status)
             # get_schedule(person=person_instance)
 
@@ -53,7 +51,7 @@ def assign_view(request):
             else:
                 messages.add_message(request,
                                      messages.INFO,
-                                     'shifts adding not successful')
+                                     'shifts adding were not all successful')
             return HttpResponseRedirect(reverse('assign_result'))
         else:
             form = AssignForm(initial={'employee_id': 0, 'repeat': 1})

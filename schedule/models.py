@@ -207,7 +207,7 @@ def set_schedule_day(person, start_day, shift):
     weekday_queryset = person.weekday.all()
 
     weekdays = [weekday.day for weekday in weekday_queryset]
-    if start_day not in weekdays:
+    if start_day.weekday() not in weekdays:
         print('employee not available this day')
         status = False
         return status
@@ -275,7 +275,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
         if pattern is None or dates.weekday() not in weekdays:
             # if it is a rest day, go to next iteration to set schedule
             if dates not in weekdays:
-                print('{} is on a rest day ({})'.format(dates, dates.weekdays()))
+                # print('{} is on a rest day ({})'.format(dates, dates.weekday()))
                 not_registered.append((dates, pattern))
             continue
         shift_time = pytz.UTC.localize(pattern.shift_start)
@@ -332,7 +332,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
             print(failed_d, failed_p)
 
     status = not not_registered
-    return status
+    return status, not_registered
 
 
 def clear_schedule(person):
@@ -425,9 +425,9 @@ def swap(person, swap_shift_start):
     output = None
 
     # try to see if the schedule exist
-    swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start__exact=swap_shift_start)
+    swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
     # if there are no schedule that day, it will not find it
-    if swap_day.count() == 0:
+    if not swap_day.exists():
         raise ValidationError('There are no schedule for ' + str(swap_shift_start))
 
     # there should only be one schedule with 
@@ -442,9 +442,14 @@ def swap(person, swap_shift_start):
     person_schedule = Assign.objects.filter(employee__exact=person)
 
     # not itself, in the same group, of those swapping as well, those that dont have the same shift
-    swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(group=person.group).filter(
-        switch__exact=True).exclude(
-        shift_start__exact=swap_shift_start)
+    # filtering of group is included in filtering for position and unit since position and unit contain group info
+    # currently filtering for exact position
+    possible_swappers = Employee.objects.filter(
+        person_unit=person.person_unit).filter(
+        person_position=person.person_position)
+    swapper_shifts = Assign.objects.filter(employee__in=possible_swappers).exclude(employee=person).filter(
+        switch=True).exclude(
+        shift_start=swap_shift_start)
     # get shifts that are not in the person's schedule already
     for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
         # range is inclusive....that means no double shift allowed unless change syntax
@@ -460,8 +465,10 @@ def swap(person, swap_shift_start):
             print('swappers', shift.employee, shift.shift_start)
         output = swapper_shifts
     else:
-        # get from people that are accepting shifts that are in the same group
-        acceptors = Employee.objects.filter(group=person.group).filter(accept_swap__exact=True)
+        # get from people that are accepting shifts that are in the same group, unit, position
+        acceptors = Employee.objects.filter(
+            person_unit=person.person_unit).filter(
+            person_position=person.person_position).filter(accept_swap__exact=True)
         print('acceptors', acceptors)
         # find people that are accepting shifts who are not working on that day
         backup_swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(employee__in=acceptors).exclude(
@@ -469,7 +476,7 @@ def swap(person, swap_shift_start):
         # backup_swapper_shifts = backup_swapper_shifts.exclude(shift_start__in=person_schedule.values_list(
         # 'shift_start')) print('backup shifts pre', backup_swapper_shifts)
 
-        # looking for possble trades on the accepting swaps
+        # looking for possible trades on the accepting swaps
         for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
             backup_swapper_shifts = backup_swapper_shifts.exclude(
                 shift_start__range=(start[0], end[0])).exclude(
@@ -530,7 +537,6 @@ def send_email(subject, msg, sender_address, receiver_list):
 
 
 def set_vacation(person, date):
-
     work_conflict = Assign.objects.get(employee=person, start_date=date).exists()
     if work_conflict:
         created = None
