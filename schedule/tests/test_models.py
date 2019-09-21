@@ -78,7 +78,6 @@ def num_generator():
 
 
 def create_employee_pool(mor_start, nig_start, shift_dur, group_name, id_gen):
-
     manager, group = create_user(employee_id=next(id_gen),
                                  group_name=group_name,
                                  is_manager=True)
@@ -102,6 +101,7 @@ def create_employee_pool(mor_start, nig_start, shift_dur, group_name, id_gen):
         _ = create_employee(user=user, position=rn, unit=unit, group=group, weekday=available)
     for user in lpn_users:
         _ = create_employee(user=user, position=lpn, unit=unit, group=group, weekday=available)
+
 
 class AssignModelTest(TestCase):
     @classmethod
@@ -206,7 +206,7 @@ class AssignModelTest(TestCase):
                 manager = person
 
         e1 = employees[0]
-        start_date = datetime.date(2019,9,1)
+        start_date = datetime.date(2019, 9, 1)
         # lands on weekend, wont work
         output = sm.set_schedule_day(e1, start_date, morning_shift)
         expected = False
@@ -232,26 +232,131 @@ class AssignModelTest(TestCase):
     def test_swap(self):
         group1 = Group.objects.get(name='group1')
         group1_pool = Employee.objects.filter(group=group1)
-        shift_pattern = Schedule.objects.filter(group=group1).get(schedule_name='standard')
-        morning_shift = Shift.objects.filter(group=group1).get(shift_name='morning')
-        night_shift = Shift.objects.filter(group=group1).get(shift_name='night')
+        shift_pattern_1 = Schedule.objects.filter(group=group1).get(schedule_name='standard')
+        morning_shift_1 = Shift.objects.filter(group=group1).get(shift_name='morning')
+        night_shift_1 = Shift.objects.filter(group=group1).get(shift_name='night')
 
-        employees = []
+        employees_1 = []
         for person in group1_pool:
             if not person.user.employee_detail.is_manager:
-                employees.append(person)
+                employees_1.append(person)
             else:
-                manager = person
+                manager_1 = person
+
+        group2 = Group.objects.get(name='group2')
+        group2_pool = Employee.objects.filter(group=group2)
+        shift_pattern_2 = Schedule.objects.filter(group=group2).get(schedule_name='standard')
+        morning_shift_2 = Shift.objects.filter(group=group2).get(shift_name='morning')
+        night_shift_2 = Shift.objects.filter(group=group2).get(shift_name='night')
+
+        employees_2 = []
+        for person in group2_pool:
+            if not person.user.employee_detail.is_manager:
+                employees_2.append(person)
+            else:
+                manager_2 = person
+
+        start_date = datetime.date(2019, 9, 1)  # sunday
+        diff = datetime.timedelta(days=3)
+
+        for i, employee in enumerate(employees_1):
+            _, _ = sm.set_schedule(person=employee,
+                                   start_date=start_date,
+                                   shift_pattern=shift_pattern_1)
+            # not_registered is list of (dates, shift)
+            start_date = start_date + diff
+
+        start_date = datetime.date(2019, 9, 1)  # sunday
+        diff = datetime.timedelta(days=3)
+
+        for i, employee in enumerate(employees_2):
+            _, _ = sm.set_schedule(person=employee,
+                                   start_date=start_date,
+                                   shift_pattern=shift_pattern_2)
+            # not_registered is list of (dates, shift)
+            start_date = start_date + diff
+
+        # set employee 2 of group 1 and 2 sept 4 morn schedule to switch = True
+        # swap employee 1 of group 1
+        # should return employee 2 of group 2 for result
+        e1_2 = employees_1[1]
+        e2_2 = employees_2[1]
+        e1_2_schedule = Assign.objects.filter(employee=e1_2).filter(start_date=datetime.date(2019, 9, 4))
+        e2_2_schedule = Assign.objects.filter(employee=e2_2).filter(start_date=datetime.date(2019, 9, 4))
+        e1_2_switch = e1_2_schedule[0]
+        e2_2_switch = e2_2_schedule[0]
+        e1_2_switch.switch = True
+        e2_2_switch.switch = True
+        e1_2_switch.save()
+        e2_2_switch.save()
+
+        swapper = employees_1[0]
+        status = sm.swap(swapper, datetime.datetime(2019, 9, 3, 19, 30))
+
+        expected_status = {'success': True,
+                           'available_shifts': e1_2_schedule,
+                           'free_people': []
+                           }
+        self.assertEquals(status['success'], expected_status['success'])
+        self.assertEquals(len(status['available_shifts']), len(expected_status['available_shifts']))
+        for shift in range(len(status['available_shifts'])):
+            self.assertEquals(status['available_shifts'][shift], expected_status['available_shifts'][shift])
+        self.assertEquals(status['free_people'], expected_status['free_people'])
+
+        # test feature for those open to swap. Employee.accept_swap = True
+        # reset previous test
+        e1_2_switch.switch = False
+        e2_2_switch.switch = False
+        e1_2_switch.save()
+        e2_2_switch.save()
+
+        e1_2.accept_swap = True
+        e2_2.accept_swap = True
+        e1_2.save()
+        e2_2.save()
+
+        status = sm.swap(swapper, datetime.datetime(2019, 9, 3, 19, 30))
+        e1_2_schedule = Assign.objects.filter(employee=e1_2)
+
+        expected_status = {'success': True,
+                           'available_shifts': e1_2_schedule,
+                           'free_people': []
+                           }
+        self.assertEquals(status['success'], expected_status['success'])
+        self.assertEquals(len(status['available_shifts']), len(expected_status['available_shifts']))
+        for shift in range(len(status['available_shifts'])):
+            self.assertEquals(status['available_shifts'][shift], expected_status['available_shifts'][shift])
+        self.assertEquals(status['free_people'], expected_status['free_people'])
+
+        # test free people that are accepting shifts but cannot offer return
+        _, _ = sm.set_schedule(person=swapper,
+                               start_date=datetime.date(2019, 9, 4),
+                               shift_pattern=shift_pattern_1)
+        swapper_schedule = sm.get_schedule(swapper)
+        print('##printing swapper schedule')
+        for s in swapper_schedule:
+            print(s.shift_start)
+        print('##done printing swapper schedule')
+        status = sm.swap(swapper, datetime.datetime(2019, 9, 3, 19, 30))
+        print('status', status)
+        expected_status = {'success': True,
+                           'available_shifts': None,
+                           'free_people': [e1_2]
+                           }
+        self.assertEquals(status['success'], expected_status['success'])
+        self.assertEquals(status['available_shifts'], expected_status['available_shifts'])
+        self.assertEquals(status['free_people'][0], expected_status['free_people'][0])
+
 
 class ShiftModelTest(TestCase):
     @classmethod
     def setUpTestData(cls):
-        morning_shift = Shift.objects.create(shift_start=datetime.time(7, 30),
-                                             shift_duration=datetime.timedelta(hours=12),
-                                             shift_name='morning')
-        night_shift = Shift.objects.create(shift_start=datetime.time(19, 30),
-                                           shift_duration=datetime.timedelta(hours=12),
-                                           shift_name='night')
+        _ = Shift.objects.create(shift_start=datetime.time(7, 30),
+                                 shift_duration=datetime.timedelta(hours=12),
+                                 shift_name='morning')
+        _ = Shift.objects.create(shift_start=datetime.time(19, 30),
+                                 shift_duration=datetime.timedelta(hours=12),
+                                 shift_name='night')
 
     def test_shift_start_name_label(self):
         shift = Shift.objects.filter(name__exact='morning')[0]

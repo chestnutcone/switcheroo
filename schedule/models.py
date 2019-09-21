@@ -7,6 +7,7 @@ from django.core.validators import MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from user.models import Group
+from django.db.models import Q
 
 
 class Shift(models.Model):
@@ -423,7 +424,8 @@ def swap(person, swap_shift_start):
     print(person)
     success = True
     output = None
-
+    free_people = []
+    swap_shift_start = pytz.UTC.localize(swap_shift_start)
     # try to see if the schedule exist
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
     # if there are no schedule that day, it will not find it
@@ -435,8 +437,9 @@ def swap(person, swap_shift_start):
     result = swap_day[0].same(shift_start=swap_shift_start, employee=person)
     assert all(result.values()) and swap_day.count() == 1
     # make the switch attribute True
-    swap_day[0].switch = True
-    swap_day[0].save()
+    swap_day_switch = swap_day[0]
+    swap_day_switch.switch = True
+    swap_day_switch.save()
 
     # person's schedule not including the day requesting to be swapped
     person_schedule = Assign.objects.filter(employee__exact=person)
@@ -447,17 +450,16 @@ def swap(person, swap_shift_start):
     possible_swappers = Employee.objects.filter(
         person_unit=person.person_unit).filter(
         person_position=person.person_position)
+
     swapper_shifts = Assign.objects.filter(employee__in=possible_swappers).exclude(employee=person).filter(
-        switch=True).exclude(
-        shift_start=swap_shift_start)
+        switch=True).exclude(shift_start=swap_shift_start)
+
     # get shifts that are not in the person's schedule already
     for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
-        # range is inclusive....that means no double shift allowed unless change syntax
+        # try exclusive, allow double shifts. Since if you swap the shift, it doesnt matter if they overlap
         swapper_shifts = swapper_shifts.exclude(
-            shift_start__range=(start[0], end[0])).exclude(
-            shift_end__range=(start[0], end[0]))
-
-    #    swapper_shifts = swapper_shifts.exclude(shift_start__in=person_schedule.values_list('shift_start'))
+            Q(shift_start__gte=start[0]) & Q(shift_start__lt=end[0])).exclude(
+            Q(shift_end__gt=start[0]) & Q(shift_end__lte=end[0]))
 
     if swapper_shifts.count() > 0:
         # if we have some swappers, swap them
@@ -478,9 +480,11 @@ def swap(person, swap_shift_start):
 
         # looking for possible trades on the accepting swaps
         for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
+            # try allow double shift since if you swap them, it doesnt matter if they overlap
             backup_swapper_shifts = backup_swapper_shifts.exclude(
-                shift_start__range=(start[0], end[0])).exclude(
-                shift_end__range=(start[0], end[0]))
+                Q(shift_start__gte=start[0]) & Q(shift_start__lt=end[0])).exclude(
+                Q(shift_end__gt=start[0]) & Q(shift_end__lte=end[0]))
+
             if backup_swapper_shifts.count() == 0:
                 break
         #            print('checking', start, end)
@@ -497,13 +501,13 @@ def swap(person, swap_shift_start):
             # look for people that are accepting shifts but not offering anything
             # in return. Which means people who are accepting shifts but that
             # are not working that day
-            free_people = []
+
             for acceptor in acceptors:
                 # check if person has shift on that day
                 weekdays = [weekday.day for weekday in acceptor.weekday.all()]
 
                 if (not Assign.objects.filter(employee__exact=acceptor).filter(
-                        shift_start__exact=swap_shift_start).exists()) and swap_shift_start.weekdays() in weekdays:
+                        shift_start__exact=swap_shift_start).exists()) and swap_shift_start.weekday() in weekdays:
                     # if acceptor not working that day and is available to work
 
                     free_people.append(acceptor)
