@@ -7,7 +7,7 @@ Created on Wed Sep 11 10:19:42 2019
 
 from django.test import TestCase
 from people.models import Employee, Position, Unit
-
+from user.models import Group, CustomUser, EmployeeID
 
 # Create your tests here.
 class EmployeeModelTest(TestCase):
@@ -15,11 +15,16 @@ class EmployeeModelTest(TestCase):
     def setUpTestData(cls):
         # "setUpTestData: Run once to set up non-modified data for all class methods.")
         # set up non-modified objects used by all test methods
+        employee_detail = EmployeeID.objects.create(employee_id=1)
+        user = CustomUser.objects.create(employee_detail=employee_detail)
+        group = Group.objects.create(owner=user,
+                                     name='group1',
+                                     password='test123')
+        user.group = group
+        user.save()
         position = Position.objects.create(position_choice='RN')
         unit = Unit.objects.create(unit_choice='T00ACE')
-        Employee.objects.create(person_name='Test Subject',
-                                person_email='test_subject@hotmail.com',
-                                employee_id=123456,
+        Employee.objects.create(user=user,
                                 person_position=position,
                                 person_unit=unit,
                                 )
@@ -28,35 +33,19 @@ class EmployeeModelTest(TestCase):
         # print("setUp: Run once for every test method to setup clean data.")
         pass
 
-    def test_person_name_label(self):
-        person = Employee.objects.get(pk=123456)
-        field_label = person._meta.get_field('person_name').verbose_name
-        self.assertEquals(field_label, 'person name')
-
-    def test_person_email_label(self):
-        person = Employee.objects.get(pk=123456)
-        field_label = person._meta.get_field('person_email').verbose_name
-        self.assertEquals(field_label, 'person email')
-
-    def test_employee_id_label(self):
-        person = Employee.objects.get(pk=123456)
-        field_label = person._meta.get_field('employee_id').verbose_name
-        self.assertEquals(field_label, 'employee id')
-
     def test_person_position_label(self):
-        person = Employee.objects.get(pk=123456)
+        employee_detail = EmployeeID.objects.get(pk=1)
+        user = CustomUser.objects.get(employee_detail=employee_detail)
+        person = Employee.objects.get(user=user)
         field_label = person._meta.get_field('person_position').verbose_name
         self.assertEquals(field_label, 'person position')
 
     def test_person_unit_label(self):
-        person = Employee.objects.get(pk=123456)
+        employee_detail = EmployeeID.objects.get(pk=1)
+        user = CustomUser.objects.get(employee_detail=employee_detail)
+        person = Employee.objects.get(user=user)
         field_label = person._meta.get_field('person_unit').verbose_name
         self.assertEquals(field_label, 'person unit')
-
-    def test_person_name_max_len(self):
-        person = Employee.objects.get(pk=123456)
-        max_length = person._meta.get_field('person_name').max_length
-        self.assertEquals(max_length, 100)
 
 
 class PositionModelTest(TestCase):
