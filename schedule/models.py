@@ -177,10 +177,6 @@ def get_schedule(person):
     
     person is Employee instance"""
     existing_schedule = Assign.objects.filter(employee__exact=person).order_by('shift_start')
-    #    print('fetching schedule for', person.user.first_name,
-    #          person.user.last_name)
-    #    for schedule in existing_schedule:
-    #        print(schedule.shift_start, schedule.shift_end)
     return existing_schedule
 
 
@@ -276,7 +272,6 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
         if pattern is None or dates.weekday() not in weekdays:
             # if it is a rest day, go to next iteration to set schedule
             if dates not in weekdays:
-                # print('{} is on a rest day ({})'.format(dates, dates.weekday()))
                 not_registered.append((dates, pattern))
             continue
         shift_time = pytz.UTC.localize(pattern.shift_start)
@@ -475,8 +470,6 @@ def swap(person, swap_shift_start):
         # find people that are accepting shifts who are not working on that day
         backup_swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(employee__in=acceptors).exclude(
             shift_start__exact=swap_shift_start)
-        # backup_swapper_shifts = backup_swapper_shifts.exclude(shift_start__in=person_schedule.values_list(
-        # 'shift_start')) print('backup shifts pre', backup_swapper_shifts)
 
         # looking for possible trades on the accepting swaps
         for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
@@ -487,8 +480,6 @@ def swap(person, swap_shift_start):
 
             if backup_swapper_shifts.count() == 0:
                 break
-        #            print('checking', start, end)
-        #            print('in loop', backup_swapper_shifts)
 
         if backup_swapper_shifts.count() > 0:
             # this gives available shifts to swap
@@ -521,7 +512,6 @@ def swap(person, swap_shift_start):
                 success = False
 
                 # go into queue of holding, wait till database updates, then run rechecks
-    #    print(success, output, free_people)
     return {'success': success,
             'available_shifts': output,
             'free_people': free_people}
