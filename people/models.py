@@ -29,17 +29,17 @@ class Unit(models.Model):
         return self.unit_choice
 
 
-class Weekday(models.Model):
+class Workday(models.Model):
     name = models.CharField(max_length=5)
     day = models.PositiveSmallIntegerField(primary_key=True)
     # 0 = monday, 6 = sunday etc
 
     @staticmethod
-    def _set_weekday():
-        if not Weekday.objects.filter(pk=6).exists():
+    def _set_workday():
+        if not Workday.objects.filter(pk=6).exists():
             weekdays = ['Mon','Tues','Wed','Thurs', 'Fri', 'Sat','Sun']
             for day, name in enumerate(weekdays):
-                weekday, created = Weekday.objects.get_or_create(name=name, day=day)
+                weekday, created = Workday.objects.get_or_create(name=name, day=day)
                 weekday.save()
 
     def __str__(self):
@@ -47,7 +47,7 @@ class Weekday(models.Model):
 
 
 # execute to ensure the weekday objects exist. Need to find out how to register once only.
-# Weekday._set_weekday()
+# Weekday._set_workday()
 
 
 class Employee(models.Model):
@@ -84,7 +84,7 @@ class Employee(models.Model):
                               on_delete=models.SET_NULL,
                               null=True,
                               blank=True)
-    weekday = models.ManyToManyField(Weekday,
+    workday = models.ManyToManyField(Workday,
                                      blank=True,
                                      help_text="availability")
 

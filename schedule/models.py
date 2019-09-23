@@ -201,7 +201,7 @@ def set_schedule_day(person, start_day, shift):
     vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(date__exact=start_day)
 
     start_weekday = start_day.weekday()
-    weekday_queryset = person.weekday.all()
+    weekday_queryset = person.workday.all()
 
     weekdays = [weekday.day for weekday in weekday_queryset]
     if start_day.weekday() not in weekdays:
@@ -258,7 +258,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
     """
 
     # shift_start is datetime.time
-    weekday_queryset = person.weekday.all()
+    weekday_queryset = person.workday.all()
     weekdays = [weekday.day for weekday in weekday_queryset]
 
     not_registered = []
@@ -495,7 +495,7 @@ def swap(person, swap_shift_start):
 
             for acceptor in acceptors:
                 # check if person has shift on that day
-                weekdays = [weekday.day for weekday in acceptor.weekday.all()]
+                weekdays = [weekday.day for weekday in acceptor.workday.all()]
 
                 if (not Assign.objects.filter(employee__exact=acceptor).filter(
                         shift_start__exact=swap_shift_start).exists()) and swap_shift_start.weekday() in weekdays:

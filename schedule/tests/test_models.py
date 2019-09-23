@@ -1,7 +1,7 @@
 from django.test import TestCase
 from schedule.models import Shift, Schedule, Assign, Vacation, Request
 from user.models import Group, CustomUser, EmployeeID
-from people.models import Unit, Position, Employee, Weekday
+from people.models import Unit, Position, Employee, Workday
 import schedule.models as sm
 import datetime
 
@@ -57,15 +57,15 @@ def create_position(position_name, group):
                                    group=group)
 
 
-def create_employee(user, position, unit, group, weekday):
+def create_employee(user, position, unit, group, workday):
     employee = Employee.objects.create(user=user,
                                        person_position=position,
                                        person_unit=unit,
                                        group=group,
                                        )
 
-    for work in weekday:
-        employee.weekday.add(Weekday.objects.get(pk=work))
+    for work in workday:
+        employee.workday.add(Workday.objects.get(pk=work))
     employee.save()
     return employee
 
@@ -98,9 +98,9 @@ def create_employee_pool(mor_start, nig_start, shift_dur, group_name, id_gen):
     rn_users = [u1, u2]
     lpn_users = [u3]
     for user in rn_users:
-        _ = create_employee(user=user, position=rn, unit=unit, group=group, weekday=available)
+        _ = create_employee(user=user, position=rn, unit=unit, group=group, workday=available)
     for user in lpn_users:
-        _ = create_employee(user=user, position=lpn, unit=unit, group=group, weekday=available)
+        _ = create_employee(user=user, position=lpn, unit=unit, group=group, workday=available)
 
 
 class AssignModelTest(TestCase):
@@ -110,7 +110,7 @@ class AssignModelTest(TestCase):
         night_start = datetime.time(19, 30)
         shift_dur = datetime.timedelta(hours=12)
         id_gen = num_generator()
-        Weekday._set_weekday()
+        Workday._set_workday()
 
         # create group 1
         create_employee_pool(mor_start=mor_start, nig_start=night_start,
@@ -359,7 +359,7 @@ class ShiftModelTest(TestCase):
                                  shift_name='night')
 
     def test_shift_start_name_label(self):
-        shift = Shift.objects.filter(name__exact='morning')[0]
+        shift = Shift.objects.filter(shift_name__exact='morning')[0]
         field_label = shift._meta.get_field('shift_start').verbose_name
         self.assertEquals(field_label, 'shift start')
 
