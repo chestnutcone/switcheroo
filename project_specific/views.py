@@ -9,6 +9,22 @@ from user.models import Group
 from django.http import HttpResponseRedirect
 from project_specific.forms import SwapForm
 from .forms import GroupCreateForm, GroupJoinForm
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+if not logger.handlers:
+    log_filename = 'logs/project_specific_views.log'
+    os.makedirs(os.path.dirname(log_filename), exist_ok=True)
+
+    formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
+    file_handler = logging.handlers.TimedRotatingFileHandler(log_filename, when='midnight')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
 
 
 @login_required
@@ -117,6 +133,9 @@ def swap_result_view(request):
             logout(request)
             return render(request, 'registration/logged_out.html')
         if request.POST.get("swap"):
+            ### this is not finished, not sure how to proceed after a user request a swap with another user
+            ### Ie if user A choose box 1 to request swap with user B, how will I know which one is selected?
+            ### depends on front end?
             index = request.POST['swap_box']
             print(index)
 
@@ -154,7 +173,7 @@ def group_view(request):
 
                 request.user.group = group
                 request.user.save()
-                print('group joined')
+
                 return HttpResponseRedirect(reverse('profile'))
 
     else:
@@ -185,27 +204,27 @@ def schedule_view(request):
 
     else:
         # get employee belonging to manager
-        print('requester', request.user.first_name)
         employees = Employee.objects.all().filter(group=request.user.group)
         total_schedule = {'name': request.user.first_name, 'schedules': []}
         for employee in employees:
             try:
                 schedule = get_schedule(employee)
-                dates = []
-                shift_start = []
-                shift_end = []
-                for s in schedule:
-                    dates.append(s.start_date.strftime("%Y/%m/%d"))
+                if schedule:
+                    dates = []
+                    shift_start = []
+                    shift_end = []
+                    for s in schedule:
+                        dates.append(s.start_date.strftime("%Y/%m/%d"))
 
-                    shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
-                    shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
-                context = {'dates': dates,
-                           'shift_start': shift_start,
-                           'shift_end': shift_end,
-                           'name': str(employee),
-                           }
-                total_schedule['schedules'].append(context)
+                        shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
+                        shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
+                    context = {'dates': dates,
+                               'shift_start': shift_start,
+                               'shift_end': shift_end,
+                               'name': str(employee),
+                               }
+                    total_schedule['schedules'].append(context)
             except IndexError:
-                raise IndexError('some error occured in schedule_view')
-        print('page display', total_schedule)
+                logger.exception('some error occured in schedule_view')
+
         return render(request, 'project_specific/manager_schedules_view.html', context=total_schedule)

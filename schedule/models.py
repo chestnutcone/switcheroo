@@ -8,6 +8,22 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from user.models import Group
 from django.db.models import Q
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+if not logger.handlers:
+    log_filename = 'logs/schedule_models.log'
+    os.makedirs(os.path.dirname(log_filename), exist_ok=True)
+
+    formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
+    file_handler = logging.handlers.TimedRotatingFileHandler(log_filename, when='midnight')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
 
 
 class Shift(models.Model):
@@ -114,9 +130,8 @@ class Assign(models.Model):
         """return dictionary with bool value 
         whether the attributes match up to query"""
         result = {}
-        #        result['start_date'] = self.start_date == start_date
+
         result['shift_start'] = self.shift_start == shift_start
-        #        result['shift_end'] = self.shift_end == shift_end
         result['employee'] = self.employee == employee
         return result
 
@@ -186,7 +201,8 @@ def set_schedule_day(person, start_day, shift):
     
     person is Employee instance
     start_day is datetime.date
-    shift is Shfit instance"""
+    shift is Shift instance"""
+    status_detail = ''
 
     shift_time = pytz.UTC.localize(shift.shift_start)
     shift_dur = shift.shift_duration
@@ -204,9 +220,14 @@ def set_schedule_day(person, start_day, shift):
 
     workdays = [workday.day for workday in workday_queryset]
     if start_day.weekday() not in workdays:
-        print('employee not available this day')
+        local_person_name = person.user.first_name + ' '  + person.user.last_name
+        local_person_id = str(person.user.employee_detail.employee_id)
+        local_person_detail = local_person_name+' '+local_person_id
+
         status = False
-        return status
+        status_detail = '{} shift registration for {} failed because the person is not ' \
+                        'available to work on {}'.format(local_person_detail, str(start_day), str(start_day.weekday()))
+        return status, status_detail
 
     if not (existing_schedule or vacation_schedule):
         schedule = Assign(start_date=start_day,
@@ -231,7 +252,12 @@ def set_schedule_day(person, start_day, shift):
 
         if overlap:
             # if there is overlap of shifts
-            print('registration failed due to schedule conflict')
+            local_person_name = person.user.first_name + ' ' + person.user.last_name
+            local_person_id = str(person.user.employee_detail.employee_id)
+            local_person_detail = local_person_name + ' ' + local_person_id
+            status_detail = '{} shift registration for {} failed because the person is not ' \
+                            'available to work on {}'.format(local_person_detail, str(start_day),
+                                                             str(start_day.weekday()))
             status = False
         else:
             # if no overlap (but allow double shifts ie shift continuation)
@@ -242,9 +268,8 @@ def set_schedule_day(person, start_day, shift):
                               group=person.group)
             schedule.save()
             status = True
-    if status:
-        print('schedule registered')
-    return status
+
+    return status, status_detail
 
 
 def set_schedule(person, start_date, shift_pattern, repeat=1):
@@ -316,15 +341,6 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
                                   employee=person,
                                   group=person.group)
                 schedule.save()
-
-    if not not_registered:
-        # if all are successful
-        print('schedule set')
-    else:
-        # if some failed
-        print('following dates did not register schedule due to schedule conflicts:')
-        for failed_d, failed_p in not_registered:
-            print(failed_d, failed_p)
 
     status = not not_registered
     return status, not_registered
@@ -415,27 +431,42 @@ def swap(person, swap_shift_start):
     
     
     """
-    print(person)
+
     success = True
     output = None
     free_people = []
+    assertion_fail = False
+
     swap_shift_start = pytz.UTC.localize(swap_shift_start)
-    # try to see if the schedule exist
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
-    # if there are no schedule that day, it will not find it
-    if not swap_day.exists():
-        raise ValidationError('There are no schedule for ' + str(swap_shift_start))
+    try:
+        assert swap_day.exists()
+    except AssertionError:
+        logger.exception('The requested shift to swap cannot be found in schedule')
+        success = False
+        assertion_fail = True
+        return {'success': success,
+                'available_shifts': output,
+                'free_people': free_people,
+                'assertion_fail': assertion_fail}
     swap_day_switch = swap_day[0]
     # there should only be one schedule with 
     # that one shift start date for that person
     result = swap_day_switch.same(shift_start=swap_shift_start, employee=person)
-    assert all(result.values()) and swap_day.count() == 1
-    # make the switch attribute True
+    try:
+        assert all(result.values()) and swap_day.count() == 1
+    except AssertionError:
+        logger.exception('Duplicate (non-unique shift start) shifts requesting to be swap')
+        assertion_fail = True
+        success = False
+        return {'success': success,
+                'available_shifts': output,
+                'free_people': free_people,
+                'assertion_fail': assertion_fail}
 
     swap_day_switch.switch = True
     swap_day_switch.save()
 
-    # person's schedule not including the day requesting to be swapped
     person_schedule = Assign.objects.filter(employee__exact=person)
 
     # not itself, in the same group, of those swapping as well, those that dont have the same shift
@@ -450,29 +481,23 @@ def swap(person, swap_shift_start):
 
     # get shifts that are not in the person's schedule already
     for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
-        # try exclusive, allow double shifts. Since if you swap the shift, it doesnt matter if they overlap
         swapper_shifts = swapper_shifts.exclude(
             Q(shift_start__gte=start[0]) & Q(shift_start__lt=end[0])).exclude(
             Q(shift_end__gt=start[0]) & Q(shift_end__lte=end[0]))
 
     if swapper_shifts.count() > 0:
-        # if we have some swappers, swap them
-        for shift in swapper_shifts:
-            print('swappers', shift.employee, shift.shift_start)
         output = swapper_shifts
     else:
         # get from people that are accepting shifts that are in the same group, unit, position
         acceptors = Employee.objects.filter(
             person_unit=person.person_unit).filter(
             person_position=person.person_position).filter(accept_swap__exact=True)
-        print('acceptors', acceptors)
         # find people that are accepting shifts who are not working on that day
         backup_swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(employee__in=acceptors).exclude(
             shift_start__exact=swap_shift_start)
 
         # looking for possible trades on the accepting swaps
         for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
-            # try allow double shift since if you swap them, it doesnt matter if they overlap
             backup_swapper_shifts = backup_swapper_shifts.exclude(
                 Q(shift_start__gte=start[0]) & Q(shift_start__lt=end[0])).exclude(
                 Q(shift_end__gt=start[0]) & Q(shift_end__lte=end[0]))
@@ -481,10 +506,6 @@ def swap(person, swap_shift_start):
                 break
 
         if backup_swapper_shifts.count() > 0:
-            # this gives available shifts to swap
-            for backup in backup_swapper_shifts:
-                print('backup swappers', backup.employee, backup.shift_start)
-
             output = backup_swapper_shifts
 
         else:
@@ -501,19 +522,14 @@ def swap(person, swap_shift_start):
                     # if acceptor not working that day and is available to work
 
                     free_people.append(acceptor)
-            if len(free_people) != 0:
-                # if there are free people that day
-                for p in free_people:
-                    print('{} is free to work'.format(str(p)))
-
-            else:
-                print('no people are available to swap')
+            if not free_people:
                 success = False
 
                 # go into queue of holding, wait till database updates, then run rechecks
     return {'success': success,
             'available_shifts': output,
-            'free_people': free_people}
+            'free_people': free_people,
+            'assertion_fail': assertion_fail}
 
 
 def send_email(subject, msg, sender_address, receiver_list):

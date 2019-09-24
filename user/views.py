@@ -6,6 +6,22 @@ from .forms import CustomUserCreationForm
 from django.contrib.auth.models import Group, Permission
 from django.http import HttpResponseRedirect
 from user.models import CustomUser, EmployeeID
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+if not logger.handlers:
+    log_filename = 'logs/user_views.log'
+    os.makedirs(os.path.dirname(log_filename), exist_ok=True)
+
+    formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
+    file_handler = logging.handlers.TimedRotatingFileHandler(log_filename, when='midnight')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
 
 
 class SignUpView(CreateView):
@@ -30,7 +46,7 @@ class SignUpView(CreateView):
             employee_detail, created = EmployeeID.objects.get_or_create(pk=employee_id)
             employee_detail.is_manager = is_manager
             employee_detail.save()
-            print('employee detail created', created)
+            logger.info('employee detail created:', created, 'employee detail:', employee_detail)
             user = CustomUser(username=email,
                               first_name=first_name,
                               last_name=last_name,
@@ -39,9 +55,8 @@ class SignUpView(CreateView):
             if user.employee_detail.is_manager:
                 user.is_staff = True
             user.save()
-            #            print('is manager', is_manager)
+
             if user.employee_detail.is_manager:
-                # if is manager is true
                 manager_group, created = Group.objects.get_or_create(name="Manager")
                 if created:
                     permissions = ['view', 'add', 'delete', 'change']
@@ -53,7 +68,7 @@ class SignUpView(CreateView):
                             try:
                                 model_add_perm = Permission.objects.get(name=name)
                             except Permission.DoesNotExist:
-                                print('Permission not found with name:', name)
+                                logger.exception('Permission not found with name:', name)
                                 continue
                             manager_group.permissions.add(model_add_perm)
                     # do for view employee
@@ -61,13 +76,12 @@ class SignUpView(CreateView):
                     try:
                         model_add_perm = Permission.objects.get(name=name)
                     except Permission.DoesNotExist:
-                        print('Permission not found with name:', name)
+                        logger.exception('Permission not found with name:', name)
                     manager_group.permissions.add(model_add_perm)
 
                 manager_group.user_set.add(user)
 
             else:
-                # if employee
                 employee_group, created = Group.objects.get_or_create(name='Employee')
                 if created:
                     permissions = ['view']
@@ -79,7 +93,7 @@ class SignUpView(CreateView):
                             try:
                                 model_add_perm = Permission.objects.get(name=name)
                             except Permission.DoesNotExist:
-                                print('Permission not found with name:', name)
+                                logger.exception('Permission not found with name:', name)
                                 continue
                             employee_group.permissions.add(model_add_perm)
                 employee_group.user_set.add(user)
