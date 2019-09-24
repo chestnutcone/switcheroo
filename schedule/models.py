@@ -258,20 +258,20 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
     """
 
     # shift_start is datetime.time
-    weekday_queryset = person.workday.all()
-    weekdays = [weekday.day for weekday in weekday_queryset]
+    workday_queryset = person.workday.all()
+    workdays = [workday.day for workday in workday_queryset]
 
     not_registered = []
     shift_pattern.mk_ls()
-    working_days = len(shift_pattern.day_list) * repeat
+    work_schedule = len(shift_pattern.day_list) * repeat
     working_dates = []
-    for i in range(working_days):
+    for i in range(work_schedule):
         working_dates.append(start_date + datetime.timedelta(days=i))
 
     for pattern, dates in zip(shift_pattern.day_list * repeat, working_dates):
-        if pattern is None or dates.weekday() not in weekdays:
+        if pattern is None or dates.weekday() not in workdays:
             # if it is a rest day, go to next iteration to set schedule
-            if dates not in weekdays:
+            if dates not in workdays:
                 not_registered.append((dates, pattern))
             continue
         shift_time = pytz.UTC.localize(pattern.shift_start)
@@ -495,10 +495,10 @@ def swap(person, swap_shift_start):
 
             for acceptor in acceptors:
                 # check if person has shift on that day
-                weekdays = [weekday.day for weekday in acceptor.workday.all()]
+                workdays = [workday.day for workday in acceptor.workday.all()]
 
                 if (not Assign.objects.filter(employee__exact=acceptor).filter(
-                        shift_start__exact=swap_shift_start).exists()) and swap_shift_start.weekday() in weekdays:
+                        shift_start__exact=swap_shift_start).exists()) and swap_shift_start.weekday() in workdays:
                     # if acceptor not working that day and is available to work
 
                     free_people.append(acceptor)
