@@ -200,11 +200,10 @@ def set_schedule_day(person, start_day, shift):
     existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=start_day)
     vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(date__exact=start_day)
 
-    start_weekday = start_day.weekday()
-    weekday_queryset = person.workday.all()
+    workday_queryset = person.workday.all()
 
-    weekdays = [weekday.day for weekday in weekday_queryset]
-    if start_day.weekday() not in weekdays:
+    workdays = [workday.day for workday in workday_queryset]
+    if start_day.weekday() not in workdays:
         print('employee not available this day')
         status = False
         return status
@@ -264,11 +263,11 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
     not_registered = []
     shift_pattern.mk_ls()
     work_schedule = len(shift_pattern.day_list) * repeat
-    working_dates = []
+    work_schedule_list = []
     for i in range(work_schedule):
-        working_dates.append(start_date + datetime.timedelta(days=i))
+        work_schedule_list.append(start_date + datetime.timedelta(days=i))
 
-    for pattern, dates in zip(shift_pattern.day_list * repeat, working_dates):
+    for pattern, dates in zip(shift_pattern.day_list * repeat, work_schedule_list):
         if pattern is None or dates.weekday() not in workdays:
             # if it is a rest day, go to next iteration to set schedule
             if dates not in workdays:
@@ -426,13 +425,13 @@ def swap(person, swap_shift_start):
     # if there are no schedule that day, it will not find it
     if not swap_day.exists():
         raise ValidationError('There are no schedule for ' + str(swap_shift_start))
-
+    swap_day_switch = swap_day[0]
     # there should only be one schedule with 
     # that one shift start date for that person
-    result = swap_day[0].same(shift_start=swap_shift_start, employee=person)
+    result = swap_day_switch.same(shift_start=swap_shift_start, employee=person)
     assert all(result.values()) and swap_day.count() == 1
     # make the switch attribute True
-    swap_day_switch = swap_day[0]
+
     swap_day_switch.switch = True
     swap_day_switch.save()
 

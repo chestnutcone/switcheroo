@@ -15,7 +15,7 @@ class EmployeeForm(forms.ModelForm):
         labels = {'user': 'Employee',
                   'person_position': 'Position',
                   'person_unit': 'Unit',
-                  'weekday':'Availability',}
+                  'workday':'Availability',}
 
 
 class PositionForm(forms.ModelForm):
