@@ -2,6 +2,7 @@ from django.shortcuts import render
 from schedule.models import Schedule, set_schedule, get_schedule, swap
 from schedule.forms import AssignForm, SwapForm, ViewScheduleForm
 from people.models import Employee
+from user.models import EmployeeID, CustomUser
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -27,18 +28,18 @@ def assign_view(request):
             start_date = form.cleaned_data['start_date']
             repeat = form.cleaned_data['repeat']
 
-            person_instance = get_object_or_404(Employee, pk=employee_id)
+            employee_detail = get_object_or_404(EmployeeID, pk=employee_id)
+            user = CustomUser.objects.get(employee_detail=employee_detail)
+            person_instance = Employee.objects.get(user=user)
 
             # get info before modifying
             person_instance.get_info()
             shift_pattern = Schedule.objects.filter(group=request.user.group).get(schedule_name__exact=shift_name)
-            # shift_pattern = get_object_or_404(Schedule, pk=shift_id)
-            shift_pattern.mk_ls()
 
-            status = set_schedule(person=person_instance,
-                                  start_date=start_date,
-                                  shift_pattern=shift_pattern,
-                                  repeat=repeat)
+            status, not_registered = set_schedule(person=person_instance,
+                                                  start_date=start_date,
+                                                  shift_pattern=shift_pattern,
+                                                  repeat=repeat)
             # print('status', status)
             # get_schedule(person=person_instance)
 
@@ -50,7 +51,7 @@ def assign_view(request):
             else:
                 messages.add_message(request,
                                      messages.INFO,
-                                     'shifts adding not successful')
+                                     'shifts adding were not all successful')
             return HttpResponseRedirect(reverse('assign_result'))
         else:
             form = AssignForm(initial={'employee_id': 0, 'repeat': 1})
@@ -86,7 +87,9 @@ def schedule_view(request):
         form = ViewScheduleForm(request.POST)
         if form.is_valid():
             employee_id = form.cleaned_data['employee_id']
-            person_instance = get_object_or_404(Employee, pk=employee_id)
+            employee_detail = get_object_or_404(EmployeeID, pk=employee_id)
+            user = CustomUser.objects.get(employee_detail=employee_detail)
+            person_instance = Employee.objects.get(user=user)
             schedule = get_schedule(person=person_instance)
             display_info = []
             for s in schedule:
@@ -135,7 +138,9 @@ def swap_view(request):
             employee_id = form.cleaned_data['employee_id']
             swap_shift_start = form.cleaned_data['swap_shift_start']
 
-            person_instance = get_object_or_404(Employee, pk=employee_id)
+            employee_detail = get_object_or_404(EmployeeID, pk=employee_id)
+            user = CustomUser.objects.get(employee_detail=employee_detail)
+            person_instance = Employee.objects.get(user=user)
             result = swap(person=person_instance, swap_shift_start=swap_shift_start)
             # result is dictionary with key 
 

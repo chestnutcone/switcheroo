@@ -11,15 +11,18 @@ from .models import CustomUser, Group
 
 
 class CustomUserCreationForm(UserCreationForm):
+    employee_id = forms.IntegerField(min_value=0)
+    is_manager = forms.BooleanField(required=False)
+
     class Meta(UserCreationForm):
         model = CustomUser
-        fields = ('email', 'first_name', 'last_name', 'is_manager')
+        fields = ('email', 'first_name', 'last_name')
 
 
 class CustomUserChangeForm(UserChangeForm):
     class Meta(UserChangeForm):
         model = CustomUser
-        fields = ('email', 'first_name', 'last_name', 'is_manager')
+        fields = ('email', 'first_name', 'last_name')
 
 
 class GroupForm(forms.ModelForm):

@@ -29,6 +29,27 @@ class Unit(models.Model):
         return self.unit_choice
 
 
+class Workday(models.Model):
+    name = models.CharField(max_length=5)
+    day = models.PositiveSmallIntegerField(primary_key=True)
+    # 0 = monday, 6 = sunday etc
+
+    @staticmethod
+    def _set_workday():
+        if not Workday.objects.filter(pk=6).exists():
+            weekdays = ['Mon','Tues','Wed','Thurs', 'Fri', 'Sat','Sun']
+            for day, name in enumerate(weekdays):
+                weekday, created = Workday.objects.get_or_create(name=name, day=day)
+                weekday.save()
+
+    def __str__(self):
+        return self.name
+
+
+# execute to ensure the weekday objects exist. Need to find out how to register once only.
+# Weekday._set_workday()
+
+
 class Employee(models.Model):
     """Employee will have one to one relationship with users. Each employee
     instance must have a user to be defined first. Which means employee should
@@ -46,8 +67,6 @@ class Employee(models.Model):
     user = models.OneToOneField(get_user_model(),
                                 on_delete=models.CASCADE,
                                 unique=True)
-    employee_id = models.IntegerField(primary_key=True,
-                                      help_text='enter unique employee id')
 
     person_position = models.ForeignKey(Position,
                                         on_delete=models.SET_NULL,
@@ -65,13 +84,15 @@ class Employee(models.Model):
                               on_delete=models.SET_NULL,
                               null=True,
                               blank=True)
+    workday = models.ManyToManyField(Workday,
+                                     blank=True,
+                                     help_text="availability")
 
     def get_info(self):
         print('   ')
         print('printing all info.....')
         print('name', self.user.first_name, self.user.last_name)
         print('email', self.user.email)
-        print('id', self.employee_id)
         print('position', self.person_position)
         print('unit', self.person_unit)
         print('accept shifts', self.accept_swap)

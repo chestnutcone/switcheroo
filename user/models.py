@@ -2,11 +2,24 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
+class EmployeeID(models.Model):
+    employee_id = models.IntegerField(primary_key=True,
+                                      help_text='enter unique employee id')
+    is_manager = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.employee_id
+
+
 class CustomUser(AbstractUser):
     group = models.ForeignKey("Group",
                               on_delete=models.SET_NULL,
                               null=True)
-    is_manager = models.BooleanField(default=False)
+    employee_detail = models.OneToOneField(EmployeeID,
+                                           on_delete=models.SET_NULL,
+                                           null=True,
+                                           unique=True
+                                           )
 
     def __str__(self):
         return self.first_name + ' ' + self.last_name
