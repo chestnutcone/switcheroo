@@ -4,9 +4,10 @@ from people.models import Employee
 import datetime
 import pytz
 from django.core.validators import MaxValueValidator
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from user.models import Group
+from project_specific.models import Organization
 from django.db.models import Q
 import logging
 import os
@@ -195,14 +196,30 @@ def get_schedule(person):
     return existing_schedule
 
 
-def set_schedule_day(person, start_day, shift):
+def set_schedule_day(person, start_day, shift, override=False):
     """
     set schedule for a single day on that person
     
     person is Employee instance
     start_day is datetime.date
     shift is Shift instance"""
-    status_detail = ''
+    status_detail = {'overridable': [],
+                     'non_overridable': [],
+                     'holiday': [],
+                     'employee': person}
+    try:
+        org = Organization.objects.get(pk=1)
+    except ObjectDoesNotExist:
+        logger.warning('Organization object cannot be found')
+    else:
+        holiday_model = org.holiday_model()
+        if (holiday_model is not None) and (start_day in holiday_model):
+            status_detail['holiday'].append(holiday_model[start_day])
+
+    if person.group != shift.group:
+        status = False
+        status_detail['non_overridable'].append('Employee group does not match shift group')
+        return status, status_detail
 
     shift_time = pytz.UTC.localize(shift.shift_start)
     shift_dur = shift.shift_duration
@@ -220,14 +237,10 @@ def set_schedule_day(person, start_day, shift):
 
     workdays = [workday.day for workday in workday_queryset]
     if start_day.weekday() not in workdays:
-        local_person_name = person.user.first_name + ' '  + person.user.last_name
-        local_person_id = str(person.user.employee_detail.employee_id)
-        local_person_detail = local_person_name+' '+local_person_id
-
-        status = False
-        status_detail = '{} shift registration for {} failed because the person is not ' \
-                        'available to work on {}'.format(local_person_detail, str(start_day), str(start_day.weekday()))
-        return status, status_detail
+        if not override:
+            status = False
+            status_detail['overridable'].append((start_day, shift))
+            return status, status_detail
 
     if not (existing_schedule or vacation_schedule):
         schedule = Assign(start_date=start_day,
@@ -252,12 +265,7 @@ def set_schedule_day(person, start_day, shift):
 
         if overlap:
             # if there is overlap of shifts
-            local_person_name = person.user.first_name + ' ' + person.user.last_name
-            local_person_id = str(person.user.employee_detail.employee_id)
-            local_person_detail = local_person_name + ' ' + local_person_id
-            status_detail = '{} shift registration for {} failed because the person is not ' \
-                            'available to work on {}'.format(local_person_detail, str(start_day),
-                                                             str(start_day.weekday()))
+            status_detail['non_overridable'].append((start_day, shift))
             status = False
         else:
             # if no overlap (but allow double shifts ie shift continuation)
@@ -272,7 +280,7 @@ def set_schedule_day(person, start_day, shift):
     return status, status_detail
 
 
-def set_schedule(person, start_date, shift_pattern, repeat=1):
+def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
     """
     This function sets a person's schedule
     
@@ -280,38 +288,60 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
     start_date is datetime.date object
     shift is shift pattern from Schedule
     """
+    status_detail = {'overridable': [],
+                     'non_overridable': [],
+                     'holiday': [],
+                     'args':(person, start_date, shift_pattern, repeat)}
+    if person.group != shift_pattern.group:
+        status = False
+        status_detail['non_overridable'] = ['All attempts']
+        return status, status_detail
+
+    try:
+        org = Organization.objects.get(pk=1)
+    except ObjectDoesNotExist:
+        logger.warning('Organization object cannot be found')
+        holiday_model = None
+    else:
+        holiday_model = org.holiday_model()
 
     # shift_start is datetime.time
     workday_queryset = person.workday.all()
     workdays = [workday.day for workday in workday_queryset]
 
-    not_registered = []
     shift_pattern.mk_ls()
     work_schedule = len(shift_pattern.day_list) * repeat
     work_schedule_list = []
     for i in range(work_schedule):
         work_schedule_list.append(start_date + datetime.timedelta(days=i))
 
-    for pattern, dates in zip(shift_pattern.day_list * repeat, work_schedule_list):
-        if pattern is None or dates.weekday() not in workdays:
+    for pattern, date in zip(shift_pattern.day_list * repeat, work_schedule_list):
+
+        if pattern is None:
             # if it is a rest day, go to next iteration to set schedule
-            if dates not in workdays:
-                not_registered.append((dates, pattern))
             continue
+        if date.weekday() not in workdays:
+            if not override:
+                status_detail['overridable'].append((date, pattern))
+                continue
+
+        if holiday_model is not None and date in holiday_model:
+            status_detail['holiday'].append(holiday_model[date])
+
         shift_time = pytz.UTC.localize(pattern.shift_start)
         shift_dur = pattern.shift_duration
 
         # shift_start and shift_end tzinfo is UTC
-        shift_start = datetime.datetime.combine(dates, shift_time)
+        shift_start = datetime.datetime.combine(date, shift_time)
         shift_end = shift_start + shift_dur
 
-        # register dates
+        # register date
         # check if there are any shift conflicts
-        existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=dates)
-        vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(date__exact=dates)
+        existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=date)
+        vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(date__exact=date)
 
         if not (existing_schedule or vacation_schedule):
-            schedule = Assign(start_date=dates,
+            schedule = Assign(start_date=date,
                               shift_start=shift_start,
                               shift_end=shift_end,
                               employee=person,
@@ -332,18 +362,19 @@ def set_schedule(person, start_date, shift_pattern, repeat=1):
 
             if overlap:
                 # if there is overlap of shifts
-                not_registered.append((dates, pattern))
+                status_detail['non_overridable'].append((date, pattern))
             else:
                 # if no overlap (but allow double shifts ie shift continuation)
-                schedule = Assign(start_date=dates,
+                schedule = Assign(start_date=date,
                                   shift_start=shift_start,
                                   shift_end=shift_end,
                                   employee=person,
                                   group=person.group)
                 schedule.save()
 
-    status = not not_registered
-    return status, not_registered
+    status = not bool(status_detail['non_overridable'] or
+                      status_detail['overridable'])
+    return status, status_detail
 
 
 def clear_schedule(person):
@@ -435,34 +466,30 @@ def swap(person, swap_shift_start):
     success = True
     output = None
     free_people = []
-    assertion_fail = False
+    error = False
 
     swap_shift_start = pytz.UTC.localize(swap_shift_start)
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
-    try:
-        assert swap_day.exists()
-    except AssertionError:
-        logger.exception('The requested shift to swap cannot be found in schedule')
+    if not swap_day.exists():
+        logger.error('The requested shift to swap cannot be found in schedule')
         success = False
-        assertion_fail = True
+        error = True
         return {'success': success,
                 'available_shifts': output,
                 'free_people': free_people,
-                'assertion_fail': assertion_fail}
+                'error': error}
     swap_day_switch = swap_day[0]
     # there should only be one schedule with 
     # that one shift start date for that person
     result = swap_day_switch.same(shift_start=swap_shift_start, employee=person)
-    try:
-        assert all(result.values()) and swap_day.count() == 1
-    except AssertionError:
-        logger.exception('Duplicate (non-unique shift start) shifts requesting to be swap')
-        assertion_fail = True
+    if not all(result.values()) and swap_day.count() == 1:
+        logger.error('Duplicate (non-unique shift start) shifts requesting to be swap')
+        error = True
         success = False
         return {'success': success,
                 'available_shifts': output,
                 'free_people': free_people,
-                'assertion_fail': assertion_fail}
+                'error': error}
 
     swap_day_switch.switch = True
     swap_day_switch.save()
@@ -529,7 +556,7 @@ def swap(person, swap_shift_start):
     return {'success': success,
             'available_shifts': output,
             'free_people': free_people,
-            'assertion_fail': assertion_fail}
+            'error': error}
 
 
 def send_email(subject, msg, sender_address, receiver_list):
