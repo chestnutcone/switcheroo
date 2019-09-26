@@ -249,6 +249,7 @@ class AssignModelTest(TestCase):
 
         e1 = employees[0]
         start_date = datetime.date(2019, 9, 1)
+
         def compare_status_detail(status_detail, expected_status_detail):
             for key in status_detail.keys():
                 self.assertEquals(status_detail[key], expected_status_detail[key])

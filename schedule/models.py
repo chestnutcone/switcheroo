@@ -210,7 +210,7 @@ def set_schedule_day(person, start_day, shift, override=False):
     try:
         org = Organization.objects.get(pk=1)
     except ObjectDoesNotExist:
-        logger.warning('Organization object cannot be found')
+        pass
     else:
         holiday_model = org.holiday_model()
         if (holiday_model is not None) and (start_day in holiday_model):
@@ -300,7 +300,6 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
     try:
         org = Organization.objects.get(pk=1)
     except ObjectDoesNotExist:
-        logger.warning('Organization object cannot be found')
         holiday_model = None
     else:
         holiday_model = org.holiday_model()
