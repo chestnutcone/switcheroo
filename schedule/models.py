@@ -23,7 +23,6 @@ if not logger.handlers:
     file_handler = logging.handlers.TimedRotatingFileHandler(log_filename, when='midnight')
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
-
     logger.addHandler(file_handler)
 
 
@@ -288,10 +287,12 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
     start_date is datetime.date object
     shift is shift pattern from Schedule
     """
-    status_detail = {'overridable': [],
+    status_detail = {
+                     'overridable': [],
                      'non_overridable': [],
                      'holiday': [],
-                     'args':(person, start_date, shift_pattern, repeat)}
+                     'args':(person, start_date, shift_pattern, repeat)
+                    }
     if person.group != shift_pattern.group:
         status = False
         status_detail['non_overridable'] = ['All attempts']
@@ -315,7 +316,6 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
         work_schedule_list.append(start_date + datetime.timedelta(days=i))
 
     for pattern, date in zip(shift_pattern.day_list * repeat, work_schedule_list):
-
         if pattern is None:
             # if it is a rest day, go to next iteration to set schedule
             continue
@@ -458,8 +458,6 @@ def swap(person, swap_shift_start):
     The current logic of swap shift does not allow double shifts (inclusive). 
     If person A wants to swap 7-9 shift and person B can offer 9-11. It will 
     not allow the shift to be swapped
-    
-    
     """
 
     success = True
@@ -485,10 +483,12 @@ def swap(person, swap_shift_start):
         logger.error('Duplicate (non-unique shift start) shifts requesting to be swap')
         error = True
         success = False
-        return {'success': success,
+        return {
+                'success': success,
                 'available_shifts': output,
                 'free_people': free_people,
-                'error': error}
+                'error': error
+                }
 
     swap_day_switch.switch = True
     swap_day_switch.save()
@@ -552,10 +552,12 @@ def swap(person, swap_shift_start):
                 success = False
 
                 # go into queue of holding, wait till database updates, then run rechecks
-    return {'success': success,
+    return {
+            'success': success,
             'available_shifts': output,
             'free_people': free_people,
-            'error': error}
+            'error': error
+            }
 
 
 def send_email(subject, msg, sender_address, receiver_list):
@@ -577,6 +579,8 @@ def set_vacation(person, date):
         created = None
     else:
         _, created = Vacation.objects.get_or_create(date=date, employee=person, group=person.group)
-    status = {'work_conflict': work_conflict,
-              'vacation_created': created}
+    status = {
+              'work_conflict': work_conflict,
+              'vacation_created': created
+             }
     return status

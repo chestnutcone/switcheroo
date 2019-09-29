@@ -3,6 +3,7 @@ from schedule.models import Shift, Schedule, Assign, Vacation, Request
 from user.models import Group, CustomUser, EmployeeID
 from people.models import Unit, Position, Employee, Workday
 from project_specific.models import Organization
+
 import schedule.models as sm
 import datetime
 
