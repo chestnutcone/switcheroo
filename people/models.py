@@ -87,6 +87,7 @@ class Employee(models.Model):
     workday = models.ManyToManyField(Workday,
                                      blank=True,
                                      help_text="availability")
+    date_joined = models.DateField()
 
     def get_info(self):
         print('   ')

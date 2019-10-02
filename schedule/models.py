@@ -1,16 +1,20 @@
 from django.db import models
-
-from people.models import Employee
-import datetime
-import pytz
 from django.core.validators import MaxValueValidator
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from people.models import Employee
 from user.models import Group
+from .mock import *
 from project_specific.models import Organization
 from django.db.models import Q
+
 import logging
 import os
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import datetime
+import pytz
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -288,11 +292,11 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
     shift is shift pattern from Schedule
     """
     status_detail = {
-                     'overridable': [],
-                     'non_overridable': [],
-                     'holiday': [],
-                     'args':(person, start_date, shift_pattern, repeat)
-                    }
+        'overridable': [],
+        'non_overridable': [],
+        'holiday': [],
+        'args': (person, start_date, shift_pattern, repeat)
+    }
     if person.group != shift_pattern.group:
         status = False
         status_detail['non_overridable'] = ['All attempts']
@@ -374,6 +378,182 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
     status = not bool(status_detail['non_overridable'] or
                       status_detail['overridable'])
     return status, status_detail
+
+
+def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, day_length, automatic=False):
+    """
+    This will generate the best schedule for each employee, and assign with set_schedule and set_schedule_day.
+    This function assumes rest days are built into the shift_pattern. It also assumes that comparison is
+    done on the day-level.
+
+    :param employees: employee queryset
+    :param shift_pattern: instance of schedule.Shift
+    :param start_date: datetime.date instance of start date for shift assigning
+    :param workers_per_day: (int) desired number of workers per day
+    :param day_length: (int) how many days into the future the schedule assign should run
+    :param automatic: (bool) will use default settings to assign employee schedules
+    :return:
+    """
+    employee_factor = 0.75
+
+    mock_employees = create_employee(employees.count())
+    shift_pattern.mk_ls()
+    # simplify assumption and make comparison only on day-level
+    shift_bool = [True if shift is not None else False for shift in shift_pattern.day_list]
+    shift_len = len(shift_bool)
+    # test_case for days offset for employee shift assignment
+    test_case = list(range(1, len(shift_pattern.day_list) + 1))
+    total_error = {}
+
+    base_date_range = [start_date + datetime.timedelta(days=i) for i in range(day_length)]
+    base_date_index = np.asarray([i for i in range(day_length)])
+    weekday_date_index = (base_date_index + start_date.weekday()) % 7
+
+    for test in test_case:
+        cumulative_test_delta = 0
+        for mock in mock_employees:
+            offset = shift_len - cumulative_test_delta % shift_len
+            offset_date_index = base_date_index + offset
+            for base_date, day in zip(base_date_range, offset_date_index):
+                if shift_bool[day % shift_len]:
+                    mock.add_day_shift(base_date)
+            cumulative_test_delta += test
+        date_worker = {}
+        mock_date = []
+        mock_id = []
+        for mock in mock_employees:
+            dates = mock.shift_date
+            for date in dates:
+                if date in date_worker:
+                    date_worker[date] += 1
+                else:
+                    date_worker[date] = 1
+                mock_date.append(date)
+                mock_id.append(mock.id)
+            date_x = []
+            daily_workers = []
+            for key, value in date_worker.items():
+                date_x.append(key)
+                daily_workers.append(value)
+
+        np_daily_workers = np.asarray(daily_workers)
+        mse_per_day = sum((np_daily_workers - workers_per_day) ** 2) / day_length
+        total_error[test] = mse_per_day
+
+        # date_fmt = mdates.DateFormatter('%d')
+        # fig, ax = plt.subplots(nrows=1, ncols=2)
+        # fig.set_figwidth(10)
+        # ax[0].plot_date(date_x, daily_workers, color='r')
+        # ax[0].set_yticks(np.arange(0, 7, step=1))
+        # ax[0].xaxis.set_major_formatter(date_fmt)
+        # ax[0].title.set_text('days_delta {}.  people working per day'.format(test))
+        #
+        # ax[1].plot_date(mock_date, mock_id)
+        # ax[1].title.set_text('days_delta {}. individual schedule'.format(test))
+        # ax[1].set_yticks(np.arange(0, 6, step=1))
+        # ax[1].xaxis.set_major_formatter(date_fmt)
+        #
+        # plt.show(block=True)
+        # plt.close()
+
+        # clear schedule
+        for mock in mock_employees:
+            mock.clear_schedule()
+
+    min_val = min(total_error.values())
+    lowest_errors = [k for k, v in total_error.items() if v == min_val]
+    print('best days deltas:', lowest_errors)
+
+    # if len(lowest_errors) > 1:
+    #     if automatic:
+    #         # choose one final_day_delta to move forward. Random for now
+    #         final_day_delta = lowest_errors[np.random.randint(0, len(lowest_errors))]
+    #     else:
+    #         final_day_delta_index = input('there are more than one equally good final_day_delta, '
+    #                                       'please enter index')
+    #         # need validation here
+    #         final_day_delta = lowest_errors[int(final_day_delta_index)]
+    # else:
+    #     final_day_delta = lowest_errors[0]
+    final_day_delta = lowest_errors[0]
+
+    # reset the mock employee schedule to desired final_day_delta
+    cumulative_test_delta = 0
+    for mock in mock_employees:
+        pattern_record = False
+        offset = shift_len - cumulative_test_delta % shift_len
+        offset_date_index = base_date_index + offset
+        for base_date, day in zip(base_date_range, offset_date_index):
+            if shift_bool[day % shift_len]:
+                mock.add_day_shift(base_date)
+            if (day % shift_len) == 0 and not pattern_record:
+                # if find the first day of shift_pattern
+                mock.pattern_start_date = base_date
+                pattern_record = True
+            elif not pattern_record:
+                if shift_bool[day % shift_len]:
+                    mock.non_pattern_dates[base_date] = shift_pattern.day_list[day % shift_len]
+        cumulative_test_delta += final_day_delta
+    # start matching employee profile to mock employee
+    match_dict = {}  # key of employee and value of list of tuple (mock_id, mismatch_count)
+
+    for employee in employees:
+        match_dict[employee] = []
+        workdays = employee.workday.all()
+        workdays = [workday.day for workday in workdays]
+        unavailable_weekday = {0, 1, 2, 3, 4, 5, 6} - set(workdays)
+        unavailable_dates = set()
+        for date, weekday_index in zip(base_date_range, weekday_date_index):
+            if weekday_index in unavailable_weekday:
+                unavailable_dates.add(date)
+
+        vacations = Vacation.objects.filter(employee=employee)
+        for v in vacations:
+            unavailable_dates.add(v.date)
+
+        # begin matching to every mock employee. n^2 where n is number of employee
+        # higher value is more mismatch
+        for mock in mock_employees:
+            mock_shifts = set(mock.shift_date)
+            match_dict[employee].append((mock.id, len(mock_shifts & unavailable_dates)))
+        match_dict[employee].sort()
+    # assign schedule based on seniority for now
+    seniority_ordered_employees = employees.order_by('date_joined')
+    employee_size = len(seniority_ordered_employees)
+    schedule_choice = {}
+    chosen_mock = set()
+    # can vectorize this later into 2D array
+    for i, employee in enumerate(seniority_ordered_employees):
+        personal_matches = sorted(match_dict[employee], key=lambda x: x[1])
+        impact_list = []
+        for mock_id, mismatch in personal_matches:
+            mismatch_impact = match_dict[seniority_ordered_employees[i]][mock_id][1] * employee_factor
+            if i != employee_size - 1:
+                mismatch_impact += (1 - employee_factor) * (sum([match_dict[next_person][mock_id][1] for next_person in
+                                                                 seniority_ordered_employees[i + 1:]]) / (
+                                                                        employee_size - i - 1))
+            impact_list.append((mismatch_impact, mock_id))
+        min_impact_choice = min(impact_list)[1]
+
+        while min_impact_choice in chosen_mock:
+            impact_list.remove(min(impact_list))
+            min_impact_choice = min(impact_list)[1]
+
+        schedule_choice[employee] = min_impact_choice
+        chosen_mock.add(min_impact_choice)
+
+    total_status_detail = {}
+    for employee in seniority_ordered_employees:
+        mock_match = mock_employees[schedule_choice[employee]]
+        status, status_detail = set_schedule(employee, mock_match.pattern_start_date,
+                                             shift_pattern, repeat=int(day_length / shift_len))
+        for date, shift in mock_match.non_pattern_dates.items():
+            indv_status, indv_status_detail = set_schedule_day(employee, date, shift)
+            status_detail['overridable'].extend(indv_status_detail['overridable'])
+            status_detail['non_overridable'].extend(indv_status_detail['non_overridable'])
+            status_detail['holiday'].extend(indv_status_detail['holiday'])
+        total_status_detail[employee] = status_detail
+    return total_status_detail
 
 
 def clear_schedule(person):
@@ -484,11 +664,11 @@ def swap(person, swap_shift_start):
         error = True
         success = False
         return {
-                'success': success,
-                'available_shifts': output,
-                'free_people': free_people,
-                'error': error
-                }
+            'success': success,
+            'available_shifts': output,
+            'free_people': free_people,
+            'error': error
+        }
 
     swap_day_switch.switch = True
     swap_day_switch.save()
@@ -553,11 +733,11 @@ def swap(person, swap_shift_start):
 
                 # go into queue of holding, wait till database updates, then run rechecks
     return {
-            'success': success,
-            'available_shifts': output,
-            'free_people': free_people,
-            'error': error
-            }
+        'success': success,
+        'available_shifts': output,
+        'free_people': free_people,
+        'error': error
+    }
 
 
 def send_email(subject, msg, sender_address, receiver_list):
@@ -580,7 +760,7 @@ def set_vacation(person, date):
     else:
         _, created = Vacation.objects.get_or_create(date=date, employee=person, group=person.group)
     status = {
-              'work_conflict': work_conflict,
-              'vacation_created': created
-             }
+        'work_conflict': work_conflict,
+        'vacation_created': created
+    }
     return status
