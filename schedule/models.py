@@ -380,7 +380,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
     return status, status_detail
 
 
-def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, day_length, automatic=False):
+def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, day_length):
     """
     This will generate the best schedule for each employee, and assign with set_schedule and set_schedule_day.
     This function assumes rest days are built into the shift_pattern. It also assumes that comparison is
@@ -391,12 +391,12 @@ def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, da
     :param start_date: datetime.date instance of start date for shift assigning
     :param workers_per_day: (int) desired number of workers per day
     :param day_length: (int) how many days into the future the schedule assign should run
-    :param automatic: (bool) will use default settings to assign employee schedules
-    :return:
+    :return: dict with key of employee instance. The value is dictionary with status_detail
+    concatenated from set_schedule and set_schedule_day
     """
     employee_factor = 0.75
-
-    mock_employees = create_employee(employees.count())
+    employee_size = employees.count()
+    mock_employees = create_employee(employee_size)
     shift_pattern.mk_ls()
     # simplify assumption and make comparison only on day-level
     shift_bool = [True if shift is not None else False for shift in shift_pattern.day_list]
@@ -440,41 +440,14 @@ def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, da
         mse_per_day = sum((np_daily_workers - workers_per_day) ** 2) / day_length
         total_error[test] = mse_per_day
 
-        # date_fmt = mdates.DateFormatter('%d')
-        # fig, ax = plt.subplots(nrows=1, ncols=2)
-        # fig.set_figwidth(10)
-        # ax[0].plot_date(date_x, daily_workers, color='r')
-        # ax[0].set_yticks(np.arange(0, 7, step=1))
-        # ax[0].xaxis.set_major_formatter(date_fmt)
-        # ax[0].title.set_text('days_delta {}.  people working per day'.format(test))
-        #
-        # ax[1].plot_date(mock_date, mock_id)
-        # ax[1].title.set_text('days_delta {}. individual schedule'.format(test))
-        # ax[1].set_yticks(np.arange(0, 6, step=1))
-        # ax[1].xaxis.set_major_formatter(date_fmt)
-        #
-        # plt.show(block=True)
-        # plt.close()
-
         # clear schedule
         for mock in mock_employees:
             mock.clear_schedule()
 
     min_val = min(total_error.values())
     lowest_errors = [k for k, v in total_error.items() if v == min_val]
-    print('best days deltas:', lowest_errors)
 
-    # if len(lowest_errors) > 1:
-    #     if automatic:
-    #         # choose one final_day_delta to move forward. Random for now
-    #         final_day_delta = lowest_errors[np.random.randint(0, len(lowest_errors))]
-    #     else:
-    #         final_day_delta_index = input('there are more than one equally good final_day_delta, '
-    #                                       'please enter index')
-    #         # need validation here
-    #         final_day_delta = lowest_errors[int(final_day_delta_index)]
-    # else:
-    #     final_day_delta = lowest_errors[0]
+    # if there are multiple equally good best choices, pick the first one (arbitrary for now)
     final_day_delta = lowest_errors[0]
 
     # reset the mock employee schedule to desired final_day_delta
@@ -497,7 +470,9 @@ def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, da
     # start matching employee profile to mock employee
     match_dict = {}  # key of employee and value of list of tuple (mock_id, mismatch_count)
 
-    for employee in employees:
+    match_array = np.zeros((employee_size, employee_size), dtype='int32')
+    seniority_ordered_employees = employees.order_by('date_joined')
+    for i, employee in enumerate(seniority_ordered_employees):
         match_dict[employee] = []
         workdays = employee.workday.all()
         workdays = [workday.day for workday in workdays]
@@ -510,35 +485,23 @@ def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, da
         vacations = Vacation.objects.filter(employee=employee)
         for v in vacations:
             unavailable_dates.add(v.date)
+        for j, mock in enumerate(mock_employees):
+            match_array[i][j] = len(set(mock.shift_date) & unavailable_dates)
 
-        # begin matching to every mock employee. n^2 where n is number of employee
-        # higher value is more mismatch
-        for mock in mock_employees:
-            mock_shifts = set(mock.shift_date)
-            match_dict[employee].append((mock.id, len(mock_shifts & unavailable_dates)))
-        match_dict[employee].sort()
-    # assign schedule based on seniority for now
-    seniority_ordered_employees = employees.order_by('date_joined')
-    employee_size = len(seniority_ordered_employees)
     schedule_choice = {}
     chosen_mock = set()
-    # can vectorize this later into 2D array
+    impact_array = np.zeros((employee_size, employee_size), dtype='float16')
     for i, employee in enumerate(seniority_ordered_employees):
-        personal_matches = sorted(match_dict[employee], key=lambda x: x[1])
-        impact_list = []
-        for mock_id, mismatch in personal_matches:
-            mismatch_impact = match_dict[seniority_ordered_employees[i]][mock_id][1] * employee_factor
-            if i != employee_size - 1:
-                mismatch_impact += (1 - employee_factor) * (sum([match_dict[next_person][mock_id][1] for next_person in
-                                                                 seniority_ordered_employees[i + 1:]]) / (
-                                                                        employee_size - i - 1))
-            impact_list.append((mismatch_impact, mock_id))
-        min_impact_choice = min(impact_list)[1]
+        impact_array[i] = match_array[i] * employee_factor
+        if i != employee_size-1:
+            impact_array[i] += np.mean(match_array[i + 1:], axis=0) * (1 - employee_factor)
 
+        inspect_array = impact_array[i]
+        arr_max = np.max(inspect_array)
+        min_impact_choice = np.argmin(inspect_array)
         while min_impact_choice in chosen_mock:
-            impact_list.remove(min(impact_list))
-            min_impact_choice = min(impact_list)[1]
-
+            inspect_array[min_impact_choice] = arr_max + 1
+            min_impact_choice = np.argmin(inspect_array)
         schedule_choice[employee] = min_impact_choice
         chosen_mock.add(min_impact_choice)
 
