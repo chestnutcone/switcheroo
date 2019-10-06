@@ -63,7 +63,7 @@ def profile_view(request):
 
                 shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
                 shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
-            context = {'dates': dates,
+            context = {'dates': {0:dates},
                        'shift_start': shift_start,
                        'shift_end': shift_end,
                        'name': current_user.first_name}

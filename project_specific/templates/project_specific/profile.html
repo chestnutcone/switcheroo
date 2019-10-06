@@ -1,18 +1,63 @@
 {% extends "project_specific\base_generic.html" %}
 
-{% block content %}
-	<h1>Home Page</h1>
-	<p>welcome!  {{ name }}</p>
 
-	<form action="" method="post">
-    {% csrf_token %}
-    <input type="submit" name="swap" value="swap shift">
-	</form>
+{% block title %}
+<title>Profile</title>
+{% endblock %}
+
+{% block sidebar %}
+	
+{% endblock %}
+
+{% block content %}
+	<p>Welcome!  {{ name }}</p>
+
+	<table>
+		<thead>
+			<tr>
+				<th>Sun</th>
+				<th>Mon</th>
+				<th>Tues</th>
+				<th>Wed</th>
+				<th>Thurs</th>
+				<th>Fri</th>
+				<th>Sat</th>
+			</tr>
+		</thead>
+		<div id='curYear'></div>
+		<div id='curMonth'></div>
+		<h1 id='monthAndYear'></h1>
+		<tbody id='calendar-body'></tbody>	
+	</table>
+	<div class='flexbox'>
+		<button id='previous' onclick='prev()'>Previous</button>
+		<button id='next' onclick="next()">Next</button>
+	</div>
+	
+	{{ dates|json_script:"shift_dates"}}
+	<h1>Swap Shift</h1>
+<!-- 	<form id='date-selector'>
+		<label for="yearSelector">Year:</label>
+		<input id="yearSelector" type="text" name="yearSelector">	
+
+		<label for="monthSelector">Month:</label>
+		<input id="monthSelector" type="text" name="monthSelector">
+
+		<label for="dateSelector">Date:</label>
+		<input id="dateSelector" type="text" name="dateSelector">
+
+		<input type="submit" name="swap" value="swap">
+
+	</form> -->
+
+	{% load staticfiles %}
+	<script src="{% static 'project_specific/js/calendar.js'%}"></script>
+	<button onclick="sendDate()">Swap</button>
+
 
 	<h2>shift start</h2>
 	<li>{{ shift_start }}</li>
 	<h2>shift end</h2>
 	<li>{{ shift_end }}</li>
 	
-
 {% endblock %}
