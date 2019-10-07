@@ -4,7 +4,6 @@ $accentColor2: #8E8D8A;
 $textColor1: #E98074;
 $textColor2: #E85A4F;
 
-
 html {
 	background-color:$primaryColor;
 }
@@ -26,15 +25,32 @@ body {
 	display: none;
 }
 
+table {
+	width: 400px;
+	background-color: white;
+}
+
 #calendar-body:hover {
 	cursor: pointer;
 }
+
+#calendar-body {
+	text-align: center;
+}
+
+@keyframes date-fill-animation {
+	from {background-color: white;}
+	to {background-color: $textColor1;}
+}
 .highlight {
-	background-color: yellow;
+	background-color: $accentColor1;
 }
 
 .date-selection {
-	background-color: green;
+	// background-color: $accentColor2;
+	animation-name: date-fill-animation;
+	animation-duration: 1s;
+	animation-fill-mode: forwards;
 }
 
 .flexbox {

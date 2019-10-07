@@ -8,6 +8,7 @@ from people.models import Employee
 from user.models import Group
 from django.http import HttpResponseRedirect
 from project_specific.forms import SwapForm
+from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import GroupCreateForm, GroupJoinForm
 import logging
 import os
@@ -27,6 +28,7 @@ if not logger.handlers:
     logger.addHandler(file_handler)
 
 
+# @ensure_csrf_cookie
 @login_required
 def profile_view(request):
     if request.method == 'POST':
@@ -69,7 +71,7 @@ def profile_view(request):
                        'name': current_user.first_name}
         except IndexError:
             context = {'name': 'Please register user in Employee'}
-        return render(request, 'project_specific/profile.html', context=context)
+        return render(request, 'project_specific/index.html', context=context)
 
 
 @login_required
@@ -84,7 +86,7 @@ def swap_view(request):
         if form.is_valid():
             current_user = request.user
             person_instance = Employee.objects.filter(user__exact=current_user)[0]
-
+            print('form clean data', form.cleaned_data)
             swap_shift_start = form.cleaned_data['swap_shift_start']
 
             result = swap(person=person_instance, swap_shift_start=swap_shift_start)

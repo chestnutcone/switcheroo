@@ -15,14 +15,28 @@ body {
 #curYear, #curMonth {
   display: none; }
 
+table {
+  width: 400px;
+  background-color: white; }
+
 #calendar-body:hover {
   cursor: pointer; }
 
+#calendar-body {
+  text-align: center; }
+
+@keyframes date-fill-animation {
+  from {
+    background-color: white; }
+  to {
+    background-color: #E98074; } }
 .highlight {
-  background-color: yellow; }
+  background-color: #D8C3A5; }
 
 .date-selection {
-  background-color: green; }
+  animation-name: date-fill-animation;
+  animation-duration: 1s;
+  animation-fill-mode: forwards; }
 
 .flexbox {
   display: flex; }

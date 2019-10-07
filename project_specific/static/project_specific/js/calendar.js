@@ -272,16 +272,33 @@ function selectDate(){
 // }
 }
 
+function getCookie (name) {
+    let cookieValue = null
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';')
+        for (let i=0; i<cookies.length; i++) {
+            let cookie = cookies[i].trim()
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+                break
+            }
+        }
+        
+    }
+    return cookieValue
+}
+
 function sendDate (){
     let send_dates = JSON.stringify(selected_dates)
-    console.log(selected_dates)
-    console.log(send_dates)
+    let csrftoken = getCookie('csrftoken')
     $.ajax({
         type: "POST",
-        url: "swap/",
+        url: "/main/swap/",
         data: send_dates,
+        headers: {
+            'X-CSRF-Token': csrftoken
+        },
         success: function(){},
-        dataType: 'json',
         contentType:'application/json'
     })
 }
