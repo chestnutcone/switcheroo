@@ -46,6 +46,10 @@ table {
 	background-color: $accentColor1;
 }
 
+.hidden {
+	display: none;
+}
+
 .date-selection {
 	// background-color: $accentColor2;
 	animation-name: date-fill-animation;

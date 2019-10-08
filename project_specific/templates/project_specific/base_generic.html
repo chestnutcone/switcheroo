@@ -5,21 +5,18 @@
 		<head>
 			<meta charset="utf-8">
 			<!-- <base href="http://127.0.0.1:8000/main/" /> -->
-			{% load staticfiles %}
-			<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/base.css'%}">
-			<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-			{% block addons %}{% endblock %}
+			
 			{% block title %}{% endblock %}
 		</head>
 
 		<div cass='content-area'>
 			<body>
-				<nav>
+				<!-- <nav>
 					<ul>
 						<li><a href="/main/swap/">Swap Shift</a></li>
 						{% block sidebar %}{% endblock %}
 					</ul>	
-				</nav>
+				</nav> -->
 			
 				{% block content %}<!-- default content text (typically empty) -->{% endblock %}
 				
@@ -28,7 +25,10 @@
 				<input type="submit" name="logout" value="logout">
 				</form>
 
-				 
+				{% load staticfiles %}
+				<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/base.css'%}">
+				<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+				{% block javascript %}{% endblock %}
 			</body>
 		</div>
 	</div>

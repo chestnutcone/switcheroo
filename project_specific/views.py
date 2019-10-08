@@ -3,15 +3,17 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
 from django.contrib import messages
+from django.core import serializers
 from schedule.models import get_schedule, swap
 from people.models import Employee
 from user.models import Group
 from django.http import HttpResponseRedirect
 from project_specific.forms import SwapForm
-from django.views.decorators.csrf import ensure_csrf_cookie
 from .forms import GroupCreateForm, GroupJoinForm
 import logging
 import os
+import json
+from collections import Counter
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,7 +30,6 @@ if not logger.handlers:
     logger.addHandler(file_handler)
 
 
-# @ensure_csrf_cookie
 @login_required
 def profile_view(request):
     if request.method == 'POST':
@@ -62,10 +63,10 @@ def profile_view(request):
             shift_end = []
             for s in schedule:
                 dates.append(s.start_date.strftime("%Y/%m/%d"))
-
                 shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
                 shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
-            context = {'dates': {0:dates},
+
+            context = {'dates': dates,
                        'shift_start': shift_start,
                        'shift_end': shift_end,
                        'name': current_user.first_name}
@@ -78,8 +79,12 @@ def profile_view(request):
 def swap_view(request):
     """the view page for swapping shift"""
     if request.method == 'POST':
-        # if it is a post method, then process form data
-        form = SwapForm(request.POST)
+        json_data = json.loads(request.body)
+        print('json data', json_data)
+        for date in json_data:
+            form = SwapForm(date)
+
+        # print('form clean data', form.cleaned_data)
         if request.POST.get("logout"):
             logout(request)
             return render(request, 'registration/logged_out.html')

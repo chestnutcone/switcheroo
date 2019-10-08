@@ -33,6 +33,9 @@ table {
 .highlight {
   background-color: #D8C3A5; }
 
+.hidden {
+  display: none; }
+
 .date-selection {
   animation-name: date-fill-animation;
   animation-duration: 1s;

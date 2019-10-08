@@ -1,6 +1,15 @@
 let shift_dates = JSON.parse(document.getElementById('shift_dates').textContent)
-months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+let shift_start = JSON.parse(document.getElementById('shift_start').textContent)
+let shift_end = JSON.parse(document.getElementById('shift_end').textContent)
 
+// for (d of shift_dates) {
+//     console.log(d)
+// }
+console.log('shift dates', shift_dates)
+console.log('most common shifts', shift_start)
+
+months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 let today = new Date()
 month = today.getMonth()
 year = today.getFullYear()
@@ -67,6 +76,13 @@ function reverseCellDate (year, month) {
     return reverseMonthDate
 }
 
+function resetDateSelectionVariable () {
+    click_count = 0
+    dateRow = 0
+    dateCol = 0
+    selected_dates = []
+}
+
 function next() {
     let curYear = parseInt(document.getElementById('curYear').innerHTML)
     let curMonth = parseInt(document.getElementById('curMonth').innerHTML)
@@ -108,8 +124,9 @@ function buildCalendar (year, month) {
         calendarTable.appendChild(row)
     }
     highlightShift(shift_dates)
+    resetDateSelectionVariable()
     $('#calendar-body td').click(selectDate)
-
+    // $('#calendar-body td').click(checkEvent)
 }
 
 function highlightShift (shift_dates) {
@@ -117,11 +134,10 @@ function highlightShift (shift_dates) {
     let curMonth = parseInt(document.getElementById('curMonth').innerHTML)
     let calendarTable = document.getElementById('calendar-body')
     calendarTable.removeAttribute('highlight')
-    shift_dates_arr = shift_dates[0]
 
     reverseLookUp = reverseCellDate(curYear, curMonth)
-    for (date in shift_dates_arr) {
-        let shiftDate = new Date(shift_dates_arr[date])
+    for (date in shift_dates) {
+        let shiftDate = new Date(shift_dates[date])
         if (shiftDate.getMonth() == curMonth && shiftDate.getFullYear() == curYear) {
             answer = reverseLookUp[shiftDate.getDate()]
             row = answer[0]
@@ -129,6 +145,34 @@ function highlightShift (shift_dates) {
             $('#calendar-body tr').eq(row).find('td').eq(col).addClass('highlight')
         }
     }
+}
+
+function readWriteDate (row, date, curYear, curMonth, selected_dates, write=false) {
+    let nextYear = (curMonth == 11) ? curYear +1: curYear
+    let nextMonth = (curMonth+1) % 12
+    let prevYear = (curMonth == 0) ? curYear -1: curYear
+    let prevMonth = (curMonth == 0) ? 11:curMonth-1
+    let date_selected = null
+
+    date = (date < 10) ? `0${date}`: date
+    prevMonth = ((prevMonth+1)<10) ? `0${prevMonth+1}`: prevMonth+1
+    curMonth = ((curMonth+1)<10) ? `0${curMonth+1}`: curMonth+1
+    nextMonth = ((nextMonth+1)<10) ? `0${nextMonth+1}`: nextMonth+1
+    if (row==0 & date>=22) {
+        date_selected = `${prevYear}/${prevMonth}/${date}`
+    } else if (row>=4 & date<=14) {
+        date_selected = `${nextYear}/${nextMonth}/${date}`
+    } else {
+        date_selected = `${curYear}/${curMonth}/${date}`
+    }
+
+    if (write) {
+        selected_dates.push(date_selected)
+        return selected_dates
+    } else {
+        return date_selected
+    }
+    
 }
 
 let click_count = 0
@@ -141,10 +185,6 @@ function selectDate(){
     let curMonth = parseInt(document.getElementById('curMonth').innerHTML)
     dateLookUp = cellDate(curYear, curMonth)
 
-    let nextYear = (curMonth == 11) ? curYear +1: curYear
-    let nextMonth = (curMonth+1) % 12
-    let prevYear = (curMonth == 0) ? curYear -1: curYear
-    let prevMonth = (curMonth == 0) ? 11:curMonth-1
     selected_dates = []
     if (click_count == 0) {
         $('td').removeClass('date-selection')
@@ -154,22 +194,11 @@ function selectDate(){
         dateRow = dateRow -1  //minus header row
     
         date = dateLookUp[[dateRow, dateCol]]
-    
-        // let yearSelector = document.getElementById('yearSelector')
-        // let monthSelector = document.getElementById('monthSelector')
-        // let dateSelector = document.getElementById('dateSelector')
-    
-        // yearSelector.value = curYear
-        // monthSelector.value = curMonth
-        // dateSelector.value = date
-        if (dateRow==0 & date>=22) {
-            selected_dates.push([prevYear, prevMonth, date])
-        } else if (dateRow>=4 & date<=14) {
-            selected_dates.push([nextYear, nextMonth, date])
-        } else {
-            selected_dates.push([curYear, curMonth, date])
-        }
+
+        selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
         $('#calendar-body tr').eq(dateRow).find('td').eq(dateCol).addClass('date-selection')
+
+        checkEvent(dateRow, date, curYear, curMonth)
         click_count ++
         click_count = click_count %2
     } else {   
@@ -185,77 +214,32 @@ function selectDate(){
             dateRow = dateRow -1  //minus header row
         
             date = dateLookUp[[dateRow, dateCol]]
-        
-            // let yearSelector = document.getElementById('yearSelector')
-            // let monthSelector = document.getElementById('monthSelector')
-            // let dateSelector = document.getElementById('dateSelector')
-        
-            // yearSelector.value = curYear
-            // monthSelector.value = curMonth
-            // dateSelector.value = date
 
-            if (dateRow==0 & date>=22) {
-                selected_dates.push([prevYear, prevMonth, date])
-            } else if (dateRow>=4 & date<=14) {
-                selected_dates.push([nextYear, nextMonth, date])
-            } else {
-                selected_dates.push([curYear, curMonth, date])
-            }
+            selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
             $('#calendar-body tr').eq(dateRow).find('td').eq(dateCol).addClass('date-selection')
+            checkEvent(dateRow, date, curYear, curMonth)
         } else {
+            $("#event-container").addClass('hidden')
             date = dateLookUp[[next_row, next_col]]
-    
-            // let yearSelector = document.getElementById('yearSelector')
-            // let monthSelector = document.getElementById('monthSelector')
-            // let dateSelector = document.getElementById('dateSelector')
-        
-            // yearSelector.value = curYear
-            // monthSelector.value = curMonth
-            // dateSelector.value = date
             
             for (let i=dateRow; i<=next_row; i++) {
                 for (let j=0; j<7; j++) {
                     date = dateLookUp[[i, j]]
                     if (i==dateRow) {
                         if ((dateRow != next_row) & (j >= dateCol)) {
-                            if (i==0 & date>=22) {
-                                selected_dates.push([prevYear, prevMonth, date])
-                            } else if (i>=4 & date<=14) {
-                                selected_dates.push([nextYear, nextMonth, date])
-                            } else {
-                                selected_dates.push([curYear, curMonth, date])
-                            }
-                            
+                            selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
                             $('#calendar-body tr').eq(i).find('td').eq(j).addClass('date-selection')
                         } else if ((dateRow == next_row) & ((j >= dateCol) & (j <= next_col))) {
-                            if (i==0 & date>=22) {
-                                selected_dates.push([prevYear, prevMonth, date])
-                            } else if (i>=4 & date<=14) {
-                                selected_dates.push([nextYear, nextMonth, date])
-                            } else {
-                                selected_dates.push([curYear, curMonth, date])
-                            }
+                            selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
                             $('#calendar-body tr').eq(i).find('td').eq(j).addClass('date-selection')
                         }
                     } else if (i==next_row) {
                         if (j <= next_col) {
-                            if (i==0 & date>=22) {
-                                selected_dates.push([prevYear, prevMonth, date])
-                            } else if (i>=4 & date<=14) {
-                                selected_dates.push([nextYear, nextMonth, date])
-                            } else {
-                                selected_dates.push([curYear, curMonth, date])
-                            }
+                            selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
                             $('#calendar-body tr').eq(i).find('td').eq(j).addClass('date-selection')
                         }
                     } else {
-                        if (i==0 & date>=22) {
-                            selected_dates.push([prevYear, prevMonth, date])
-                        } else if (i>=4 & date<=14) {
-                            selected_dates.push([nextYear, nextMonth, date])
-                        } else {
-                            selected_dates.push([curYear, curMonth, date])
-                        }
+                        selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
                         $('#calendar-body tr').eq(i).find('td').eq(j).addClass('date-selection')
                     }
                 }
@@ -264,12 +248,46 @@ function selectDate(){
             click_count ++
             click_count = click_count%2
         }
-
         
     }
-// for (date of selected_dates) {
-//     console.log(date)
-// }
+}
+
+function checkEvent (dateRow, date, curYear, curMonth) {
+    $("#event-detail").empty()
+    $("#event-container").removeClass('hidden')
+    single_date = readWriteDate(dateRow, date,curYear, curMonth)
+    let chosen_date = new Date(single_date)
+    $("#event-date").html(`${weekdays[chosen_date.getDay()]} ${date}`)
+
+    if (shift_dates.includes(single_date)) {
+        let total_shifts = []
+        shift_start_index = getShift(single_date)
+        
+        for (index of shift_start_index) {
+            total_shifts.push(`${shift_start[index]} to ${shift_end[index]}`)
+        }
+        
+        for (shift_detail of total_shifts) {
+            $('#event-detail').append(`<li>${shift_detail}</li>`)
+        }
+    }
+}
+
+function getShift (date) {
+    let found = false
+    let shift_start_index = []
+    for (let i=0; i<shift_start.length; i++) {
+        if (shift_start[i].startsWith(date)) {
+            shift_start_index.push(i)
+            found = true
+        } else {
+            if (found) {
+                // shifts are arranged chronologically
+                break;
+            }
+        }
+    }
+    return shift_start_index
 }
 
 function getCookie (name) {
@@ -283,24 +301,40 @@ function getCookie (name) {
                 break
             }
         }
-        
     }
     return cookieValue
 }
 
 function sendDate (){
-    let send_dates = JSON.stringify(selected_dates)
-    let csrftoken = getCookie('csrftoken')
-    $.ajax({
-        type: "POST",
-        url: "/main/swap/",
-        data: send_dates,
-        headers: {
-            'X-CSRF-Token': csrftoken
-        },
-        success: function(){},
-        contentType:'application/json'
-    })
+    let request_dates = []
+    console.log('selected_dates', selected_dates)
+    for (date of selected_dates) {
+        shift_start_index = getShift(date)
+        for (let i=0; i<shift_start_index.length; i++) {
+            request_dates.push(shift_start[shift_start_index])
+        }
+    }
+    console.log('request dates', request_dates)
+    if (request_dates.length != 0) {
+
+        let send_dates = JSON.stringify(request_dates)
+        let csrftoken = getCookie('csrftoken')
+        $.ajax({
+            type: "POST",
+            url: "/main/swap/",
+            data: send_dates,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            success: function(msg){
+                alert(`submission succeeded ${msg}`)
+            },
+            contentType:'application/json'
+        })
+    } else {
+        alert('no dates to be swapped')
+    }
+    
 }
 buildCalendar (year, month)
 
