@@ -1,7 +1,8 @@
 from django.db import models
 import holidays
 from .province_state import province_state
-
+from people.models import Employee
+from user.models import CustomUser
 
 class Organization(models.Model):
     """
@@ -26,3 +27,18 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class VacationNotification(models.Model):
+    requester = models.ForeignKey(Employee,
+                                  on_delete=models.CASCADE,
+                                  null=True)
+    assignee = models.ForeignKey(CustomUser,
+                                 on_delete=models.CASCADE,
+                                 null=True)
+    date = models.DateField()
+    approved = models.BooleanField(default=False)
+    rejected = models.BooleanField(default=False)
+    delivered = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+    expired = models.BooleanField(default=False)

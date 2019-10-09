@@ -12,6 +12,10 @@
 {% block content %}
 	<p>Welcome!  {{ name }}</p>
 
+	<div id='today-summary'>
+
+	</div>
+
 	<table>
 		<thead>
 			<tr>
@@ -39,16 +43,28 @@
 		<h1 id='event-date'></h1>
 	<ul id='event-detail'></ul>
 	</div>
-	<button onclick="sendDate()">Swap</button>
-
+	<button onclick="sendSwapDate()">Swap</button>
+	<button onclick="sendVacationDate()">Vacation</button>
 	{{ dates|json_script:"shift_dates"}}
 	{{ shift_start|json_script:"shift_start" }}
 	{{ shift_end|json_script:"shift_end" }}
 	
+	<h1>Swap Requests</h1>
+	<div id='swapResult-container'>
+	</div>
+
+	<h1>Vacation Requests</h1>
+	<div id='vacationResult-container'>
+	</div>
+
+	<h1>Notification</h1>
+	<div id='notification-container'>
+	</div>
 {% endblock %}
 
 {% block javascript %}
 	{% load staticfiles %}
 	<script src="{% static 'project_specific/js/calendar.js'%}"></script>
+	<script src="{% static 'project_specific/js/daySummary.js'%}"></script>
 	
 {% endblock %}

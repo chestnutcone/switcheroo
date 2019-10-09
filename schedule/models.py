@@ -139,6 +139,17 @@ class Assign(models.Model):
         result['employee'] = self.employee == employee
         return result
 
+    def json_format(self):
+        result = {'start_date': str(self.start_date),
+                  'shift_start': str(self.shift_start),
+                  'shift_end': str(self.shift_end),
+                  'employee': {'first_name': str(self.employee.user.first_name),
+                               'last_name': str(self.employee.user.last_name),
+                               'employee_id': str(self.employee.user.employee_detail.employee_id)}
+                  }
+        print(result)
+        return result
+
 
 class Vacation(models.Model):
     """
@@ -493,7 +504,7 @@ def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, da
     impact_array = np.zeros((employee_size, employee_size), dtype='float16')
     for i, employee in enumerate(seniority_ordered_employees):
         impact_array[i] = match_array[i] * employee_factor
-        if i != employee_size-1:
+        if i != employee_size - 1:
             impact_array[i] += np.mean(match_array[i + 1:], axis=0) * (1 - employee_factor)
 
         inspect_array = impact_array[i]
@@ -581,7 +592,7 @@ def swap(person, swap_shift_start):
     person is Employee instance, and the requester
     swap_shift_start is the shift that needs to be swapped
     
-    This will output a dictionary with key success, available_shifts, free_people
+    This will output a dictionary with key success, available_shifts, available_people
     
     first checks people that are currently swapping,
     then check people that are open to swap (even if not currently swapping)
@@ -591,12 +602,12 @@ def swap(person, swap_shift_start):
     if a shift/person is found to be possible to make swap, success will 
     be True. If there are shifts offered in return, the available_shifts 
     will be QuerySet. If there are no shifts offered in return, then, 
-    available_shifts will remain as None and free_people will return as a list 
+    available_shifts will remain as None and available_people will return as a list 
     of Employee instance who are open to accept shift and are not working 
     that shift
     
     If not possible to find any shift/person to swap, success will be Fail
-    and available_shifts will be None and free_people will be empty list
+    and available_shifts will be None and available_people will be empty list
     
     The current logic of swap shift does not allow double shifts (inclusive). 
     If person A wants to swap 7-9 shift and person B can offer 9-11. It will 
@@ -605,7 +616,7 @@ def swap(person, swap_shift_start):
 
     success = True
     output = None
-    free_people = []
+    available_people = []
     error = False
 
     swap_shift_start = pytz.UTC.localize(swap_shift_start)
@@ -616,7 +627,7 @@ def swap(person, swap_shift_start):
         error = True
         return {'success': success,
                 'available_shifts': output,
-                'free_people': free_people,
+                'available_people': available_people,
                 'error': error}
     swap_day_switch = swap_day[0]
     # there should only be one schedule with 
@@ -629,7 +640,7 @@ def swap(person, swap_shift_start):
         return {
             'success': success,
             'available_shifts': output,
-            'free_people': free_people,
+            'available_people': available_people,
             'error': error
         }
 
@@ -690,15 +701,15 @@ def swap(person, swap_shift_start):
                         shift_start__exact=swap_shift_start).exists()) and swap_shift_start.weekday() in workdays:
                     # if acceptor not working that day and is available to work
 
-                    free_people.append(acceptor)
-            if not free_people:
+                    available_people.append(acceptor)
+            if not available_people:
                 success = False
 
                 # go into queue of holding, wait till database updates, then run rechecks
     return {
         'success': success,
         'available_shifts': output,
-        'free_people': free_people,
+        'available_people': available_people,
         'error': error
     }
 

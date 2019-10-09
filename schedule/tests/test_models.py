@@ -388,13 +388,13 @@ class AssignModelTest(TestCase):
 
         expected_status = {'success': True,
                            'available_shifts': e1_2_schedule,
-                           'free_people': []
+                           'available_people': []
                            }
         self.assertEquals(status['success'], expected_status['success'])
         self.assertEquals(len(status['available_shifts']), len(expected_status['available_shifts']))
         for shift in range(len(status['available_shifts'])):
             self.assertEquals(status['available_shifts'][shift], expected_status['available_shifts'][shift])
-        self.assertEquals(status['free_people'], expected_status['free_people'])
+        self.assertEquals(status['available_people'], expected_status['available_people'])
 
         # test feature for those open to swap. Employee.accept_swap = True
         # reset previous test
@@ -413,13 +413,13 @@ class AssignModelTest(TestCase):
 
         expected_status = {'success': True,
                            'available_shifts': e1_2_schedule,
-                           'free_people': []
+                           'available_people': []
                            }
         self.assertEquals(status['success'], expected_status['success'])
         self.assertEquals(len(status['available_shifts']), len(expected_status['available_shifts']))
         for shift in range(len(status['available_shifts'])):
             self.assertEquals(status['available_shifts'][shift], expected_status['available_shifts'][shift])
-        self.assertEquals(status['free_people'], expected_status['free_people'])
+        self.assertEquals(status['available_people'], expected_status['available_people'])
 
         # test free people that are accepting shifts but cannot offer return
         _, _ = sm.set_schedule(person=swapper,
@@ -429,11 +429,11 @@ class AssignModelTest(TestCase):
         status = sm.swap(swapper, datetime.datetime(2019, 9, 3, 19, 30))
         expected_status = {'success': True,
                            'available_shifts': None,
-                           'free_people': [e1_2]
+                           'available_people': [e1_2]
                            }
         self.assertEquals(status['success'], expected_status['success'])
         self.assertEquals(status['available_shifts'], expected_status['available_shifts'])
-        self.assertEquals(status['free_people'][0], expected_status['free_people'][0])
+        self.assertEquals(status['available_people'][0], expected_status['available_people'][0])
 
     def test_group_set_schedule(self):
         group3 = Group.objects.get(name='group3')

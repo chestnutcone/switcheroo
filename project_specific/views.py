@@ -1,19 +1,19 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
 from django.contrib import messages
-from django.core import serializers
 from schedule.models import get_schedule, swap
 from people.models import Employee
 from user.models import Group
-from django.http import HttpResponseRedirect
+from project_specific.models import VacationNotification
+from django.http import HttpResponseRedirect, HttpResponse
 from project_specific.forms import SwapForm
 from .forms import GroupCreateForm, GroupJoinForm
 import logging
 import os
 import json
-from collections import Counter
+import datetime
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -79,51 +79,20 @@ def profile_view(request):
 def swap_view(request):
     """the view page for swapping shift"""
     if request.method == 'POST':
-        json_data = json.loads(request.body)
-        print('json data', json_data)
-        for date in json_data:
-            form = SwapForm(date)
-
-        # print('form clean data', form.cleaned_data)
         if request.POST.get("logout"):
             logout(request)
             return render(request, 'registration/logged_out.html')
-        if form.is_valid():
-            current_user = request.user
-            person_instance = Employee.objects.filter(user__exact=current_user)[0]
-            print('form clean data', form.cleaned_data)
-            swap_shift_start = form.cleaned_data['swap_shift_start']
-
-            result = swap(person=person_instance, swap_shift_start=swap_shift_start)
-            # result is dictionary with key 
-            if result['success']:
-                if result['available_shifts']:
-                    # pass as list
-                    display_info = []
-                    for match in result['available_shifts']:
-                        display_info.append('{}, start: {}, end: {}'.format(match.employee.person_name,
-                                                                            match.shift_start, match.shift_end))
-                    messages.add_message(request,
-                                         messages.INFO,
-                                         display_info)
-
-                elif len(result['free_people']) != 0:
-                    display_info = [str(p) for p in result['free_people']]
-                    messages.add_message(request,
-                                         messages.INFO,
-                                         display_info)
-            else:
-                messages.add_message(request,
-                                     messages.INFO,
-                                     'no available shift swaps')
-
-            return HttpResponseRedirect(reverse('swap_result'))
-        else:
-            form = SwapForm()
-            context = {'form': form,
-                       }
-            messages.add_message(request, messages.INFO, 'please enter valid info')
-            return render(request, 'project_specific/swap.html', context=context)
+        json_data = json.loads(request.body)
+        shift_start_time = [datetime.datetime.strptime(time, "%Y/%m/%d, %H:%M:%S") for time in json_data]
+        current_user = request.user
+        person_instance = Employee.objects.filter(user__exact=current_user)[0]
+        total_result = {}
+        for start_time in shift_start_time:
+            result = swap(person=person_instance, swap_shift_start=start_time)
+            result['available_shifts'] = [output_shift.json_format() for output_shift in result['available_shifts']]
+            total_result[str(start_time)] = result
+        print(total_result)
+        return HttpResponse(json.dumps(total_result), content_type='application/json')
     else:
 
         form = SwapForm()
@@ -196,6 +165,38 @@ def group_view(request):
             return render(request, 'project_specific/group_join.html', context=context)
 
 
+@login_required
+def vacation_view(request):
+    if request.method == 'POST':
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        if json_data['action'] == 'request_vacation':
+
+            vacation_date = [datetime.datetime.strptime(date, "%Y/%m/%d").date() for date in json_data['data']]
+            current_user = request.user
+            person_instance = get_object_or_404(Employee, user=current_user)
+            manager_instance = person_instance.group.owner
+            for vacation in vacation_date:
+                notification = VacationNotification(requester=person_instance,
+                                                    assignee=manager_instance,
+                                                    date=vacation)
+                notification.save()
+            return HttpResponse('registered')
+    if request.method == 'GET':
+        current_user = request.user
+        person_instance = get_object_or_404(Employee, user=current_user)
+        today = datetime.datetime.now().date()
+        vacation_requests = VacationNotification.objects.filter(requester=person_instance).filter(
+            date__gte=today).order_by('-date')
+        response = {}
+        for vacation_request in vacation_requests:
+            response[str(vacation_request.date)] = {'approved': vacation_request.approved,
+                                                    'rejected': vacation_request.rejected,
+                                                    'delivered': vacation_request.delivered}
+        return HttpResponse(json.dumps(response), content_type='application/json')
+
+
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def schedule_view(request):
     """
@@ -225,11 +226,11 @@ def schedule_view(request):
                         shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
                         shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
                     context = {
-                               'dates': dates,
-                               'shift_start': shift_start,
-                               'shift_end': shift_end,
-                               'name': str(employee),
-                               }
+                        'dates': dates,
+                        'shift_start': shift_start,
+                        'shift_end': shift_end,
+                        'name': str(employee),
+                    }
                     total_schedule['schedules'].append(context)
             except IndexError:
                 logger.exception('some error occured in schedule_view')

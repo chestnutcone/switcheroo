@@ -2,12 +2,6 @@ let shift_dates = JSON.parse(document.getElementById('shift_dates').textContent)
 let shift_start = JSON.parse(document.getElementById('shift_start').textContent)
 let shift_end = JSON.parse(document.getElementById('shift_end').textContent)
 
-// for (d of shift_dates) {
-//     console.log(d)
-// }
-console.log('shift dates', shift_dates)
-console.log('most common shifts', shift_start)
-
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 let today = new Date()
@@ -57,23 +51,29 @@ function reverseCellDate (year, month) {
     startWeekday = thisMonth.getDay()
     lastMonthStart = dayPrevMonth - startWeekday + 1
 
-    let reverseMonthDate = {}
+
+    let reversemonthDate = {}
     let cellCount = 0
     let thisMonthCount = 1
+    let nextMonthCount = 1
     for (let i=0; i<6; i++) {
         for (let j=0; j<7; j++) {
             if (i == 0 && j < startWeekday) {
+                reversemonthDate[formatDateTime(i,lastMonthStart,year,month)] = [i,j]
+                lastMonthStart ++
                 cellCount ++
             } else if (cellCount<(dayThisMonth+startWeekday)) {
-                reverseMonthDate[thisMonthCount] = [i,j]
+                reversemonthDate[formatDateTime(i,thisMonthCount,year,month)] = [i,j]
                 thisMonthCount ++
                 cellCount ++
             } else {
-                break
+                reversemonthDate[formatDateTime(i,nextMonthCount,year,month)] = [i,j]
+                nextMonthCount ++
+                cellCount ++
             }
         }
     }
-    return reverseMonthDate
+    return reversemonthDate
 }
 
 function resetDateSelectionVariable () {
@@ -126,7 +126,6 @@ function buildCalendar (year, month) {
     highlightShift(shift_dates)
     resetDateSelectionVariable()
     $('#calendar-body td').click(selectDate)
-    // $('#calendar-body td').click(checkEvent)
 }
 
 function highlightShift (shift_dates) {
@@ -136,36 +135,51 @@ function highlightShift (shift_dates) {
     calendarTable.removeAttribute('highlight')
 
     reverseLookUp = reverseCellDate(curYear, curMonth)
-    for (date in shift_dates) {
-        let shiftDate = new Date(shift_dates[date])
-        if (shiftDate.getMonth() == curMonth && shiftDate.getFullYear() == curYear) {
-            answer = reverseLookUp[shiftDate.getDate()]
-            row = answer[0]
-            col = answer[1]
-            $('#calendar-body tr').eq(row).find('td').eq(col).addClass('highlight')
+    for (date of shift_dates) {
+        answer = reverseLookUp[date]
+        if (answer) {
+            $('#calendar-body tr').eq(answer[0]).find('td').eq(answer[1]).addClass('highlight')
         }
     }
 }
 
-function readWriteDate (row, date, curYear, curMonth, selected_dates, write=false) {
+function formatMonth (month_variable) {
+// will add one to the js 0-indexed months. Also, 8 => 09. return as str
+    mod_month = ((month_variable+1)<10) ? `0${month_variable+1}`: `${month_variable+1}`
+    return mod_month
+}
+
+function formatDate (date_variable) {
+    // Also, 9 => 09. return as str
+    mod_date = (date_variable < 10) ? `0${date_variable}`: `${date_variable}`
+    return mod_date
+}
+
+function formatDateTime (row, date, curYear, curMonth) {
     let nextYear = (curMonth == 11) ? curYear +1: curYear
     let nextMonth = (curMonth+1) % 12
     let prevYear = (curMonth == 0) ? curYear -1: curYear
     let prevMonth = (curMonth == 0) ? 11:curMonth-1
+
+    let str_date = formatDate(date)
+    let str_prevMonth = formatMonth(prevMonth)
+    let str_curMonth = formatMonth(curMonth)
+    let str_nextMonth = formatMonth(nextMonth)
+
+    if (row==0 && date>=22) {
+        date_selected = `${prevYear}/${str_prevMonth}/${str_date}`
+    } else if (row>=4 && date<=14) {
+        date_selected = `${nextYear}/${str_nextMonth}/${str_date}`
+    } else {
+        date_selected = `${curYear}/${str_curMonth}/${str_date}`
+    }
+    return date_selected
+}
+
+function readWriteDate (row, date, curYear, curMonth, selected_dates, write=false) {
     let date_selected = null
 
-    date = (date < 10) ? `0${date}`: date
-    prevMonth = ((prevMonth+1)<10) ? `0${prevMonth+1}`: prevMonth+1
-    curMonth = ((curMonth+1)<10) ? `0${curMonth+1}`: curMonth+1
-    nextMonth = ((nextMonth+1)<10) ? `0${nextMonth+1}`: nextMonth+1
-    if (row==0 & date>=22) {
-        date_selected = `${prevYear}/${prevMonth}/${date}`
-    } else if (row>=4 & date<=14) {
-        date_selected = `${nextYear}/${nextMonth}/${date}`
-    } else {
-        date_selected = `${curYear}/${curMonth}/${date}`
-    }
-
+    date_selected = formatDateTime(row, date, curYear, curMonth)
     if (write) {
         selected_dates.push(date_selected)
         return selected_dates
@@ -206,7 +220,7 @@ function selectDate(){
         next_col = this.cellIndex
         next_row = next_row -1  //minus header row
     
-        if (next_row < dateRow | ((next_row == dateRow) & (next_col <= dateCol))) {
+        if (next_row < dateRow | ((next_row == dateRow) && (next_col <= dateCol))) {
             $('td').removeClass('date-selection')
 
             dateRow = this.parentNode.rowIndex
@@ -226,10 +240,10 @@ function selectDate(){
                 for (let j=0; j<7; j++) {
                     date = dateLookUp[[i, j]]
                     if (i==dateRow) {
-                        if ((dateRow != next_row) & (j >= dateCol)) {
+                        if ((dateRow != next_row) && (j >= dateCol)) {
                             selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
                             $('#calendar-body tr').eq(i).find('td').eq(j).addClass('date-selection')
-                        } else if ((dateRow == next_row) & ((j >= dateCol) & (j <= next_col))) {
+                        } else if ((dateRow == next_row) && ((j >= dateCol) && (j <= next_col))) {
                             selected_dates = readWriteDate(dateRow, date, curYear, curMonth, selected_dates, write=true)
                             $('#calendar-body tr').eq(i).find('td').eq(j).addClass('date-selection')
                         }
@@ -290,6 +304,18 @@ function getShift (date) {
     return shift_start_index
 }
 
+function filterDate (dateList) {
+    let today = new Date()
+    let filtered_date = []
+    for (date of dateList) {
+        let test_date = new Date(date)
+        if (test_date.setHours(0,0,0,0) >= today.setHours(0,0,0,0)) {
+            filtered_date.push(date)
+        }
+    }
+    return filtered_date
+}
+
 function getCookie (name) {
     let cookieValue = null
     if (document.cookie && document.cookie !== '') {
@@ -305,20 +331,20 @@ function getCookie (name) {
     return cookieValue
 }
 
-function sendDate (){
+function sendSwapDate (){
+    let filtered_dates = filterDate(selected_dates)
     let request_dates = []
-    console.log('selected_dates', selected_dates)
-    for (date of selected_dates) {
+    for (date of filtered_dates) {
         shift_start_index = getShift(date)
         for (let i=0; i<shift_start_index.length; i++) {
             request_dates.push(shift_start[shift_start_index])
         }
     }
-    console.log('request dates', request_dates)
     if (request_dates.length != 0) {
 
         let send_dates = JSON.stringify(request_dates)
         let csrftoken = getCookie('csrftoken')
+        alert(`Swapping the following shifts: ${send_dates}`)
         $.ajax({
             type: "POST",
             url: "/main/swap/",
@@ -326,15 +352,130 @@ function sendDate (){
             headers: {
                 'X-CSRFToken': csrftoken
             },
-            success: function(msg){
-                alert(`submission succeeded ${msg}`)
+            dataType: 'json',
+            success: function(result) {
+                swapResult(result)
             },
             contentType:'application/json'
         })
     } else {
-        alert('no dates to be swapped')
+        if (filtered_dates.length != 0) {
+            alert('no shifts to be swapped')
+        } else {
+            alert('cannot swap shifts in the past')
+        }
+        
     }
     
 }
-buildCalendar (year, month)
 
+function sendVacationDate(){
+    let filtered_dates = filterDate(selected_dates)
+    if (filtered_dates.length != 0) {
+
+        let send_data = JSON.stringify({"action": "request_vacation", "data": filtered_dates})
+        let csrftoken = getCookie('csrftoken')
+        alert(`Asking vaction for the following dates: ${filtered_dates}`)
+        $.ajax({
+            type: "POST",
+            url: "/main/vacation/",
+            data: send_data,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            dataType: 'text',
+            success: function(msg) {
+                alert(msg)
+                fetchVacationResult()
+            },
+            contentType:'application/json'
+        })
+    } else {
+        if (selected_dates.length != 0) {
+            alert('cannot swap shifts in the past')
+        } else {
+            alert('no dates to be send')
+        }
+    }
+    
+}
+
+function swapResult (result) {
+    let swapResultLists = document.getElementById('swapResult-container')
+    
+    for (date in result) {
+        let swapDateList = document.createElement('ul')
+        swapDateList.innerText = date
+        response = result[date]
+        if (response['success']) {
+            let available_shifts = response['available_shifts']
+            if (available_shifts) {
+                
+                for (detail in available_shifts) {
+                    let shift_detail = available_shifts[detail]
+                    let shift_start = shift_detail['shift_start']
+                    let shift_end = shift_detail['shift_end']
+                    let employee = shift_detail['employee']
+                    let employee_name =  `${employee['first_name']} ${employee['last_name']}`
+
+                    let swaps = document.createElement('li')
+                    let info = document.createTextNode(`${employee_name} ${shift_start} to ${shift_end}`)
+                    swaps.appendChild(info)
+                    swapDateList.appendChild(swaps)
+                }
+            } else if (response['available_people']) {
+                for (people of response['available_people']) {
+                    let swaps = document.createElement('li')
+                    let info = document.createTextNode(people)
+                    swaps.appendChild(info)
+                    swapDateList.appendChild(swaps)
+                }
+            }
+        } else {
+            let swaps = document.createElement('li')
+            if (response['error']) {
+                let info = document.createTextNode('error encountered')
+                swaps.appendChild(info)
+                swapDateList.appendChild(swaps)
+            } else {
+                let info = document.createTextNode('cannot find anyone to swap')
+                swaps.appendChild(info)
+                swapDateList.appendChild(swaps)
+            }
+            
+        }
+
+        swapResultLists.appendChild(swapDateList)
+    }
+}
+
+function fetchVacationResult () {
+    $.ajax({
+        type: "GET",
+        url: "/main/vacation/",
+        dataType: 'json',
+        success: function(response) {
+            displayVacationResult(response)
+        },
+        contentType:'application/json'
+    })
+}
+
+function displayVacationResult (response) {
+    let vacationResultContainer = document.getElementById('vacationResult-container')
+    $("#vacationResult-container").empty()
+    for (date in response) {
+        let status = response[date]
+        let vacationList = document.createElement('ul')
+        let vacationDate = document.createTextNode(date)
+        vacationList.appendChild(vacationDate)
+        for (detail in status) {
+            let vacation_detail = document.createElement('li')
+            vacation_detail.innerText = `${detail}: ${status[detail]}`
+            vacationList.appendChild(vacation_detail)
+        }
+        vacationResultContainer.appendChild(vacationList)
+    }
+}
+buildCalendar (year, month)
+fetchVacationResult()
