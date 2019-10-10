@@ -408,6 +408,11 @@ class AssignModelTest(TestCase):
         e1_2.save()
         e2_2.save()
 
+        swap_shift_start = pytz.UTC.localize(datetime.datetime(2019, 9, 3, 19, 30))
+        swap_day = Assign.objects.filter(employee__exact=swapper).filter(shift_start=swap_shift_start)[0]
+        swap_day.switch = False
+        swap_day.save()
+
         status = sm.swap(swapper, datetime.datetime(2019, 9, 3, 19, 30))
         e1_2_schedule = Assign.objects.filter(employee=e1_2)
 
@@ -425,6 +430,11 @@ class AssignModelTest(TestCase):
         _, _ = sm.set_schedule(person=swapper,
                                start_date=datetime.date(2019, 9, 4),
                                shift_pattern=shift_pattern_1)
+
+        swap_shift_start = pytz.UTC.localize(datetime.datetime(2019, 9, 3, 19, 30))
+        swap_day = Assign.objects.filter(employee__exact=swapper).filter(shift_start=swap_shift_start)[0]
+        swap_day.switch = False
+        swap_day.save()
 
         status = sm.swap(swapper, datetime.datetime(2019, 9, 3, 19, 30))
         expected_status = {'success': True,

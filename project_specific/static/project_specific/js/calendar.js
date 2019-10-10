@@ -354,7 +354,7 @@ function sendSwapDate (){
             },
             dataType: 'json',
             success: function(result) {
-                swapResult(result)
+                displaySwapResult(result, new_info=true)
             },
             contentType:'application/json'
         })
@@ -400,13 +400,51 @@ function sendVacationDate(){
     
 }
 
-function swapResult (result) {
+function createAcceptRejectButton (parentElement, acceptText='Accept', rejectText='Reject') {
+    let acceptButton = document.createElement("button")
+    let rejectButton = document.createElement("button")
+    acceptButton.innerText = acceptText
+    rejectButton.innerText = rejectText
+    parentElement.appendChild(acceptButton)
+    parentElement.appendChild(rejectButton)
+    return parentElement
+}
+
+function createCancelButton (parentElement) {
+    let cancelButton = document.createElement("button")
+    cancelButton.innerText = 'Cancel'
+    parentElement.appendChild(cancelButton)
+    return parentElement
+}
+
+
+function fetchSwapResult () {
+    $.ajax({
+        type: "GET",
+        url: "/main/swap/",
+        dataType: 'json',
+        success: function(response) {
+            $("#swapResult-container").empty()
+            console.log(response)
+            displaySwapResult(response)
+        },
+        contentType:'application/json'
+    })
+}
+
+function displaySwapResult (result, new_info=false) {
     let swapResultLists = document.getElementById('swapResult-container')
-    
+
     for (date in result) {
-        let swapDateList = document.createElement('ul')
-        swapDateList.innerText = date
         response = result[date]
+        let swapDateList = document.createElement('ul')
+        let swapDateListContainer = document.createElement('div')
+
+        swapDateListContainer.innerText = date
+        swapDateListContainer = createCancelButton(swapDateListContainer)
+
+        swapDateListContainer.classList.add('flexbox')
+        swapDateList.appendChild(swapDateListContainer)
         if (response['success']) {
             let available_shifts = response['available_shifts']
             if (available_shifts) {
@@ -419,24 +457,39 @@ function swapResult (result) {
                     let employee_name =  `${employee['first_name']} ${employee['last_name']}`
 
                     let swaps = document.createElement('li')
+                    swaps.setAttribute("data-shift_start", `${shift_start}`)
+                    swaps.setAttribute("data-shift_end", `${shift_end}`)
+                    swaps.setAttribute("data-employee_id", `${employee['employee_id']}`)
+                    
                     let info = document.createTextNode(`${employee_name} ${shift_start} to ${shift_end}`)
                     swaps.appendChild(info)
+                    swaps = createAcceptRejectButton(swaps)
+                    swaps.classList.add('flexbox')
                     swapDateList.appendChild(swaps)
                 }
             } else if (response['available_people']) {
                 for (people of response['available_people']) {
                     let swaps = document.createElement('li')
+                    swaps.setAttribute("data-shift_start", `${shift_start}`)
+                    swaps.setAttribute("data-shift_end", `${shift_end}`)
+                    swaps.setAttribute("data-employee_id", `${employee['employee_id']}`)
                     let info = document.createTextNode(people)
                     swaps.appendChild(info)
+                    swaps = createAcceptRejectButton(swaps)
+                    swaps.classList.add('flexbox')
                     swapDateList.appendChild(swaps)
                 }
             }
         } else {
             let swaps = document.createElement('li')
             if (response['error']) {
-                let info = document.createTextNode('error encountered')
+                if (new_info) {
+                    alert(response['error_detail'])
+                }
+                let info = document.createTextNode(response['error_detail'])
                 swaps.appendChild(info)
                 swapDateList.appendChild(swaps)
+            
             } else {
                 let info = document.createTextNode('cannot find anyone to swap')
                 swaps.appendChild(info)
@@ -477,5 +530,7 @@ function displayVacationResult (response) {
         vacationResultContainer.appendChild(vacationList)
     }
 }
+
 buildCalendar (year, month)
 fetchVacationResult()
+fetchSwapResult()

@@ -147,7 +147,6 @@ class Assign(models.Model):
                                'last_name': str(self.employee.user.last_name),
                                'employee_id': str(self.employee.user.employee_detail.employee_id)}
                   }
-        print(result)
         return result
 
 
@@ -164,6 +163,20 @@ class Vacation(models.Model):
                               on_delete=models.SET_NULL,
                               null=True,
                               blank=True)
+
+
+class SwapResult(models.Model):
+    """
+    This is designed to hold swap results that have not received action from the user.
+    Will only hold those with error= False
+    """
+    applicant = models.ForeignKey(Employee,
+                                  on_delete=models.CASCADE,
+                                  null=True,)
+    action = models.BooleanField(default=False) # if true, then it is dealt with
+    shift_start = models.DateTimeField()
+    json_data = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class Request(models.Model):
@@ -618,6 +631,7 @@ def swap(person, swap_shift_start):
     output = None
     available_people = []
     error = False
+    error_detail = ''
 
     swap_shift_start = pytz.UTC.localize(swap_shift_start)
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
@@ -625,10 +639,12 @@ def swap(person, swap_shift_start):
         logger.error('The requested shift to swap cannot be found in schedule')
         success = False
         error = True
+        error_detail = 'The requested shift to swap cannot be found in schedule'
         return {'success': success,
                 'available_shifts': output,
                 'available_people': available_people,
-                'error': error}
+                'error': error,
+                'error_detail': error_detail}
     swap_day_switch = swap_day[0]
     # there should only be one schedule with 
     # that one shift start date for that person
@@ -637,11 +653,25 @@ def swap(person, swap_shift_start):
         logger.error('Duplicate (non-unique shift start) shifts requesting to be swap')
         error = True
         success = False
+        error_detail = 'Duplicate (non-unique shift start) shifts requesting to be swap'
         return {
             'success': success,
             'available_shifts': output,
             'available_people': available_people,
-            'error': error
+            'error': error,
+            'error_detail': error_detail
+        }
+
+    if swap_day_switch.switch:
+        error = True
+        success = False
+        error_detail = 'requested shift is already being swapped'
+        return {
+            'success': success,
+            'available_shifts': output,
+            'available_people': available_people,
+            'error': error,
+            'error_detail': error_detail
         }
 
     swap_day_switch.switch = True
@@ -710,7 +740,8 @@ def swap(person, swap_shift_start):
         'success': success,
         'available_shifts': output,
         'available_people': available_people,
-        'error': error
+        'error': error,
+        'error_detail': error_detail
     }
 
 
@@ -738,3 +769,14 @@ def set_vacation(person, date):
         'vacation_created': created
     }
     return status
+
+
+def clear_assign_and_swap():
+    """only a temporary function. Sets all assign schedule to switch=False and clear SwapResult"""
+    all_schedule = Assign.objects.all()
+    for a in all_schedule:
+        a.switch = False
+        a.save()
+    all_queue = SwapResult.objects.all()
+    all_queue.delete()
+    print('reset done')

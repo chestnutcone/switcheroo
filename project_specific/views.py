@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
 from django.contrib import messages
-from schedule.models import get_schedule, swap
+from schedule.models import get_schedule, swap, SwapResult
 from people.models import Employee
 from user.models import Group
 from project_specific.models import VacationNotification
@@ -14,6 +14,8 @@ import logging
 import os
 import json
 import datetime
+import pytz
+from pprint import pprint
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -88,17 +90,31 @@ def swap_view(request):
         person_instance = Employee.objects.filter(user__exact=current_user)[0]
         total_result = {}
         for start_time in shift_start_time:
+            # check if shift is already being switched
             result = swap(person=person_instance, swap_shift_start=start_time)
-            result['available_shifts'] = [output_shift.json_format() for output_shift in result['available_shifts']]
+            if result['success']:
+                result['available_shifts'].order_by('employee', '-start_date')
+                result['available_shifts'] = [output_shift.json_format() for output_shift in result['available_shifts']]
             total_result[str(start_time)] = result
-        print(total_result)
-        return HttpResponse(json.dumps(total_result), content_type='application/json')
-    else:
+            store_data = SwapResult(applicant=person_instance,
+                                    shift_start=pytz.UTC.localize(start_time),
+                                    json_data=json.dumps(result))
+            store_data.save()
 
-        form = SwapForm()
-        context = {'form': form,
-                   }
-        return render(request, 'project_specific/swap.html', context=context)
+        return HttpResponse(json.dumps(total_result), content_type='application/json')
+    elif request.method == "GET":
+        today = datetime.datetime.now().date()
+        current_user = request.user
+        person_instance = Employee.objects.filter(user__exact=current_user)[0]
+        stored_data_query = SwapResult.objects.filter(applicant=person_instance).filter(
+            shift_start__gte=today).order_by('-shift_start')
+        total_result = {str(stored_data.shift_start): json.loads(stored_data.json_data) for stored_data in stored_data_query}
+        return HttpResponse(json.dumps(total_result), content_type='application/json')
+
+        # form = SwapForm()
+        # context = {'form': form,
+        #            }
+        # return render(request, 'project_specific/swap.html', context=context)
 
 
 @login_required
