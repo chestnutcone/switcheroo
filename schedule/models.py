@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MaxValueValidator
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from django.utils import timezone
 from people.models import Employee
 from user.models import Group
 from .mock import *
@@ -149,6 +150,17 @@ class Assign(models.Model):
                   }
         return result
 
+    @staticmethod
+    def assure_one_and_same(shift_queryset, shift_time, person):
+        # assure there is only one shift instance and is the same
+        error=''
+        if not shift_queryset.exists():
+            error = 'requested shift cannot be found'
+        single_shift_instance = shift_queryset[0]
+        result = single_shift_instance.same(shift_start=shift_time, employee=person)
+        if not all(result.values()) and shift_queryset.count() == 1:
+            error = 'Duplicate (non-unique shift start)'
+        return error
 
 class Vacation(models.Model):
     """
@@ -211,7 +223,7 @@ class Request(models.Model):
     # did the receiver accept the proposed swap?
     accept = models.BooleanField(default=False)
     # is the action done?
-    done = models.BooleanField(default=False)
+    responded = models.BooleanField(default=False)
 
 
 def get_schedule(person):
@@ -626,34 +638,16 @@ def swap(person, swap_shift_start):
     If person A wants to swap 7-9 shift and person B can offer 9-11. It will 
     not allow the shift to be swapped
     """
-
     success = True
     output = None
     available_people = []
     error = False
-    error_detail = ''
-
     swap_shift_start = pytz.UTC.localize(swap_shift_start)
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
-    if not swap_day.exists():
-        logger.error('The requested shift to swap cannot be found in schedule')
-        success = False
-        error = True
-        error_detail = 'The requested shift to swap cannot be found in schedule'
-        return {'success': success,
-                'available_shifts': output,
-                'available_people': available_people,
-                'error': error,
-                'error_detail': error_detail}
-    swap_day_switch = swap_day[0]
-    # there should only be one schedule with 
-    # that one shift start date for that person
-    result = swap_day_switch.same(shift_start=swap_shift_start, employee=person)
-    if not all(result.values()) and swap_day.count() == 1:
-        logger.error('Duplicate (non-unique shift start) shifts requesting to be swap')
+    error_detail = Assign.assure_one_and_same(swap_day, swap_shift_start, person)
+    if error_detail:
         error = True
         success = False
-        error_detail = 'Duplicate (non-unique shift start) shifts requesting to be swap'
         return {
             'success': success,
             'available_shifts': output,
@@ -662,6 +656,7 @@ def swap(person, swap_shift_start):
             'error_detail': error_detail
         }
 
+    swap_day_switch = swap_day[0]
     if swap_day_switch.switch:
         error = True
         success = False
@@ -780,3 +775,31 @@ def clear_assign_and_swap():
     all_queue = SwapResult.objects.all()
     all_queue.delete()
     print('reset done')
+
+
+def cancel_swap(person, shift_time):
+    shift_instance = Assign.objects.filter(employee=person).filter(shift_start=shift_time)
+    status = False
+    error = Assign.assure_one_and_same(shift_instance, shift_time, person)
+    if error:
+        return {'status': status,
+                'error': error}
+    else:
+        single_shift_instance = shift_instance[0]
+        single_shift_instance.switch = False
+        single_shift_instance.save()
+
+    try:
+        swap_queue = SwapResult.objects.filter(applicant=person).get(shift_start=shift_time)
+        swap_queue.delete()
+        status = True
+    except error as e:
+        error = e
+    return {'status': status,
+            'error': error}
+
+
+
+
+
+

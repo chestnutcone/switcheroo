@@ -15,4 +15,5 @@ urlpatterns = [
         path('group/', views.group_view, name='group'),
         path('schedule/', views.schedule_view, name='schedule_view'),
         path('vacation/', views.vacation_view, name='vacation_view'),
+        path('swap/request', views.swap_request_view, name='swap_request'),
         ]

@@ -7,12 +7,6 @@ Created on Wed Sep 11 21:59:23 2019
 
 from django import forms
 from user.models import Group
-from django.http import JsonResponse
-
-
-class SwapForm(forms.Form):
-    # swap_shift_start = forms.DateTimeField(help_text='2006-10-25 14:30:59')
-    test_date = forms.DateField()
 
 
 class GroupCreateForm(forms.Form):

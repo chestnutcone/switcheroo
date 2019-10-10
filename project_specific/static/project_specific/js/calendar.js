@@ -342,13 +342,13 @@ function sendSwapDate (){
     }
     if (request_dates.length != 0) {
 
-        let send_dates = JSON.stringify(request_dates)
+        let send_data = JSON.stringify({"action": "swap", "data":request_dates})
         let csrftoken = getCookie('csrftoken')
-        alert(`Swapping the following shifts: ${send_dates}`)
+        alert(`Swapping the following shifts: ${send_data}`)
         $.ajax({
             type: "POST",
             url: "/main/swap/",
-            data: send_dates,
+            data: send_data,
             headers: {
                 'X-CSRFToken': csrftoken
             },
@@ -405,6 +405,8 @@ function createAcceptRejectButton (parentElement, acceptText='Accept', rejectTex
     let rejectButton = document.createElement("button")
     acceptButton.innerText = acceptText
     rejectButton.innerText = rejectText
+    acceptButton.setAttribute('onclick', 'acceptSwap(this)')
+    rejectButton.setAttribute('onclick', 'rejectSwap(this)')
     parentElement.appendChild(acceptButton)
     parentElement.appendChild(rejectButton)
     return parentElement
@@ -413,10 +415,180 @@ function createAcceptRejectButton (parentElement, acceptText='Accept', rejectTex
 function createCancelButton (parentElement) {
     let cancelButton = document.createElement("button")
     cancelButton.innerText = 'Cancel'
+    cancelButton.setAttribute('onclick', 'cancelSwapShift(this)')
     parentElement.appendChild(cancelButton)
     return parentElement
 }
 
+function cancelSwapShift (param) {
+    let parent_element = param.parentNode
+    let swap_shift_start = parent_element.dataset.shift_start
+    if (swap_shift_start) {
+
+        let send_data = JSON.stringify({"action": "cancel", "data":swap_shift_start})
+        let csrftoken = getCookie('csrftoken')
+        $.ajax({
+            type: "POST",
+            url: "/main/swap/",
+            data: send_data,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            dataType: 'json',
+            success: function(result) {
+                if (result['status']) {
+                    alert('shift swap cancelled')
+                    fetchSwapResult()
+                } else {
+                    alert(result['error'])
+                }
+            },
+            contentType:'application/json'
+        })
+    }
+}
+
+function acceptSwap (param) {
+    let parent_element = param.parentNode
+    let requester_shift_start = parent_element.parentNode.firstChild.dataset.shift_start
+    let acceptor_shift_start = parent_element.dataset.shift_start
+    let acceptor_employee_id = parent_element.dataset.employee_id
+
+    let data = {'acceptor_shift_start': acceptor_shift_start,
+     'acceptor_employee_id': acceptor_employee_id,
+    'requester_shift_start': requester_shift_start}
+
+    let send_data = JSON.stringify({"action": "request", "data":data})
+    let csrftoken = getCookie('csrftoken')
+    $.ajax({
+        type: "POST",
+        url: "/main/swap/request",
+        data: send_data,
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        dataType: 'json',
+        success: function(result) {
+            if (result['status']) {
+                alert('Request sent')
+                fetchSwapResult()
+                fetchRequestResult()
+
+            } else if (result['acceptor_error']) {
+                alert(result['acceptor_error'])
+            } else if (result['requester_error']) {
+                alert(result['requester_error'])
+            } else if (result['already_exist']) {
+                fetchSwapResult()
+                fetchRequestResult()
+                alert(`Request already exist for this shift`)
+            }
+        },
+        contentType:'application/json'
+    })
+
+}
+
+function rejectSwap (param) {
+    let parent_element = param.parentNode
+    parent_element.remove()
+}
+
+function fetchRequestResult() {
+    $.ajax({
+        type: "GET",
+        url: "/main/swap/request",
+        dataType: 'json',
+        success: function(response) {
+            $("#swapRequest-container").empty()
+            displayRequestResult(response)
+        },
+        contentType:'application/json'
+    })
+}
+
+function displayRequestResult(response) {
+    let swap_request_container = document.getElementById('swapRequest-container')
+    $('#swapRequest-container').empty()
+    for (num in response) {
+        let processing = response[num]
+        let shift_item = document.createElement('ul')
+        let applicant = document.createElement('li')
+        let receiver = document.createElement('li')
+        let status = ""
+        let cancelButton = document.createElement('button')
+        cancelButton.innerText = 'Cancel'
+        cancelButton.setAttribute('onclick', 'cancelRequest(this)')
+        shift_item.setAttribute('data-created_time', processing['created'])
+        
+        
+        shift_item.setAttribute('data-applicant_shift_start', processing['applicant_shift_start'])
+        shift_item.setAttribute('data-applicant_shift_end', processing['applicant_shift_end'])
+        shift_item.setAttribute('data-receiver_shift_start', processing['receiver_shift_start'])
+        shift_item.setAttribute('data-receiver_shift_end', processing['receiver_shift_end'])
+
+        applicant.innerText = `Own Schedule ${processing['applicant_shift_start']} to ${processing['applicant_shift_end']}`
+        receiver.innerText = `Swap Schedule ${processing['receiver_shift_start']} to ${processing['receiver_shift_end']}`
+        if (processing['responded']) {
+            status = `${processing['accept']}`
+            if (processing['accept']) {
+                let acceptButton = document.createElement('button')
+                acceptButton.innerText = 'Accept'
+                acceptButton.setAttribute('onclick', 'acceptRequest(this)')
+                shift_item.innerHTML = status
+                shift_item.appendChild(acceptButton)
+                shift_item.appendChild(cancelButton)
+            } else {
+                shift_item.innerHTML = status
+                shift_item.appendChild(cancelButton)
+            }
+        } else {
+            status = 'Status: Not Responded'
+            shift_item.innerHTML = status
+            shift_item.appendChild(cancelButton)
+        }
+        
+        shift_item.appendChild(applicant)
+        shift_item.appendChild(receiver)
+        
+        swap_request_container.appendChild(shift_item)
+    }
+}
+
+function cancelRequest(param) {
+    let parent_element = param.parentNode
+    let created_time = parent_element.dataset.created_time
+    let requester_shift_start = parent_element.dataset.applicant_shift_start
+    console.log(created_time)
+    let data = {'created':created_time, 'requester_shift_start':requester_shift_start}
+
+    let send_data = JSON.stringify({"action": "cancel", "data":data})
+    console.log(send_data)
+    let csrftoken = getCookie('csrftoken')
+    $.ajax({
+        type: "POST",
+        url: "/main/swap/request",
+        data: send_data,
+        headers: {
+            'X-CSRFToken': csrftoken
+        },
+        dataType: 'json',
+        success: function(result) {
+            if (result['status']) {
+                alert('Request cancelled')
+                fetchSwapResult()
+                fetchRequestResult()
+            } else {
+                alert(result['error_detail'])
+            }
+        },
+        contentType:'application/json'
+    })
+}
+
+function acceptRequest(param) {
+
+}
 
 function fetchSwapResult () {
     $.ajax({
@@ -425,7 +597,6 @@ function fetchSwapResult () {
         dataType: 'json',
         success: function(response) {
             $("#swapResult-container").empty()
-            console.log(response)
             displaySwapResult(response)
         },
         contentType:'application/json'
@@ -439,7 +610,7 @@ function displaySwapResult (result, new_info=false) {
         response = result[date]
         let swapDateList = document.createElement('ul')
         let swapDateListContainer = document.createElement('div')
-
+        swapDateListContainer.setAttribute('data-shift_start', `${date}`)
         swapDateListContainer.innerText = date
         swapDateListContainer = createCancelButton(swapDateListContainer)
 
@@ -534,3 +705,4 @@ function displayVacationResult (response) {
 buildCalendar (year, month)
 fetchVacationResult()
 fetchSwapResult()
+fetchRequestResult()

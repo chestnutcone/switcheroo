@@ -84,6 +84,10 @@ input[type='submit'] {
 	font-size: 110%;
 }
 
+input[type='submit']:hover {
+	cursor: pointer;
+}
+
 button {
 	width: 12%;
 	display: block;
@@ -97,4 +101,8 @@ button {
 	margin-top: 10px;
 	margin-bottom: 10px;
 	font-size: 110%;
+}
+
+button:hover {
+	cursor: pointer;
 }
