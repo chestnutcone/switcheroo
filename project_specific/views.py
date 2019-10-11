@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
-from schedule.models import get_schedule, swap, SwapResult, cancel_swap, Request, Assign
+from schedule.models import get_schedule, swap, SwapResult, cancel_swap, Request, Assign, set_schedule_day
 from people.models import Employee
 from user.models import Group, EmployeeID, CustomUser
 from project_specific.models import VacationNotification
@@ -120,7 +120,8 @@ def swap_view(request):
         stored_data_query = SwapResult.objects.filter(applicant=person_instance).filter(
             action=False).filter(
             shift_start__gte=today).order_by('-shift_start')
-        total_result = {str(stored_data.shift_start): json.loads(stored_data.json_data) for stored_data in stored_data_query}
+        total_result = {str(stored_data.shift_start): json.loads(stored_data.json_data) for stored_data in
+                        stored_data_query}
         return HttpResponse(json.dumps(total_result), content_type='application/json')
 
 
@@ -188,7 +189,6 @@ def swap_request_view(request):
                                  'already_exist': ''}
                 return HttpResponse(json.dumps(status_detail), content_type='application/json')
         elif json_data['action'] == 'cancel':
-            print(json_data)
             created_timestamp = json_data['data']['created']
             created_timestamp = parse(created_timestamp)
             requester_shift_start = json_data['data']['requester_shift_start']
@@ -210,6 +210,34 @@ def swap_request_view(request):
                 status = False
             status_detail = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
+        elif json_data['action'] == 'finalize':
+            created_timestamp = json_data['data']['created']
+            created_timestamp = parse(created_timestamp)
+
+            requester_shift_start = json_data['data']['requester_shift_start']
+            requester_shift_start = parse(requester_shift_start)
+
+            acceptor_shift_start = json_data['data']['acceptor_shift_start']
+            acceptor_shift_start = parse(acceptor_shift_start)
+
+            acceptor_employee_id = int(json_data['data']['acceptor_employee_id'])
+            acceptor_employee_detail = EmployeeID.objects.get(pk=acceptor_employee_id)
+            acceptor_user = CustomUser.objects.get(employee_detail=acceptor_employee_detail)
+            acceptor = Employee.objects.get(user=acceptor_user)
+
+            current_user = request.user
+            requester = Employee.objects.filter(user__exact=current_user)[0]
+            try:
+                status, error_detail = Assign.finalize_swap(requester=requester,
+                                                            requester_shift_start=requester_shift_start,
+                                                            acceptor=acceptor,
+                                                            acceptor_shift_start=acceptor_shift_start,
+                                                            request_timestamp=created_timestamp)
+            except Exception as e:
+                error_detail = e
+                status = False
+            status_detail = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
     elif request.method == 'GET':
         current_user = request.user
@@ -223,6 +251,31 @@ def swap_request_view(request):
                                                        'applicant_shift_end': str(applicant_schedule.shift_end),
                                                        'receiver_shift_start': str(receiver_schedule.shift_start),
                                                        'receiver_shift_end': str(receiver_schedule.shift_end),
+                                                       'receiver_employee_id': str(
+                                                           processing.receiver.user.employee_detail.employee_id),
+                                                       'accept': processing.accept,
+                                                       'responded': processing.responded,
+                                                       'created': str(processing.created)}
+        return HttpResponse(json.dumps(total_requests), content_type='application/json')
+
+
+def receive_request_view(request):
+    if request.method == "POST":
+        pass
+    elif request.method == "GET":
+        current_user = request.user
+        requester = Employee.objects.get(user=current_user)
+        current_requests = Request.objects.filter(receiver=requester)
+        total_requests = {}
+        for processing in current_requests:
+            applicant_schedule = processing.applicant_schedule
+            receiver_schedule = processing.receiver_schedule
+            total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                       'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                       'receiver_shift_start': str(receiver_schedule.shift_start),
+                                                       'receiver_shift_end': str(receiver_schedule.shift_end),
+                                                       'receiver_employee_id': str(
+                                                           processing.receiver.user.employee_detail.employee_id),
                                                        'accept': processing.accept,
                                                        'responded': processing.responded,
                                                        'created': str(processing.created)}

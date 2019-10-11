@@ -16,4 +16,5 @@ urlpatterns = [
         path('schedule/', views.schedule_view, name='schedule_view'),
         path('vacation/', views.vacation_view, name='vacation_view'),
         path('swap/request', views.swap_request_view, name='swap_request'),
+        path('swap/receive', views.receive_request_view, name='receive_swap'),
         ]

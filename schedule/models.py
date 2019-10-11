@@ -153,7 +153,7 @@ class Assign(models.Model):
     @staticmethod
     def assure_one_and_same(shift_queryset, shift_time, person):
         # assure there is only one shift instance and is the same
-        error=''
+        error = ''
         if not shift_queryset.exists():
             error = 'requested shift cannot be found'
         single_shift_instance = shift_queryset[0]
@@ -161,6 +161,43 @@ class Assign(models.Model):
         if not all(result.values()) and shift_queryset.count() == 1:
             error = 'Duplicate (non-unique shift start)'
         return error
+
+    @staticmethod
+    def finalize_swap(requester, requester_shift_start, acceptor, acceptor_shift_start, request_timestamp):
+        total_status = True
+        error_detail = ''
+        requester_shift = Assign.objects.filter(employee=requester).get(shift_start=requester_shift_start)
+        acceptor_shift = Assign.objects.filter(employee=acceptor).get(shift_start=acceptor_shift_start)
+
+        requester_status, requester_status_detail = set_schedule_day(person=requester,
+                                                                     start_day=acceptor_shift.start_date,
+                                                                     shift_start=acceptor_shift.shift_start,
+                                                                     shift_end=acceptor_shift.shift_end,
+                                                                     override=True)
+        acceptor_status, acceptor_status_detail = set_schedule_day(person=acceptor,
+                                                                   start_day=requester_shift.start_date,
+                                                                   shift_start=requester_shift.shift_start,
+                                                                   shift_end=requester_shift.shift_end,
+                                                                   override=True)
+        if requester_status and acceptor_status:
+            request_instance = Request.objects.filter(applicant=requester).get(created=request_timestamp)
+            request_instance.delete()
+            requester_swap_result = SwapResult.objects.filter(
+                applicant=requester).get(shift_start=requester_shift_start)
+            requester_swap_result.delete()
+            requester_shift.delete()
+            acceptor_shift.delete()
+        else:
+            if requester_status:
+                # delete newly created assign object
+                new_requester_shift = Assign.objects.filter(person=requester).get(shift_start=acceptor_shift_start)
+                new_requester_shift.delete()
+            if acceptor_status:
+                new_acceptor_shift = Assign.objects.filter(person=acceptor).get(shift_start=requester_shift_start)
+                new_acceptor_shift.delete()
+            total_status = False
+            error_detail = 'requester status detail: {}. acceptor status detail:{}'.format(requester_status_detail, acceptor_status_detail)
+        return total_status, error_detail
 
 class Vacation(models.Model):
     """
@@ -184,8 +221,8 @@ class SwapResult(models.Model):
     """
     applicant = models.ForeignKey(Employee,
                                   on_delete=models.CASCADE,
-                                  null=True,)
-    action = models.BooleanField(default=False) # if true, then it is dealt with
+                                  null=True, )
+    action = models.BooleanField(default=False)  # if true, then it is dealt with
     shift_start = models.DateTimeField()
     json_data = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
@@ -235,13 +272,17 @@ def get_schedule(person):
     return existing_schedule
 
 
-def set_schedule_day(person, start_day, shift, override=False):
+def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=None, override=False):
     """
     set schedule for a single day on that person
     
     person is Employee instance
     start_day is datetime.date
     shift is Shift instance"""
+    if shift is None:
+        assert (shift_start is not None)
+        assert (shift_end is not None)
+
     status_detail = {'overridable': [],
                      'non_overridable': [],
                      'holiday': [],
@@ -255,17 +296,19 @@ def set_schedule_day(person, start_day, shift, override=False):
         if (holiday_model is not None) and (start_day in holiday_model):
             status_detail['holiday'].append(holiday_model[start_day])
 
-    if person.group != shift.group:
-        status = False
-        status_detail['non_overridable'].append('Employee group does not match shift group')
-        return status, status_detail
+    if shift is not None:
+        if person.group != shift.group:
+            status = False
+            status_detail['non_overridable'].append('Employee group does not match shift group')
+            return status, status_detail
 
-    shift_time = pytz.UTC.localize(shift.shift_start)
-    shift_dur = shift.shift_duration
+        if not shift.shift_start.tzinfo:
+            shift_time = pytz.UTC.localize(shift.shift_start)
+        shift_dur = shift.shift_duration
 
-    # shift_start and shift_end tzinfo is UTC
-    shift_start = datetime.datetime.combine(start_day, shift_time)
-    shift_end = shift_start + shift_dur
+        # shift_start and shift_end tzinfo is UTC
+        shift_start = datetime.datetime.combine(start_day, shift_time)
+        shift_end = shift_start + shift_dur
 
     # register dates
     # check if there are any shift conflicts and vacation days
@@ -278,6 +321,11 @@ def set_schedule_day(person, start_day, shift, override=False):
     if start_day.weekday() not in workdays:
         if not override:
             status = False
+            if shift is None:
+                shift = Shift.objects.filter(
+                    group=person.group).filter(
+                    shift_start=shift_start).get(
+                    shift_duration=(shift_end - shift_start))
             status_detail['overridable'].append((start_day, shift))
             return status, status_detail
 
@@ -304,6 +352,11 @@ def set_schedule_day(person, start_day, shift, override=False):
 
         if overlap:
             # if there is overlap of shifts
+            if shift is None:
+                shift = Shift.objects.filter(
+                    group=person.group).filter(
+                    shift_start=shift_start).get(
+                    shift_duration=(shift_end - shift_start))
             status_detail['non_overridable'].append((start_day, shift))
             status = False
         else:
@@ -797,9 +850,3 @@ def cancel_swap(person, shift_time):
         error = e
     return {'status': status,
             'error': error}
-
-
-
-
-
-

@@ -57,6 +57,9 @@
 	<div id='swapRequest-container'>
 	</div>
 
+	<h1>Receive Swap</h1>
+	<div id='swapReceiveRequest-container'></div>
+
 	<h1>Vacation Requests</h1>
 	<div id='vacationResult-container'>
 	</div>
@@ -69,6 +72,10 @@
 {% block javascript %}
 	{% load staticfiles %}
 	<script src="{% static 'project_specific/js/calendar.js'%}"></script>
+	<script src="{% static 'project_specific/js/fetchDisplay.js'%}"></script>
+	<script src="{% static 'project_specific/js/receiverFunctions.js'%}"></script>
+	<script src="{% static 'project_specific/js/requestFunctions.js'%}"></script>
+	<script src="{% static 'project_specific/js/swapFunctions.js'%}"></script>
 	<script src="{% static 'project_specific/js/daySummary.js'%}"></script>
 	
 {% endblock %}
