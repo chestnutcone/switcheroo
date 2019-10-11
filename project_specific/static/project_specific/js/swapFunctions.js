@@ -50,41 +50,48 @@ function cancelSwapShift (param) {
 function applyRequest (param) {
     let parent_element = param.parentNode
     let requester_shift_start = parent_element.parentNode.firstChild.dataset.shift_start
-    let acceptor_shift_start = parent_element.dataset.shift_start
-    let acceptor_employee_id = parent_element.dataset.employee_id
+    let acceptor_employee_id = parent_element.dataset.receiver_employee_id
+    let dataType = parent_element.dataset.datatype
+    if (dataType == 'shift') {
+        let acceptor_shift_start = parent_element.dataset.receiver_shift_start
+        var data = {'acceptor_shift_start': acceptor_shift_start,
+        'acceptor_employee_id': acceptor_employee_id,
+        'requester_shift_start': requester_shift_start,}
+    } else if (dataType == 'people') {
+        var data = {'requester_shift_start':requester_shift_start,
+                    'acceptor_employee_id':acceptor_employee_id,}
 
-    let data = {'acceptor_shift_start': acceptor_shift_start,
-     'acceptor_employee_id': acceptor_employee_id,
-    'requester_shift_start': requester_shift_start}
-
+    }
+    data['data_type'] = dataType
     let send_data = JSON.stringify({"action": "request", "data":data})
-    let csrftoken = getCookie('csrftoken')
-    $.ajax({
-        type: "POST",
-        url: "/main/swap/request",
-        data: send_data,
-        headers: {
-            'X-CSRFToken': csrftoken
-        },
-        dataType: 'json',
-        success: function(result) {
-            if (result['status']) {
-                alert('Request sent')
-                fetchSwapResult()
-                fetchRequestResult()
+        let csrftoken = getCookie('csrftoken')
+        $.ajax({
+            type: "POST",
+            url: "/main/swap/request",
+            data: send_data,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            dataType: 'json',
+            success: function(result) {
+                if (result['status']) {
+                    alert('Request sent')
+                    fetchSwapResult()
+                    fetchRequestResult()
 
-            } else if (result['acceptor_error']) {
-                alert(result['acceptor_error'])
-            } else if (result['requester_error']) {
-                alert(result['requester_error'])
-            } else if (result['already_exist']) {
-                fetchSwapResult()
-                fetchRequestResult()
-                alert(`Request already exist for this shift`)
-            }
-        },
-        contentType:'application/json'
+                } else if (result['acceptor_error']) {
+                    alert(result['acceptor_error'])
+                } else if (result['requester_error']) {
+                    alert(result['requester_error'])
+                } else if (result['already_exist']) {
+                    fetchSwapResult()
+                    fetchRequestResult()
+                    alert(`Request already exist for this shift`)
+                }
+            },
+            contentType:'application/json'
     })
+    
 
 }
 

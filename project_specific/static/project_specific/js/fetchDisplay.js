@@ -32,12 +32,21 @@ function displayRequestResult(response) {
         
         shift_item.setAttribute('data-applicant_shift_start', processing['applicant_shift_start'])
         shift_item.setAttribute('data-applicant_shift_end', processing['applicant_shift_end'])
-        shift_item.setAttribute('data-receiver_shift_start', processing['receiver_shift_start'])
-        shift_item.setAttribute('data-receiver_shift_end', processing['receiver_shift_end'])
         shift_item.setAttribute('data-receiver_employee_id', processing['receiver_employee_id'])
 
+        if (processing['receiver_shift_start']) {
+            shift_item.setAttribute('data-receiver_shift_start', processing['receiver_shift_start'])
+            shift_item.setAttribute('data-receiver_shift_end', processing['receiver_shift_end'])
+            receiver.innerText = `Swap Schedule ${processing['receiver_shift_start']} to ${processing['receiver_shift_end']}`
+        } else {
+            shift_item.setAttribute('data-receiver_shift_start', '')
+            shift_item.setAttribute('data-receiver_shift_end', '')
+            receiver.innerText = `No schedule in return`
+        }
+        
+
         applicant.innerText = `Own Schedule ${processing['applicant_shift_start']} to ${processing['applicant_shift_end']}`
-        receiver.innerText = `Swap Schedule ${processing['receiver_shift_start']} to ${processing['receiver_shift_end']}`
+        
         if (processing['responded']) {
             status = `${processing['accept']}`
             if (processing['accept']) {
@@ -105,9 +114,10 @@ function displaySwapResult (result, new_info=false) {
                     let employee_name =  `${employee['first_name']} ${employee['last_name']}`
 
                     let swaps = document.createElement('li')
-                    swaps.setAttribute("data-shift_start", `${shift_start}`)
-                    swaps.setAttribute("data-shift_end", `${shift_end}`)
-                    swaps.setAttribute("data-employee_id", `${employee['employee_id']}`)
+                    swaps.setAttribute("data-receiver_shift_start", `${shift_start}`)
+                    swaps.setAttribute("data-receiver_shift_end", `${shift_end}`)
+                    swaps.setAttribute("data-receiver_employee_id", `${employee['employee_id']}`)
+                    swaps.setAttribute("data-datatype", "shift")
                     
                     let info = document.createTextNode(`${employee_name} ${shift_start} to ${shift_end}`)
                     swaps.appendChild(info)
@@ -116,12 +126,15 @@ function displaySwapResult (result, new_info=false) {
                     swapDateList.appendChild(swaps)
                 }
             } else if (response['available_people']) {
-                for (people of response['available_people']) {
+                for (people in response['available_people']) {
                     let swaps = document.createElement('li')
-                    swaps.setAttribute("data-shift_start", `${shift_start}`)
-                    swaps.setAttribute("data-shift_end", `${shift_end}`)
-                    swaps.setAttribute("data-employee_id", `${employee['employee_id']}`)
-                    let info = document.createTextNode(people)
+                    person = response['available_people'][people]
+
+                    swaps.setAttribute("data-receiver_first_name", `${person['receiver_first_name']}`)
+                    swaps.setAttribute("data-receiver_last_name", `${person['receiver_last_name']}`)
+                    swaps.setAttribute("data-receiver_employee_id", `${person['receiver_employee_id']}`)
+                    swaps.setAttribute("data-datatype", "people")
+                    let info = document.createTextNode(`Available: ${person['receiver_first_name']} ${person['receiver_last_name']}`)
                     swaps.appendChild(info)
                     swaps = createAcceptRejectButton(swaps)
                     swaps.classList.add('flexbox')
@@ -168,8 +181,12 @@ function displayVacationResult (response) {
     for (date in response) {
         let status = response[date]
         let vacationList = document.createElement('ul')
+        let cancelButton = document.createElement('button')
+        cancelButton.innerText = 'Cancel'
+        cancelButton.setAttribute('onclick', 'cancelVacation(this)')
         let vacationDate = document.createTextNode(date)
         vacationList.appendChild(vacationDate)
+        vacationList.appendChild(cancelButton)
         for (detail in status) {
             let vacation_detail = document.createElement('li')
             vacation_detail.innerText = `${detail}: ${status[detail]}`

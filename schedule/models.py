@@ -167,13 +167,16 @@ class Assign(models.Model):
         total_status = True
         error_detail = ''
         requester_shift = Assign.objects.filter(employee=requester).get(shift_start=requester_shift_start)
-        acceptor_shift = Assign.objects.filter(employee=acceptor).get(shift_start=acceptor_shift_start)
-
-        requester_status, requester_status_detail = set_schedule_day(person=requester,
-                                                                     start_day=acceptor_shift.start_date,
-                                                                     shift_start=acceptor_shift.shift_start,
-                                                                     shift_end=acceptor_shift.shift_end,
-                                                                     override=True)
+        if acceptor_shift_start:
+            acceptor_shift = Assign.objects.filter(employee=acceptor).get(shift_start=acceptor_shift_start)
+            requester_status, requester_status_detail = set_schedule_day(person=requester,
+                                                                         start_day=acceptor_shift.start_date,
+                                                                         shift_start=acceptor_shift.shift_start,
+                                                                         shift_end=acceptor_shift.shift_end,
+                                                                         override=True)
+        else:
+            requester_status = True
+            requester_status_detail = 'Did not try requester since requester not getting shift in return'
         acceptor_status, acceptor_status_detail = set_schedule_day(person=acceptor,
                                                                    start_day=requester_shift.start_date,
                                                                    shift_start=requester_shift.shift_start,
@@ -186,7 +189,8 @@ class Assign(models.Model):
                 applicant=requester).get(shift_start=requester_shift_start)
             requester_swap_result.delete()
             requester_shift.delete()
-            acceptor_shift.delete()
+            if acceptor_shift_start:
+                acceptor_shift.delete()
         else:
             if requester_status:
                 # delete newly created assign object
@@ -198,6 +202,7 @@ class Assign(models.Model):
             total_status = False
             error_detail = 'requester status detail: {}. acceptor status detail:{}'.format(requester_status_detail, acceptor_status_detail)
         return total_status, error_detail
+
 
 class Vacation(models.Model):
     """

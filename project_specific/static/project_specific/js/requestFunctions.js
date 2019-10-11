@@ -1,4 +1,5 @@
 
+
 function cancelRequest(param) {
     // for applicant
     let parent_element = param.parentNode
@@ -54,8 +55,7 @@ function finalizeSwap(param) {
         success: function(result) {
             if (result['status']) {
                 alert('Shift Swapped!')
-                fetchSwapResult()
-                fetchRequestResult()
+                window.location.reload();
             } else {
                 alert(result['error_detail'])
             }

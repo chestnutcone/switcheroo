@@ -96,9 +96,16 @@ def swap_view(request):
                 timezone_start_time = pytz.UTC.localize(start_time)
                 result = swap(person=person_instance, swap_shift_start=start_time)
                 if result['success']:
-                    result['available_shifts'].order_by('employee', '-start_date')
-                    result['available_shifts'] = [output_shift.json_format()
-                                                  for output_shift in result['available_shifts']]
+                    if result['available_shifts']:
+                        result['available_shifts'].order_by('employee', '-start_date')
+                        result['available_shifts'] = [output_shift.json_format()
+                                                      for output_shift in result['available_shifts']]
+                    elif result['available_people']:
+                        available_people = result['available_people']
+                        available_people_dict = [{'receiver_employee_id':str(p.user.employee_detail.employee_id),
+                                                  'receiver_first_name':str(p.user.first_name),
+                                                  'receiver_last_name':str(p.user.last_name)} for p in available_people]
+                        result['available_people'] = available_people_dict
                 total_result[str(timezone_start_time)] = result
                 store_data = SwapResult(applicant=person_instance,
                                         shift_start=timezone_start_time,
@@ -136,12 +143,11 @@ def swap_request_view(request):
         json_data = json.loads(str_data)
         if json_data['action'] == 'request':
             acceptor_data = json_data['data']
-            acceptor_shift_start = parse(acceptor_data['acceptor_shift_start'])
+
             acceptor_employee_id = int(acceptor_data['acceptor_employee_id'])
             acceptor_employee_detail = EmployeeID.objects.get(pk=acceptor_employee_id)
             acceptor_user = CustomUser.objects.get(employee_detail=acceptor_employee_detail)
             acceptor = Employee.objects.get(user=acceptor_user)
-            acceptor_shift = Assign.objects.filter(employee=acceptor).filter(shift_start=acceptor_shift_start)
 
             current_user = request.user
             requester = Employee.objects.filter(user__exact=current_user)[0]
@@ -154,40 +160,60 @@ def swap_request_view(request):
                 requester_swap_result.action = True
                 requester_swap_result.save()
             except Exception as e:
-                status_detail = {'status': True,
+                status_detail = {'status': False,
                                  'acceptor_error': '',
                                  'requester_error': str(e),
-                                 'already_exist': ''}
+                                 'already_exist': '',
+                                 'data_type': json_data['data']['data_type']}
                 return HttpResponse(json.dumps(status_detail), content_type='application/json')
-
-            acceptor_error = Assign.assure_one_and_same(acceptor_shift, acceptor_shift_start, acceptor)
-            requester_error = Assign.assure_one_and_same(requester_shift, requester_shift_start, requester)
-
-            if not (acceptor_error and requester_error):
+            if json_data['data']['data_type'] == 'shift':
+                acceptor_shift_start = parse(acceptor_data['acceptor_shift_start'])
+                acceptor_shift = Assign.objects.filter(employee=acceptor).filter(shift_start=acceptor_shift_start)
+                acceptor_error = Assign.assure_one_and_same(acceptor_shift, acceptor_shift_start, acceptor)
+                requester_error = Assign.assure_one_and_same(requester_shift, requester_shift_start, requester)
+                if not (acceptor_error and requester_error):
+                    request_exist = Request.objects.filter(applicant=requester).filter(
+                        applicant_schedule=requester_shift[0]).exists()
+                    if not request_exist:
+                        request_queue = Request(applicant=requester,
+                                                receiver=acceptor,
+                                                applicant_schedule=requester_shift[0],
+                                                receiver_schedule=acceptor_shift[0])
+                        request_queue.save()
+                        status_detail = {'status': True,
+                                         'acceptor_error': acceptor_error,
+                                         'requester_error': requester_error,
+                                         'already_exist': request_exist}
+                    else:
+                        status_detail = {'status': False,
+                                         'acceptor_error': acceptor_error,
+                                         'requester_error': requester_error,
+                                         'already_exist': request_exist}
+                else:
+                    status_detail = {'status': False,
+                                     'acceptor_error': acceptor_error,
+                                     'requester_error': requester_error,
+                                     'already_exist': ''}
+            elif json_data['data']['data_type'] == 'people':
                 request_exist = Request.objects.filter(applicant=requester).filter(
                     applicant_schedule=requester_shift[0]).exists()
                 if not request_exist:
                     request_queue = Request(applicant=requester,
                                             receiver=acceptor,
                                             applicant_schedule=requester_shift[0],
-                                            receiver_schedule=acceptor_shift[0])
+                                            receiver_schedule=None)
                     request_queue.save()
                     status_detail = {'status': True,
-                                     'acceptor_error': acceptor_error,
-                                     'requester_error': requester_error,
+                                     'acceptor_error':'',
+                                     'requester_error':'',
                                      'already_exist': request_exist}
                 else:
                     status_detail = {'status': False,
-                                     'acceptor_error': acceptor_error,
-                                     'requester_error': requester_error,
+                                     'acceptor_error':'',
+                                     'requester_error':'',
                                      'already_exist': request_exist}
-                return HttpResponse(json.dumps(status_detail), content_type='application/json')
-            else:
-                status_detail = {'status': False,
-                                 'acceptor_error': acceptor_error,
-                                 'requester_error': requester_error,
-                                 'already_exist': ''}
-                return HttpResponse(json.dumps(status_detail), content_type='application/json')
+            status_detail['data_type'] = json_data['data']['data_type']
+            return HttpResponse(json.dumps(status_detail), content_type='application/json')
         elif json_data['action'] == 'cancel':
             created_timestamp = json_data['data']['created']
             created_timestamp = parse(created_timestamp)
@@ -218,7 +244,8 @@ def swap_request_view(request):
             requester_shift_start = parse(requester_shift_start)
 
             acceptor_shift_start = json_data['data']['acceptor_shift_start']
-            acceptor_shift_start = parse(acceptor_shift_start)
+            if acceptor_shift_start:
+                acceptor_shift_start = parse(acceptor_shift_start)
 
             acceptor_employee_id = int(json_data['data']['acceptor_employee_id'])
             acceptor_employee_detail = EmployeeID.objects.get(pk=acceptor_employee_id)
@@ -247,15 +274,26 @@ def swap_request_view(request):
         for processing in current_requests:
             applicant_schedule = processing.applicant_schedule
             receiver_schedule = processing.receiver_schedule
-            total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
-                                                       'applicant_shift_end': str(applicant_schedule.shift_end),
-                                                       'receiver_shift_start': str(receiver_schedule.shift_start),
-                                                       'receiver_shift_end': str(receiver_schedule.shift_end),
-                                                       'receiver_employee_id': str(
-                                                           processing.receiver.user.employee_detail.employee_id),
-                                                       'accept': processing.accept,
-                                                       'responded': processing.responded,
-                                                       'created': str(processing.created)}
+            if receiver_schedule:
+                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                           'receiver_shift_start': str(receiver_schedule.shift_start),
+                                                           'receiver_shift_end': str(receiver_schedule.shift_end),
+                                                           'receiver_employee_id': str(
+                                                               processing.receiver.user.employee_detail.employee_id),
+                                                           'accept': processing.accept,
+                                                           'responded': processing.responded,
+                                                           'created': str(processing.created)}
+            else:
+                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                           'receiver_shift_start': '',
+                                                           'receiver_shift_end': '',
+                                                           'receiver_employee_id': str(
+                                                               processing.receiver.user.employee_detail.employee_id),
+                                                           'accept': processing.accept,
+                                                           'responded': processing.responded,
+                                                           'created': str(processing.created)}
         return HttpResponse(json.dumps(total_requests), content_type='application/json')
 
 
@@ -300,41 +338,34 @@ def receive_request_view(request):
         for processing in current_requests:
             applicant_schedule = processing.applicant_schedule
             receiver_schedule = processing.receiver_schedule
-            total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
-                                                       'applicant_shift_end': str(applicant_schedule.shift_end),
-                                                       'receiver_shift_start': str(receiver_schedule.shift_start),
-                                                       'receiver_shift_end': str(receiver_schedule.shift_end),
-                                                       'receiver_employee_id': str(
-                                                           processing.receiver.user.employee_detail.employee_id),
-                                                       'applicant_employee_id': str(
-                                                           processing.applicant.user.employee_detail.employee_id
-                                                       ),
-                                                       'accept': processing.accept,
-                                                       'responded': processing.responded,
-                                                       'created': str(processing.created)}
+            if receiver_schedule:
+                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                           'receiver_shift_start': str(receiver_schedule.shift_start),
+                                                           'receiver_shift_end': str(receiver_schedule.shift_end),
+                                                           'receiver_employee_id': str(
+                                                               processing.receiver.user.employee_detail.employee_id),
+                                                           'applicant_employee_id': str(
+                                                               processing.applicant.user.employee_detail.employee_id
+                                                           ),
+                                                           'accept': processing.accept,
+                                                           'responded': processing.responded,
+                                                           'created': str(processing.created)}
+            else:
+                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                           'receiver_shift_start': '',
+                                                           'receiver_shift_end': '',
+                                                           'receiver_employee_id': str(
+                                                               processing.receiver.user.employee_detail.employee_id),
+                                                           'applicant_employee_id': str(
+                                                               processing.applicant.user.employee_detail.employee_id
+                                                           ),
+                                                           'accept': processing.accept,
+                                                           'responded': processing.responded,
+                                                           'created': str(processing.created)}
+
         return HttpResponse(json.dumps(total_requests), content_type='application/json')
-
-
-# @login_required
-# def swap_result_view(request):
-#     """redirect here after swap_view"""
-#     if request.method == 'POST':
-#         if request.POST.get("logout"):
-#             logout(request)
-#             return render(request, 'registration/logged_out.html')
-#         if request.POST.get("swap"):
-#             ### this is not finished, not sure how to proceed after a user request a swap with another user
-#             ### Ie if user A choose box 1 to request swap with user B, how will I know which one is selected?
-#             ### depends on front end?
-#             index = request.POST['swap_box']
-#             print(index)
-#
-#             return HttpResponseRedirect(reverse('swap'))
-#     else:
-#         if request.GET.get("home"):
-#             return HttpResponseRedirect(reverse('profile'))
-#         else:
-#             return render(request, 'project_specific/swap_result.html')
 
 
 @login_required
@@ -386,8 +417,7 @@ def vacation_view(request):
         str_data = str_data.decode('utf-8')
         json_data = json.loads(str_data)
         if json_data['action'] == 'request_vacation':
-
-            vacation_date = [datetime.datetime.strptime(date, "%Y/%m/%d").date() for date in json_data['data']]
+            vacation_date = [parse(date) for date in json_data['data']]
             current_user = request.user
             person_instance = get_object_or_404(Employee, user=current_user)
             manager_instance = person_instance.group.owner
@@ -397,6 +427,22 @@ def vacation_view(request):
                                                     date=vacation)
                 notification.save()
             return HttpResponse('registered')
+        elif json_data['action'] == 'cancel':
+            status = True
+            error_detail = ''
+            try:
+                vacation_date = parse(json_data['data']['vacation_date'])
+                current_user = request.user
+                person_instance = get_object_or_404(Employee, user=current_user)
+                vacation_instance = VacationNotification.objects.filter(requester=person_instance).get(
+                    date=vacation_date)
+                vacation_instance.delete()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            status_detail = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(status_detail), content_type='application/json')
+
     if request.method == 'GET':
         current_user = request.user
         person_instance = get_object_or_404(Employee, user=current_user)

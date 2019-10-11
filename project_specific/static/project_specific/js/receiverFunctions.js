@@ -35,11 +35,15 @@ function displayReceiverRequestResult(response) {
         shift_item.setAttribute('data-applicant_shift_start', processing['applicant_shift_start'])
         shift_item.setAttribute('data-applicant_shift_end', processing['applicant_shift_end'])
         shift_item.setAttribute('data-applicant_employee_id', processing['applicant_employee_id'])
+        shift_item.setAttribute('data-receiver_employee_id', processing['receiver_employee_id'])
         shift_item.setAttribute('data-receiver_shift_start', processing['receiver_shift_start'])
         shift_item.setAttribute('data-receiver_shift_end', processing['receiver_shift_end'])
-        shift_item.setAttribute('data-receiver_employee_id', processing['receiver_employee_id'])
 
-        applicant.innerText = `Current Schedule ${processing['receiver_shift_start']} to ${processing['receiver_shift_end']}`
+        if (processing['receiver_shift_start']) {
+            applicant.innerText = `Current Schedule ${processing['receiver_shift_start']} to ${processing['receiver_shift_end']}`
+        } else {
+            applicant.innerText = `Would you be willing to accept the following shift:`
+        }
         receiver.innerText = `Proposed Schedule ${processing['applicant_shift_start']} to ${processing['applicant_shift_end']}`
 
         shift_item.appendChild(acceptButton)
