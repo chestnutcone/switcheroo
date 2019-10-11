@@ -156,7 +156,7 @@ def swap_request_view(request):
             except Exception as e:
                 status_detail = {'status': True,
                                  'acceptor_error': '',
-                                 'requester_error': e,
+                                 'requester_error': str(e),
                                  'already_exist': ''}
                 return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
@@ -234,7 +234,7 @@ def swap_request_view(request):
                                                             acceptor_shift_start=acceptor_shift_start,
                                                             request_timestamp=created_timestamp)
             except Exception as e:
-                error_detail = e
+                error_detail = str(e)
                 status = False
             status_detail = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
@@ -261,11 +261,41 @@ def swap_request_view(request):
 
 def receive_request_view(request):
     if request.method == "POST":
-        pass
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        status = True
+        error_detail = ''
+
+        try:
+            applicant_employee_id = int(json_data['data']['applicant_employee_id'])
+            applicant_employee_detail = EmployeeID.objects.get(pk=applicant_employee_id)
+            applicant_user = CustomUser.objects.get(employee_detail=applicant_employee_detail)
+            applicant = Employee.objects.get(user=applicant_user)
+            created_time = json_data['data']['created']
+            created_time = parse(created_time)
+
+            # this should be enough to get unique Request object
+            # implement requester employee id...
+            request_instance = Request.objects.filter(applicant=applicant).get(created=created_time)
+            if json_data['action'] == 'accept':
+                request_instance.responded = True
+                request_instance.accept = True
+                request_instance.save()
+            elif json_data['action'] == 'reject':
+                request_instance.responded = True
+                request_instance.save()
+        except Exception as e:
+            error_detail = str(e)
+            status = False
+
+        status_detail = {'status': status, 'error_detail': error_detail}
+        return HttpResponse(json.dumps(status_detail), content_type='application/json')
+
     elif request.method == "GET":
         current_user = request.user
         requester = Employee.objects.get(user=current_user)
-        current_requests = Request.objects.filter(receiver=requester)
+        current_requests = Request.objects.filter(receiver=requester).filter(responded=False)
         total_requests = {}
         for processing in current_requests:
             applicant_schedule = processing.applicant_schedule
@@ -276,32 +306,35 @@ def receive_request_view(request):
                                                        'receiver_shift_end': str(receiver_schedule.shift_end),
                                                        'receiver_employee_id': str(
                                                            processing.receiver.user.employee_detail.employee_id),
+                                                       'applicant_employee_id': str(
+                                                           processing.applicant.user.employee_detail.employee_id
+                                                       ),
                                                        'accept': processing.accept,
                                                        'responded': processing.responded,
                                                        'created': str(processing.created)}
         return HttpResponse(json.dumps(total_requests), content_type='application/json')
 
 
-@login_required
-def swap_result_view(request):
-    """redirect here after swap_view"""
-    if request.method == 'POST':
-        if request.POST.get("logout"):
-            logout(request)
-            return render(request, 'registration/logged_out.html')
-        if request.POST.get("swap"):
-            ### this is not finished, not sure how to proceed after a user request a swap with another user
-            ### Ie if user A choose box 1 to request swap with user B, how will I know which one is selected?
-            ### depends on front end?
-            index = request.POST['swap_box']
-            print(index)
-
-            return HttpResponseRedirect(reverse('swap'))
-    else:
-        if request.GET.get("home"):
-            return HttpResponseRedirect(reverse('profile'))
-        else:
-            return render(request, 'project_specific/swap_result.html')
+# @login_required
+# def swap_result_view(request):
+#     """redirect here after swap_view"""
+#     if request.method == 'POST':
+#         if request.POST.get("logout"):
+#             logout(request)
+#             return render(request, 'registration/logged_out.html')
+#         if request.POST.get("swap"):
+#             ### this is not finished, not sure how to proceed after a user request a swap with another user
+#             ### Ie if user A choose box 1 to request swap with user B, how will I know which one is selected?
+#             ### depends on front end?
+#             index = request.POST['swap_box']
+#             print(index)
+#
+#             return HttpResponseRedirect(reverse('swap'))
+#     else:
+#         if request.GET.get("home"):
+#             return HttpResponseRedirect(reverse('profile'))
+#         else:
+#             return render(request, 'project_specific/swap_result.html')
 
 
 @login_required

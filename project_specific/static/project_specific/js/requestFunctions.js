@@ -34,8 +34,8 @@ function finalizeSwap(param) {
     let parent_element = param.parentNode
     let created_time = parent_element.dataset.created_time
     let requester_shift_start = parent_element.dataset.applicant_shift_start
-    let acceptor_shift_start = parent_element.dataset.acceptor_shift_start
-    let acceptor_employee_id = parent_element.dataset.acceptor_employee_id
+    let acceptor_shift_start = parent_element.dataset.receiver_shift_start
+    let acceptor_employee_id = parent_element.dataset.receiver_employee_id
 
 
     let data = {'created':created_time, 'requester_shift_start':requester_shift_start,

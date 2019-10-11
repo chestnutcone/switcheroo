@@ -34,7 +34,7 @@ function displayRequestResult(response) {
         shift_item.setAttribute('data-applicant_shift_end', processing['applicant_shift_end'])
         shift_item.setAttribute('data-receiver_shift_start', processing['receiver_shift_start'])
         shift_item.setAttribute('data-receiver_shift_end', processing['receiver_shift_end'])
-        shift_item.setAttribute('data-acceptor_employee_id', processing['receiver_employee_id'])
+        shift_item.setAttribute('data-receiver_employee_id', processing['receiver_employee_id'])
 
         applicant.innerText = `Own Schedule ${processing['applicant_shift_start']} to ${processing['applicant_shift_end']}`
         receiver.innerText = `Swap Schedule ${processing['receiver_shift_start']} to ${processing['receiver_shift_end']}`
