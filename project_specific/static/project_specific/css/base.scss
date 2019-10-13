@@ -4,19 +4,47 @@ $accentColor2: #8E8D8A;
 $textColor1: #E98074;
 $textColor2: #E85A4F;
 
-html {
-	background-color:$primaryColor;
+@media only screen and (min-width: 300px) {
+    .collapse {
+        display: block;
+    }
+
+    .navbar-header {
+        float: left;
+    }
+
+    .navbar-toggle {
+        display: none;
+    }
+
+    .navbar-nav.navbar-left {
+       float: left;
+       margin: 0;
+    }
+
+    .navbar-nav.navbar-right {
+       float: right;
+       margin: 0;
+    }
+    .navbar-nav>li {
+        float: left;
+    }
+    .navbar-nav>li>a {
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
 }
 
-body {
-	font-family: Tahoma, sans-serif;
+@media only screen and (max-width: 420px) {
+     .collapse {
+        display: none;
+     }
 
+	 .navbar-header {
+		 display: block;
+	 }
 }
-.container {
-	width:940px;
-	margin-left: auto;
-	margin-right: auto;
-}
+
 .content-area {
  	background-color:white;
 }	
@@ -26,8 +54,26 @@ body {
 }
 
 table {
-	width: 400px;
-	background-color: white;
+	width: 10%;
+}
+
+td {
+	width: 14.286%;
+	position: relative;
+}
+
+td:after {
+	content: '';
+	display: block;
+	margin-top: 100%;
+}
+
+td .square_content {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
 }
 
 #calendar-body:hover {
@@ -36,6 +82,10 @@ table {
 
 #calendar-body {
 	text-align: center;
+}
+
+#calendar-button {
+	margin-top: 20px;
 }
 
 @keyframes date-fill-animation {
@@ -59,48 +109,6 @@ table {
 
 .flexbox {
 	display: flex;
-}
-
-#previous {
-	width: 12%;
-} 
-
-#next {
-	width: 12%;
-}
-
-input[type='submit'] {
-	width: 12%;
-	display: block;
-	box-sizing: border-box;
-	background-color: $accentColor1;
-	color: white;
-	padding: 2px 0;
-	border: 1px solid $accentColor2;
-	border-radius: 3px;
-	outline: none;
-	margin-top: 10px;
-	margin-bottom: 10px;
-	font-size: 110%;
-}
-
-input[type='submit']:hover {
-	cursor: pointer;
-}
-
-button {
-	width: 12%;
-	display: block;
-	box-sizing: border-box;
-	background-color: $accentColor1;
-	color: white;
-	padding: 2px 0;
-	border: 1px solid $accentColor2;
-	border-radius: 3px;
-	outline: none;
-	margin-top: 10px;
-	margin-bottom: 10px;
-	font-size: 110%;
 }
 
 button:hover {

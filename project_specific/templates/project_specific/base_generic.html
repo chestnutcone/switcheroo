@@ -1,36 +1,51 @@
 <!DOCTYPE html>
 
 <html lang="en">
-	<div class='container'>
+	<div>
 		<head>
 			<meta charset="utf-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
 			<!-- <base href="http://127.0.0.1:8000/main/" /> -->
-			
+			{% load staticfiles %}
+			<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+			<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/base.css'%}">
+			<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+			<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+
 			{% block title %}{% endblock %}
 		</head>
 
-		<div cass='content-area'>
-			<body>
-				<!-- <nav>
-					<ul>
-						<li><a href="/main/swap/">Swap Shift</a></li>
-						{% block sidebar %}{% endblock %}
-					</ul>	
-				</nav> -->
-			
-				{% block content %}<!-- default content text (typically empty) -->{% endblock %}
-				
-				<form action="" method="post">
-				{% csrf_token %}
-				<input type="submit" name="logout" value="logout">
-				</form>
+		
+		<body>
 
-				{% load staticfiles %}
-				<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/base.css'%}">
-				<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-				{% block javascript %}{% endblock %}
-			</body>
-		</div>
+			<nav class="nvbar navbar-inverse navbar-default">
+				<div class='container-fluid'>
+					<div class='navbar-header'>
+						<a class='navbar-brand' href="#">Switcheroo</a>
+					</div>
+					<ul class="nav navbar-nav navbar-right">
+							<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+					</ul>
+
+				<div class='container-fluid'>
+			</nav>	
+
+
+				<div class='content-area'>
+						{% block content %}<!-- default content text (typically empty) -->{% endblock %}
+			<!-- 				
+						<form action="" method="post">
+						{% csrf_token %}
+						<input type="submit" name="logout" value="logout">
+						</form> -->
+		
+						
+						{% block javascript %}{% endblock %}
+				</div>
+			</div>
+			
+		</body>
+		
 	</div>
 
 

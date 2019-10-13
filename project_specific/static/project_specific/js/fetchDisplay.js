@@ -24,12 +24,16 @@ function displayRequestResult(response) {
         let applicant = document.createElement('li')
         let receiver = document.createElement('li')
         let status = ""
+        let button_group = document.createElement('div')
+        button_group.setAttribute('class', 'pull-right')
         let cancelButton = document.createElement('button')
+        let status_title = document.createElement('h4')
+
         cancelButton.innerText = 'Cancel'
         cancelButton.setAttribute('onclick', 'cancelRequest(this)')
+        cancelButton.setAttribute('class', 'btn btn-danger')
+
         shift_item.setAttribute('data-created_time', processing['created'])
-        
-        
         shift_item.setAttribute('data-applicant_shift_start', processing['applicant_shift_start'])
         shift_item.setAttribute('data-applicant_shift_end', processing['applicant_shift_end'])
         shift_item.setAttribute('data-receiver_employee_id', processing['receiver_employee_id'])
@@ -48,23 +52,42 @@ function displayRequestResult(response) {
         applicant.innerText = `Own Schedule ${processing['applicant_shift_start']} to ${processing['applicant_shift_end']}`
         
         if (processing['responded']) {
-            status = `${processing['accept']}`
+            if (processing['accept']) {
+                status = 'Request Accepted'
+                status_title.setAttribute('class', 'alert alert-success')
+            } else {
+                status = 'Request Denied'
+                status_title.setAttribute('class', 'alert alert-danger')
+            }
+            
             if (processing['accept']) {
                 let acceptButton = document.createElement('button')
-                acceptButton.innerText = 'Accept'
+                acceptButton.innerText = 'Finalize'
                 acceptButton.setAttribute('onclick', 'finalizeSwap(this)')
-                shift_item.innerHTML = status
-                shift_item.appendChild(acceptButton)
-                shift_item.appendChild(cancelButton)
+                acceptButton.setAttribute('class', 'btn btn-success')
+                status_title.innerText = status
+                button_group.appendChild(acceptButton)
+                button_group.appendChild(cancelButton)
+                status_title.appendChild(button_group)
+                shift_item.appendChild(status_title)
+
             } else {
-                shift_item.innerHTML = status
-                shift_item.appendChild(cancelButton)
+                status_title.innerText = status
+                button_group.appendChild(cancelButton)
+                status_title.appendChild(button_group)
+                shift_item.appendChild(status_title)
+
             }
         } else {
             status = 'Status: Not Responded'
-            shift_item.innerHTML = status
-            shift_item.appendChild(cancelButton)
+            status_title.innerText = status
+            status_title.setAttribute('class', 'alert alert-info')
+            button_group.appendChild(cancelButton)
+            status_title.appendChild(button_group)
+            shift_item.appendChild(status_title)
+
         }
+        
         
         shift_item.appendChild(applicant)
         shift_item.appendChild(receiver)
@@ -97,10 +120,12 @@ function displaySwapResult (result, new_info=false) {
         let swapDateList = document.createElement('ul')
         let swapDateListContainer = document.createElement('div')
         swapDateListContainer.setAttribute('data-shift_start', `${date}`)
-        swapDateListContainer.innerText = date
-        swapDateListContainer = createCancelButton(swapDateListContainer)
+        let shift_title = document.createElement('h4')
+        shift_title.innerText = date
 
-        swapDateListContainer.classList.add('flexbox')
+        shift_title = createCancelButton(shift_title)
+        swapDateListContainer.appendChild(shift_title)
+
         swapDateList.appendChild(swapDateListContainer)
         if (response['success']) {
             let available_shifts = response['available_shifts']
@@ -122,7 +147,6 @@ function displaySwapResult (result, new_info=false) {
                     let info = document.createTextNode(`${employee_name} ${shift_start} to ${shift_end}`)
                     swaps.appendChild(info)
                     swaps = createAcceptRejectButton(swaps)
-                    swaps.classList.add('flexbox')
                     swapDateList.appendChild(swaps)
                 }
             } else if (response['available_people']) {
@@ -137,7 +161,6 @@ function displaySwapResult (result, new_info=false) {
                     let info = document.createTextNode(`Available: ${person['receiver_first_name']} ${person['receiver_last_name']}`)
                     swaps.appendChild(info)
                     swaps = createAcceptRejectButton(swaps)
-                    swaps.classList.add('flexbox')
                     swapDateList.appendChild(swaps)
                 }
             }
@@ -184,7 +207,10 @@ function displayVacationResult (response) {
         let cancelButton = document.createElement('button')
         cancelButton.innerText = 'Cancel'
         cancelButton.setAttribute('onclick', 'cancelVacation(this)')
-        let vacationDate = document.createTextNode(date)
+        cancelButton.setAttribute('class', 'btn pull-right')
+        let vacationDate = document.createElement('h4')
+        vacationDate.innerText = date
+        vacationDate.appendChild(cancelButton)
         vacationList.appendChild(vacationDate)
         vacationList.appendChild(cancelButton)
         for (detail in status) {
@@ -192,6 +218,14 @@ function displayVacationResult (response) {
             vacation_detail.innerText = `${detail}: ${status[detail]}`
             vacationList.appendChild(vacation_detail)
         }
+        if (status['Approved'] && (status['Rejected'] !== true)) {
+            vacationDate.setAttribute('class', 'alert alert-success')
+        } else if (status['Rejected'] && (status['Approved'] !== true)) {
+            vacationDate.setAttribute('class', 'alert alert-danger')
+        } else if (status['Delivered']) {
+            vacationDate.setAttribute('class', 'alert alert-info')
+        }
+        
         vacationResultContainer.appendChild(vacationList)
     }
 }

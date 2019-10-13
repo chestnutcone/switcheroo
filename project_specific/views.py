@@ -174,7 +174,9 @@ def swap_request_view(request):
                 if not (acceptor_error and requester_error):
                     request_exist = Request.objects.filter(applicant=requester).filter(
                         applicant_schedule=requester_shift[0]).exists()
-                    if not request_exist:
+                    vice_versa_request_exist = Request.objects.filter(applicant=acceptor).filter(
+                        applicant_schedule=acceptor_shift[0]).exists()
+                    if not (request_exist or vice_versa_request_exist):
                         request_queue = Request(applicant=requester,
                                                 receiver=acceptor,
                                                 applicant_schedule=requester_shift[0],
@@ -183,12 +185,12 @@ def swap_request_view(request):
                         status_detail = {'status': True,
                                          'acceptor_error': acceptor_error,
                                          'requester_error': requester_error,
-                                         'already_exist': request_exist}
+                                         'already_exist': (request_exist or vice_versa_request_exist)}
                     else:
                         status_detail = {'status': False,
                                          'acceptor_error': acceptor_error,
                                          'requester_error': requester_error,
-                                         'already_exist': request_exist}
+                                         'already_exist': (request_exist or vice_versa_request_exist)}
                 else:
                     status_detail = {'status': False,
                                      'acceptor_error': acceptor_error,
@@ -197,6 +199,7 @@ def swap_request_view(request):
             elif json_data['data']['data_type'] == 'people':
                 request_exist = Request.objects.filter(applicant=requester).filter(
                     applicant_schedule=requester_shift[0]).exists()
+
                 if not request_exist:
                     request_queue = Request(applicant=requester,
                                             receiver=acceptor,
@@ -417,16 +420,30 @@ def vacation_view(request):
         str_data = str_data.decode('utf-8')
         json_data = json.loads(str_data)
         if json_data['action'] == 'request_vacation':
-            vacation_date = [parse(date) for date in json_data['data']]
+            vacation_date = [parse(date).date() for date in json_data['data']]
             current_user = request.user
             person_instance = get_object_or_404(Employee, user=current_user)
             manager_instance = person_instance.group.owner
-            for vacation in vacation_date:
+            exist_vacation = VacationNotification.objects.filter(requester=person_instance)
+            exist_vacation_set = set()
+            for exist_request in exist_vacation:
+                exist_vacation_set.add(exist_request.date)
+            print('exist vacation', exist_vacation_set)
+            unregistered_vacation = set(vacation_date) - exist_vacation_set
+            print('unregistered vacation', unregistered_vacation)
+            overlap_requests = set(vacation_date).intersection(exist_vacation_set)
+            print('overlap request', overlap_requests)
+            for vacation in unregistered_vacation:
                 notification = VacationNotification(requester=person_instance,
                                                     assignee=manager_instance,
                                                     date=vacation)
                 notification.save()
-            return HttpResponse('registered')
+            json_overlap_requests = [str(d) for d in list(overlap_requests)]
+            json_registered_vacation = [str(d) for d in list(unregistered_vacation)]
+            data = {'overlap_requests': json_overlap_requests,
+                    'registered_vacation': json_registered_vacation}
+            print(json.dumps(data))
+            return HttpResponse(json.dumps(data), content_type='application/json')
         elif json_data['action'] == 'cancel':
             status = True
             error_detail = ''
@@ -451,9 +468,9 @@ def vacation_view(request):
             date__gte=today).order_by('-date')
         response = {}
         for vacation_request in vacation_requests:
-            response[str(vacation_request.date)] = {'approved': vacation_request.approved,
-                                                    'rejected': vacation_request.rejected,
-                                                    'delivered': vacation_request.delivered}
+            response[str(vacation_request.date)] = {'Approved': vacation_request.approved,
+                                                    'Rejected': vacation_request.rejected,
+                                                    'Delivered': vacation_request.delivered}
         return HttpResponse(json.dumps(response), content_type='application/json')
 
 
@@ -496,3 +513,11 @@ def schedule_view(request):
                 logger.exception('some error occured in schedule_view')
 
         return render(request, 'project_specific/manager_schedules_view.html', context=total_schedule)
+
+
+def logout_view(request):
+    if request.method == 'POST':
+        pass
+    elif request.method == 'GET':
+        logout(request)
+        return render(request, 'registration/logged_out.html')

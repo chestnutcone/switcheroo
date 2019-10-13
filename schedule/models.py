@@ -832,26 +832,49 @@ def clear_assign_and_swap():
         a.save()
     all_queue = SwapResult.objects.all()
     all_queue.delete()
+    all_request = Request.objects.all()
+    all_request.delete()
+    print('reset done')
+
+
+def reset_employee_schedule():
+    """For testing only, temporary"""
+    clear_assign_and_swap()
+    all_schedule = Assign.objects.all()
+    all_schedule.delete()
+    group1 = Group.objects.get(pk=1)
+    group1_e = Employee.objects.filter(group=group1)
+    group1_schedule = Schedule.objects.filter(group=group1)[1]
+    sfu = group1_e[0]
+    third = group1_e[1]
+    third.accept_swap = True
+    third.save()
+    start_date = datetime.date(2019,10,22)
+    set_schedule(sfu, start_date=start_date, shift_pattern=group1_schedule)
     print('reset done')
 
 
 def cancel_swap(person, shift_time):
     shift_instance = Assign.objects.filter(employee=person).filter(shift_start=shift_time)
     status = False
-    error = Assign.assure_one_and_same(shift_instance, shift_time, person)
-    if error:
-        return {'status': status,
-                'error': error}
+    if shift_instance.exists():
+        error = Assign.assure_one_and_same(shift_instance, shift_time, person)
+        if error:
+            return {'status': status,
+                    'error': error}
+        else:
+            single_shift_instance = shift_instance[0]
+            single_shift_instance.switch = False
+            single_shift_instance.save()
     else:
-        single_shift_instance = shift_instance[0]
-        single_shift_instance.switch = False
-        single_shift_instance.save()
-
+        status = True
+        error = 'shift already doesnt exist'
     try:
         swap_queue = SwapResult.objects.filter(applicant=person).get(shift_start=shift_time)
         swap_queue.delete()
         status = True
     except error as e:
-        error = e
+        error = error + str(e)
+
     return {'status': status,
             'error': error}

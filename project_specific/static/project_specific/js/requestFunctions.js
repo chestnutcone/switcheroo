@@ -1,11 +1,10 @@
-
-
 function cancelRequest(param) {
     // for applicant
-    let parent_element = param.parentNode
-    let created_time = parent_element.dataset.created_time
-    let requester_shift_start = parent_element.dataset.applicant_shift_start
+    let data_element = param.parentNode.parentNode.parentNode
+    let created_time = data_element.dataset.created_time
+    let requester_shift_start = data_element.dataset.applicant_shift_start
     let data = {'created':created_time, 'requester_shift_start':requester_shift_start}
+    console.log(data)
 
     let send_data = JSON.stringify({"action": "cancel", "data":data})
     let csrftoken = getCookie('csrftoken')
@@ -32,11 +31,11 @@ function cancelRequest(param) {
 
 function finalizeSwap(param) {
     // for applicant
-    let parent_element = param.parentNode
-    let created_time = parent_element.dataset.created_time
-    let requester_shift_start = parent_element.dataset.applicant_shift_start
-    let acceptor_shift_start = parent_element.dataset.receiver_shift_start
-    let acceptor_employee_id = parent_element.dataset.receiver_employee_id
+    let data_element = param.parentNode.parentNode.parentNode
+    let created_time = data_element.dataset.created_time
+    let requester_shift_start = data_element.dataset.applicant_shift_start
+    let acceptor_shift_start = data_element.dataset.receiver_shift_start
+    let acceptor_employee_id = data_element.dataset.receiver_employee_id
 
 
     let data = {'created':created_time, 'requester_shift_start':requester_shift_start,

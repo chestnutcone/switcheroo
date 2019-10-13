@@ -30,6 +30,8 @@ function displayReceiverRequestResult(response) {
 
         rejectButton.setAttribute('onclick', 'rejectRequest(this)')
         acceptButton.setAttribute('onclick', 'acceptRequest(this)')
+        rejectButton.setAttribute('class', 'btn btn-danger')
+        acceptButton.setAttribute('class', 'btn btn-success')
 
         shift_item.setAttribute('data-created_time', processing['created'])
         shift_item.setAttribute('data-applicant_shift_start', processing['applicant_shift_start'])
@@ -89,10 +91,10 @@ function rejectRequest(param) {
     // for receiver
     let parent_element = param.parentNode
     let created_time = parent_element.dataset.created_time
-    let requester_shift_start = parent_element.dataset.applicant_shift_start
-
-    let data = {'created':created_time, 'requester_shift_start':requester_shift_start}
-
+    let applicant_employee_id = parent_element.dataset.applicant_employee_id
+    // let requester_shift_start = parent_element.dataset.applicant_shift_start
+    // 'requester_shift_start':requester_shift_start
+    let data = {'created':created_time, 'applicant_employee_id': applicant_employee_id}
     let send_data = JSON.stringify({"action": "reject", "data":data})
     let csrftoken = getCookie('csrftoken')
     $.ajax({
@@ -104,6 +106,7 @@ function rejectRequest(param) {
         },
         dataType: 'json',
         success: function(result) {
+            console.log(result)
             if (result['status']) {
                 alert('Request rejected')
                 fetchReceiveRequestResult()

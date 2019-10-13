@@ -10,63 +10,77 @@
 {% endblock %}
 
 {% block content %}
-	<p>Welcome!  {{ name }}</p>
 
 	<div id='today-summary'>
 
 	</div>
 
-	<table>
-		<thead>
-			<tr>
-				<th width='14.286%'>Sun</th>
-				<th width='14.286%'>Mon</th>
-				<th width='14.286%'>Tues</th>
-				<th width='14.286%'>Wed</th>
-				<th width='14.286%'>Thurs</th>
-				<th width='14.286%'>Fri</th>
-				<th width='14.286%'>Sat</th>
-			</tr>
-		</thead>
-		<div id='curYear'></div>
-		<div id='curMonth'></div>
-		<h1 id='monthAndYear'></h1>
-		<tbody id='calendar-body'></tbody>	
-	</table>
+	<div id='pageDate'></div>
 
-	<div class='flexbox'>
-		<button id='previous' onclick='prev()'>Previous</button>
-		<button id='next' onclick="next()">Next</button>
+	<div class='row'>
+		<h1 id='monthAndYear' class="col-xs-7 col-sm-6 col col-md-4 col-lg-3 col-md-offset-2 col-lg-offset-3"></h1>
+		<div class='btn-group col-xs-5 col-sm-4 col-lg-4' id='calendar-button' role='group'>
+			<button id='previous' onclick='prev()' class='btn btn-secondary'>Prev</button>	
+			<button id='next' onclick="next()" class='btn btn-secondary'>Next</button>
+		</div>
 	</div>
 
-	<div id='event-container'>
-		<h1 id='event-date'></h1>
-	<ul id='event-detail'></ul>
+	<div class='row'>
+		<div class="col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3">
+			<table class="table table-borderless table-responsive">
+				<thead>
+					<tr>
+						<th width='14.286%' style='text-align: center'>Sun</th>
+						<th width='14.286%' style='text-align: center'>Mon</th>
+						<th width='14.286%' style='text-align: center'>Tues</th>
+						<th width='14.286%' style='text-align: center'>Wed</th>
+						<th width='14.286%' style='text-align: center'>Thurs</th>
+						<th width='14.286%' style='text-align: center'>Fri</th>
+						<th width='14.286%' style='text-align: center'>Sat</th>
+					</tr>
+				</thead>
+				<tbody id='calendar-body'></tbody>	
+			</table>	
+		</div>
+		<div class='col-xs-12 col-sm-4 col-md-4 col-lg-4'>
+			<div id='event-container'>
+				<h2 id='event-date'></h2>
+				<ul id='event-detail'></ul>
+			</div>
+		</div>
 	</div>
-	<button onclick="sendSwapDate()">Swap</button>
-	<button onclick="sendVacationDate()">Vacation</button>
+
+	<div class='row'>
+		<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+			<h2>Swap Requests<button onclick="sendSwapDate()" class='btn pull-right'>Swap</button></h2>
+			<div id='swapResult-container'>
+			</div>
+
+			<h2>Swap Request Status</h2>
+			<div id='swapRequest-container'>
+			</div>
+		</div>
+
+		<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+			<h2>Receive Swap</h2>
+			<div id='ReceiveRequest-container'></div>
+			<h2>Notification</h2>
+			<div id='notification-container'>
+			</div>
+		</div>
+
+		<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+			<h2>Vacation Requests<button onclick="sendVacationDate()" class='btn pull-right'>Vacation</button></h2>
+			<div id='vacationResult-container'>
+			</div>
+		</div>
+
+	</div>
+	
 	{{ dates|json_script:"shift_dates"}}
 	{{ shift_start|json_script:"shift_start" }}
 	{{ shift_end|json_script:"shift_end" }}
-	
-	<h1>Swap Requests</h1>
-	<div id='swapResult-container'>
-	</div>
 
-	<h1>Swap Request Status</h1>
-	<div id='swapRequest-container'>
-	</div>
-
-	<h1>Receive Swap</h1>
-	<div id='ReceiveRequest-container'></div>
-
-	<h1>Vacation Requests</h1>
-	<div id='vacationResult-container'>
-	</div>
-
-	<h1>Notification</h1>
-	<div id='notification-container'>
-	</div>
 {% endblock %}
 
 {% block javascript %}

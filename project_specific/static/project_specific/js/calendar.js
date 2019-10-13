@@ -84,16 +84,18 @@ function resetDateSelectionVariable () {
 }
 
 function next() {
-    let curYear = parseInt(document.getElementById('curYear').innerHTML)
-    let curMonth = parseInt(document.getElementById('curMonth').innerHTML)
+    let pageDate = document.getElementById('pageDate')
+    let curYear = parseInt(pageDate.dataset.year)
+    let curMonth = parseInt(pageDate.dataset.month)
     nextYear = (curMonth == 11) ? curYear +1: curYear
     nextMonth = (curMonth+1) % 12
     buildCalendar(nextYear, nextMonth)
 }
 
 function prev() {
-    let curYear = parseInt(document.getElementById('curYear').innerHTML)
-    let curMonth = parseInt(document.getElementById('curMonth').innerHTML)
+    let pageDate = document.getElementById('pageDate')
+    let curYear = parseInt(pageDate.dataset.year)
+    let curMonth = parseInt(pageDate.dataset.month)
     prevYear = (curMonth == 0) ? curYear -1: curYear
     prevMonth = (curMonth == 0) ? 11:curMonth-1
     buildCalendar(prevYear, prevMonth)
@@ -102,23 +104,26 @@ function prev() {
 
 function buildCalendar (year, month) {
     let calendarTable = document.getElementById('calendar-body')
-    calendarTable.innerHTML = ''
+    $('#calendar-body').empty()
+
+    let pageDate = document.getElementById('pageDate')
+    pageDate.setAttribute('data-month', month)
+    pageDate.setAttribute('data-year', year)
 
     let monthAndYear = document.getElementById('monthAndYear')
     monthAndYear.innerHTML = `${year} ${months[month]}`
-
-    let curYear = document.getElementById('curYear')
-    let curMonth = document.getElementById('curMonth')
-    curYear.innerHTML = year
-    curMonth.innerHTML = month
 
     cellRef = cellDate(year, month)
     for (let i = 0; i<6; i++) {
         let row = document.createElement('tr')
         for (let j = 0;  j <7; j++) {
             let cell = document.createElement('td')
+            let square_content = document.createElement('div')
+            square_content.setAttribute('class', 'square_content')
+
             cellText = document.createTextNode(cellRef[[i,j]])
-            cell.appendChild(cellText)
+            square_content.appendChild(cellText)
+            cell.appendChild(square_content)
             row.appendChild(cell)
         }
         calendarTable.appendChild(row)
@@ -129,8 +134,9 @@ function buildCalendar (year, month) {
 }
 
 function highlightShift (shift_dates) {
-    let curYear = parseInt(document.getElementById('curYear').innerHTML)
-    let curMonth = parseInt(document.getElementById('curMonth').innerHTML)
+    let pageDate = document.getElementById('pageDate')
+    let curYear = parseInt(pageDate.dataset.year)
+    let curMonth = parseInt(pageDate.dataset.month)
     let calendarTable = document.getElementById('calendar-body')
     calendarTable.removeAttribute('highlight')
 
@@ -195,8 +201,9 @@ let dateCol = 0
 let selected_dates = []
 
 function selectDate(){
-    let curYear = parseInt(document.getElementById('curYear').innerHTML)
-    let curMonth = parseInt(document.getElementById('curMonth').innerHTML)
+    let pageDate = document.getElementById('pageDate')
+    let curYear = parseInt(pageDate.dataset.year)
+    let curMonth = parseInt(pageDate.dataset.month)
     dateLookUp = cellDate(curYear, curMonth)
 
     selected_dates = []
@@ -344,7 +351,7 @@ function sendSwapDate (){
 
         let send_data = JSON.stringify({"action": "swap", "data":request_dates})
         let csrftoken = getCookie('csrftoken')
-        alert(`Swapping the following shifts: ${send_data}`)
+        alert(`Swapping the following shifts: ${request_dates}`)
         $.ajax({
             type: "POST",
             url: "/main/swap/",
@@ -362,7 +369,7 @@ function sendSwapDate (){
         if (filtered_dates.length != 0) {
             alert('no shifts to be swapped')
         } else {
-            alert('cannot swap shifts in the past')
+            alert('No dates selected')
         }
         
     }
@@ -384,8 +391,11 @@ function sendVacationDate(){
                 'X-CSRFToken': csrftoken
             },
             dataType: 'text',
-            success: function(msg) {
-                alert(msg)
+            success: function(data) {
+                let parse_data = JSON.parse(data)
+                if (parse_data['overlap_requests']) {
+                    alert(`The following dates are already in request: ${parse_data['overlap_requests']}`)
+                }
                 fetchVacationResult()
             },
             contentType:'application/json'
