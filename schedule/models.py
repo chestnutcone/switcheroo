@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.utils import timezone
 from people.models import Employee
-from user.models import Group
+from user.models import Group, CustomUser
 from .mock import *
 from project_specific.models import Organization
 from django.db.models import Q
@@ -12,8 +12,6 @@ from django.db.models import Q
 import logging
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import datetime
 import pytz
 
@@ -151,6 +149,37 @@ class Assign(models.Model):
         return result
 
     @staticmethod
+    def schedule_sort(schedules):
+        """
+
+        :param schedules: Queryset
+        :return: json serializable format
+        """
+        total_schedule = {}
+        for shift in schedules:
+            employee_id = shift.employee.user.employee_detail.employee_id
+            shift_start_date = str(shift.start_date)
+            daily_schedule = total_schedule.get(shift_start_date)
+            if daily_schedule:
+                daily_schedule[employee_id]['shift_start'].append(str(shift.shift_start))
+                daily_schedule[employee_id]['shift_end'].append(str(shift.shift_end))
+                daily_schedule['employee_count'] += 1
+            else:
+                total_schedule[shift_start_date] = {employee_id:{'first_name': str(shift.employee.user.first_name),
+                                                                 'last_name': str(shift.employee.user.last_name),
+                                                                 'shift_start': [str(shift.shift_start)],
+                                                                 'shift_end': [str(shift.shift_end)],
+                                                                 },
+                                                    'employee_count': 1}
+        daily_counts = [day['employee_count'] for day in total_schedule.values()]
+        max_count = max(daily_counts)
+        worker_bins = np.array([max_count*0.25, max_count*0.5, max_count*0.75])
+        for day in total_schedule.values():
+            day['daily_bin'] = int(np.digitize(day['employee_count'], worker_bins))
+
+        return total_schedule
+
+    @staticmethod
     def assure_one_and_same(shift_queryset, shift_time, person):
         # assure there is only one shift instance and is the same
         error = ''
@@ -185,6 +214,7 @@ class Assign(models.Model):
         if requester_status and acceptor_status:
             request_instance = Request.objects.filter(applicant=requester).get(created=request_timestamp)
             request_instance.delete()
+
             requester_swap_result = SwapResult.objects.filter(
                 applicant=requester).get(shift_start=requester_shift_start)
             requester_swap_result.delete()
@@ -194,13 +224,14 @@ class Assign(models.Model):
         else:
             if requester_status:
                 # delete newly created assign object
-                new_requester_shift = Assign.objects.filter(person=requester).get(shift_start=acceptor_shift_start)
+                new_requester_shift = Assign.objects.filter(employee=requester).get(shift_start=acceptor_shift_start)
                 new_requester_shift.delete()
             if acceptor_status:
-                new_acceptor_shift = Assign.objects.filter(person=acceptor).get(shift_start=requester_shift_start)
+                new_acceptor_shift = Assign.objects.filter(employee=acceptor).get(shift_start=requester_shift_start)
                 new_acceptor_shift.delete()
             total_status = False
-            error_detail = 'requester status detail: {}. acceptor status detail:{}'.format(requester_status_detail, acceptor_status_detail)
+            error_detail = 'requester status detail: {}. acceptor status detail:{}'.format(requester_status_detail,
+                                                                                           acceptor_status_detail)
         return total_status, error_detail
 
 
@@ -259,6 +290,9 @@ class Request(models.Model):
                                           on_delete=models.SET_NULL,
                                           null=True,
                                           related_name="receiver_shift")
+    manager = models.ForeignKey(CustomUser,
+                                on_delete=models.SET_NULL,
+                                null=True)
     # get creation timestamp for timeout purpose later
     created = models.DateTimeField(auto_now_add=True)
 
@@ -266,6 +300,36 @@ class Request(models.Model):
     accept = models.BooleanField(default=False)
     # is the action done?
     responded = models.BooleanField(default=False)
+    manager_responded = models.BooleanField(default=False)
+    manager_accept = models.BooleanField(default=False)
+
+    def json_format(self):
+        if self.receiver_schedule:
+            output = {'requester_name': '{} {}'.format(self.applicant.user.first_name,
+                                                       self.applicant.user.last_name),
+                      'requester_employee_id': str(self.applicant.user.employee_detail.employee_id),
+                      'acceptor_name': '{} {}'.format(self.receiver.user.first_name,
+                                                      self.receiver.user.last_name),
+                      'acceptor_employee_id': str(self.receiver.user.employee_detail.employee_id),
+                      'requester_shift_start': str(self.applicant_schedule.shift_start),
+                      'requester_shift_end': str(self.applicant_schedule.shift_end),
+                      'acceptor_shift_start': str(self.receiver_schedule.shift_start),
+                      'acceptor_shift_end': str(self.receiver_schedule.shift_end),
+                      'created': str(self.created)}
+        else:
+            output = {'requester_name': '{} {}'.format(self.applicant.user.first_name,
+                                                       self.applicant.user.last_name),
+                      'requester_employee_id': str(self.applicant.user.employee_detail.employee_id),
+                      'acceptor_name': '{} {}'.format(self.receiver.user.first_name,
+                                                      self.receiver.user.last_name),
+                      'acceptor_employee_id': str(self.receiver.user.employee_detail.employee_id),
+                      'requester_shift_start': str(self.applicant_schedule.shift_start),
+                      'requester_shift_end': str(self.applicant_schedule.shift_end),
+                      'acceptor_shift_start': '',
+                      'acceptor_shift_end': '',
+                      'created': str(self.created)}
+        return output
+
 
 
 def get_schedule(person):
@@ -849,7 +913,7 @@ def reset_employee_schedule():
     third = group1_e[1]
     third.accept_swap = True
     third.save()
-    start_date = datetime.date(2019,10,22)
+    start_date = datetime.date(2019, 10, 22)
     set_schedule(sfu, start_date=start_date, shift_pattern=group1_schedule)
     print('reset done')
 
@@ -868,12 +932,16 @@ def cancel_swap(person, shift_time):
             single_shift_instance.save()
     else:
         status = True
-        error = 'shift already doesnt exist'
+        error = 'Shift already doesnt exist.'
     try:
-        swap_queue = SwapResult.objects.filter(applicant=person).get(shift_start=shift_time)
-        swap_queue.delete()
-        status = True
-    except error as e:
+        swap_queue = SwapResult.objects.filter(applicant=person).filter(shift_start=shift_time)
+        if swap_queue.exists():
+            swap_queue.delete()
+            status = True
+        else:
+            status = False
+            error += 'Swap request already cancelled'
+    except Exception as e:
         error = error + str(e)
 
     return {'status': status,

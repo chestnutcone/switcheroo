@@ -1,0 +1,116 @@
+{% extends "project_specific\base_generic.html" %}
+
+
+{% block title %}
+<title>Profile</title>
+{% endblock %}
+
+{% block sidebar %}
+{% endblock %}
+
+{% block navbar %}
+<nav class="nvbar navbar-inverse navbar-default">
+	<div class='container-fluid'>
+		<div class='navbar-header'>
+			<a class='navbar-brand' href="#">Switcheroo</a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li><a href="#">Assign</a></li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Setup<span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="#">People</a></li>
+                <li><a href="#">Schedule</a></li>
+              </ul>
+            </li>
+        </ul>
+        
+		<ul class="nav navbar-nav navbar-right">
+				<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+		</ul>
+
+	<div class='container-fluid'>
+</nav>	
+{% endblock %}
+
+{% block content %}
+<div id='pageDate'></div>
+
+<div class='row'>
+    <h1 id='monthAndYear' class="col-xs-7 col-sm-6 col col-md-4 col-lg-2" style="background-color:burlywood;"></h1>
+    <div class='btn-group col-xs-5 col-sm-4 col-lg-2' id='calendar-button' role='group' style='background-color: blue;'>
+        <button id='next' onclick="next()" class='btn btn-secondary pull-right'>Next</button>
+        <button id='previous' onclick='prev()' class='btn btn-secondary pull-right'>Prev</button>	
+    </div>
+
+    <div class='col-xs-12 col-sm-12 col-md-4 col-lg-4' style='background-color: chocolate;'>
+        <h1>Daily Summary</h1>
+    </div>
+
+    <div class='col-xs-12 col-sm-12 col-md-4 col-lg-4' style='background-color:cyan;'>
+        <h1>Schedule Stats</h1>
+    </div>
+</div>
+
+<div class='row'>
+    <div class="col-xs-12 col-sm-8 col-md-6 col-lg-4">
+        <table class="table table-borderless table-responsive">
+            <thead>
+                <tr>
+                    <th width='14.286%' style='text-align: center'>Sun</th>
+                    <th width='14.286%' style='text-align: center'>Mon</th>
+                    <th width='14.286%' style='text-align: center'>Tues</th>
+                    <th width='14.286%' style='text-align: center'>Wed</th>
+                    <th width='14.286%' style='text-align: center'>Thurs</th>
+                    <th width='14.286%' style='text-align: center'>Fri</th>
+                    <th width='14.286%' style='text-align: center'>Sat</th>
+                </tr>
+            </thead>
+            <tbody id='calendar-body'></tbody>	
+        </table>	
+    </div>
+
+    <div id='today-summary' class="col-xs-12 col-sm-4 col-md-6 col-lg-4" style="background-color: cornflowerblue;">
+        
+    </div>
+    
+    <div id='statistics' class="col-xs-12 col-sm-4 col-md-6 col-lg-4"></div>
+</div>
+
+<div class='row'>
+    <div class='col-xs-12 col-sm-8 col-md-6 col-lg-4'>
+        <h1>Swap Requests</h1>
+    </div>
+
+    <div class='col-xs-12 col-sm-8 col-md-6 col-lg-4' style="background-color:darkgray">
+        <h1>Vacation Requests</h1>
+    </div>
+    <div class='col-xs-12 col-sm-8 col-md-6 col-lg-4'>
+        <h1>Personal Stats</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div id='incoming-swap-requests' class='col-xs-12 col-sm-8 col-md-6 col-lg-4'>
+        
+    </div>
+
+    <div id='incoming-vacation-requests' class='col-xs-12 col-sm-8 col-md-6 col-lg-4'>
+        
+    </div>
+
+    <div id='personal-stats' class='col-xs-12 col-sm-8 col-md-6 col-lg-4'>
+        
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+    {% load staticfiles %}
+    <script src="{% static 'project_specific/js/managerVariable.js'%}"></script>
+    <script src="{% static 'project_specific/js/manager_calendar.js'%}"></script>
+    <script src="{% static 'project_specific/js/manager_vacationFunctions.js'%}"></script>
+    <script src="{% static 'project_specific/js/manager_fetchDisplay.js'%}"></script>
+	<script src="{% static 'project_specific/js/daySummary.js'%}"></script>
+	
+{% endblock %}

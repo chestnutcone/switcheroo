@@ -47,6 +47,7 @@ function cancelSwapShift (param) {
                     fetchSwapResult()
                 } else {
                     alert(result['error'])
+                    fetchSwapResult()
                 }
             },
             contentType:'application/json'
@@ -55,12 +56,12 @@ function cancelSwapShift (param) {
 }
 
 function applyRequest (param) {
-    let parent_element = param.parentNode
-    let requester_shift_start = parent_element.parentNode.parentNode.firstChild.dataset.shift_start
-    let acceptor_employee_id = parent_element.parentNode.dataset.receiver_employee_id
-    let dataType = parent_element.parentNode.dataset.datatype
+    let parent_element = param.parentNode.parentNode
+    let requester_shift_start = parent_element.parentNode.firstChild.dataset.shift_start
+    let acceptor_employee_id = parent_element.dataset.receiver_employee_id
+    let dataType = parent_element.dataset.datatype
     if (dataType == 'shift') {
-        let acceptor_shift_start = parent_element.parentNode.dataset.receiver_shift_start
+        let acceptor_shift_start = parent_element.dataset.receiver_shift_start
         var data = {'acceptor_shift_start': acceptor_shift_start,
         'acceptor_employee_id': acceptor_employee_id,
         'requester_shift_start': requester_shift_start,}

@@ -17,4 +17,7 @@ urlpatterns = [
         path('vacation/', views.vacation_view, name='vacation_view'),
         path('swap/request', views.swap_request_view, name='swap_request'),
         path('swap/receive', views.receive_request_view, name='receive_swap'),
+        path('manager/', views.manager_profile_view, name='manager_view'),
+        path('manager/vacation', views.manager_vacation_view, name='manager_vacation_view'),
+        path('manager/request', views.manager_request_view, name='manager_request_view'),
         ]

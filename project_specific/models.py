@@ -37,8 +37,18 @@ class VacationNotification(models.Model):
                                  on_delete=models.CASCADE,
                                  null=True)
     date = models.DateField()
+    schedule_conflict = models.BooleanField(default=False)
     approved = models.BooleanField(default=False)
-    rejected = models.BooleanField(default=False)
+    responded = models.BooleanField(default=False)
     delivered = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     expired = models.BooleanField(default=False)
+
+    def json_format(self):
+        output = {'requester_name': '{} {}'.format(self.requester.user.first_name,
+                                                   self.requester.user.last_name),
+                  'requester_employee_id': str(self.requester.user.employee_detail.employee_id),
+                  'date': str(self.date),
+                  'schedule_conflict': str(self.schedule_conflict),
+                  }
+        return output

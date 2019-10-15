@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
-from schedule.models import get_schedule, swap, SwapResult, cancel_swap, Request, Assign, set_schedule_day
+from schedule.models import *
 from people.models import Employee
 from user.models import Group, EmployeeID, CustomUser
 from project_specific.models import VacationNotification
@@ -33,10 +33,6 @@ if not logger.handlers:
 @login_required
 def profile_view(request):
     if request.method == 'POST':
-
-        if request.POST.get("logout"):
-            logout(request)
-            return render(request, 'registration/logged_out.html')
         if request.POST.get("swap"):
             return HttpResponseRedirect(reverse('swap'))
     else:
@@ -51,7 +47,7 @@ def profile_view(request):
                 return HttpResponseRedirect(reverse('group'))
             elif current_user.employee_detail.is_manager:
                 # if not superuser and is manager, and has a group, redirect to admin
-                return HttpResponseRedirect('/admin/')
+                return HttpResponseRedirect('manager/')
 
         # will throw index error if the user is not registered under Employee
         try:
@@ -79,9 +75,6 @@ def profile_view(request):
 def swap_view(request):
     """the view page for swapping shift"""
     if request.method == 'POST':
-        if request.POST.get("logout"):
-            logout(request)
-            return render(request, 'registration/logged_out.html')
         str_data = request.body
         str_data = str_data.decode('utf-8')
         json_data = json.loads(str_data)
@@ -94,23 +87,29 @@ def swap_view(request):
             for start_time in shift_start_time:
                 # check if shift is already being switched
                 timezone_start_time = pytz.UTC.localize(start_time)
-                result = swap(person=person_instance, swap_shift_start=start_time)
-                if result['success']:
-                    if result['available_shifts']:
-                        result['available_shifts'].order_by('employee', '-start_date')
-                        result['available_shifts'] = [output_shift.json_format()
-                                                      for output_shift in result['available_shifts']]
-                    elif result['available_people']:
-                        available_people = result['available_people']
-                        available_people_dict = [{'receiver_employee_id':str(p.user.employee_detail.employee_id),
-                                                  'receiver_first_name':str(p.user.first_name),
-                                                  'receiver_last_name':str(p.user.last_name)} for p in available_people]
-                        result['available_people'] = available_people_dict
-                total_result[str(timezone_start_time)] = result
-                store_data = SwapResult(applicant=person_instance,
-                                        shift_start=timezone_start_time,
-                                        json_data=json.dumps(result))
-                store_data.save()
+                exist_swap = SwapResult.objects.filter(
+                    applicant=person_instance).filter(shift_start=timezone_start_time).exists()
+                if not exist_swap:
+                    result = swap(person=person_instance, swap_shift_start=start_time)
+                    if result['success']:
+                        if result['available_shifts']:
+                            result['available_shifts'].order_by('employee', '-start_date')
+                            result['available_shifts'] = [output_shift.json_format()
+                                                          for output_shift in result['available_shifts']]
+                        elif result['available_people']:
+                            available_people = result['available_people']
+                            available_people_dict = [{'receiver_employee_id':str(p.user.employee_detail.employee_id),
+                                                      'receiver_first_name':str(p.user.first_name),
+                                                      'receiver_last_name':str(p.user.last_name)} for p in available_people]
+                            result['available_people'] = available_people_dict
+                    total_result[str(timezone_start_time)] = result
+                    store_data = SwapResult(applicant=person_instance,
+                                            shift_start=timezone_start_time,
+                                            json_data=json.dumps(result))
+                    store_data.save()
+                else:
+                    total_result[str(timezone_start_time)] = {'error': True,
+                                                              'error_detail': 'shift is already being swapped'}
             return HttpResponse(json.dumps(total_result), content_type='application/json')
         elif json_data['action'] == 'cancel':
             cancel_shift_start = json_data['data']
@@ -135,9 +134,6 @@ def swap_view(request):
 @login_required
 def swap_request_view(request):
     if request.method == 'POST':
-        if request.POST.get("logout"):
-            logout(request)
-            return render(request, 'registration/logged_out.html')
         str_data = request.body
         str_data = str_data.decode('utf-8')
         json_data = json.loads(str_data)
@@ -167,6 +163,7 @@ def swap_request_view(request):
                                  'data_type': json_data['data']['data_type']}
                 return HttpResponse(json.dumps(status_detail), content_type='application/json')
             if json_data['data']['data_type'] == 'shift':
+                print('json data', json_data['data'])
                 acceptor_shift_start = parse(acceptor_data['acceptor_shift_start'])
                 acceptor_shift = Assign.objects.filter(employee=acceptor).filter(shift_start=acceptor_shift_start)
                 acceptor_error = Assign.assure_one_and_same(acceptor_shift, acceptor_shift_start, acceptor)
@@ -180,7 +177,8 @@ def swap_request_view(request):
                         request_queue = Request(applicant=requester,
                                                 receiver=acceptor,
                                                 applicant_schedule=requester_shift[0],
-                                                receiver_schedule=acceptor_shift[0])
+                                                receiver_schedule=acceptor_shift[0],
+                                                manager=requester.user.group.owner)
                         request_queue.save()
                         status_detail = {'status': True,
                                          'acceptor_error': acceptor_error,
@@ -204,7 +202,8 @@ def swap_request_view(request):
                     request_queue = Request(applicant=requester,
                                             receiver=acceptor,
                                             applicant_schedule=requester_shift[0],
-                                            receiver_schedule=None)
+                                            receiver_schedule=None,
+                                            manager=requester.user.group.owner)
                     request_queue.save()
                     status_detail = {'status': True,
                                      'acceptor_error':'',
@@ -239,6 +238,23 @@ def swap_request_view(request):
                 status = False
             status_detail = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
+        elif json_data['action'] == 'reject':
+            created_timestamp = json_data['data']['created']
+            created_timestamp = parse(created_timestamp)
+
+            requester_employee_id = int(json_data['data']['requester_employee_id'])
+            requester_employee_detail = EmployeeID.objects.get(pk=requester_employee_id)
+            requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
+            requester = Employee.objects.get(user=requester_user)
+
+            swap_request = Request.objects.filter(
+                applicant=requester).get(created=created_timestamp)
+
+            swap_request.manager_responded = True
+            swap_request.save()
+            print('action done')
+            return HttpResponse('request rejected')
+
         elif json_data['action'] == 'finalize':
             created_timestamp = json_data['data']['created']
             created_timestamp = parse(created_timestamp)
@@ -255,17 +271,20 @@ def swap_request_view(request):
             acceptor_user = CustomUser.objects.get(employee_detail=acceptor_employee_detail)
             acceptor = Employee.objects.get(user=acceptor_user)
 
-            current_user = request.user
-            requester = Employee.objects.filter(user__exact=current_user)[0]
-            try:
-                status, error_detail = Assign.finalize_swap(requester=requester,
-                                                            requester_shift_start=requester_shift_start,
-                                                            acceptor=acceptor,
-                                                            acceptor_shift_start=acceptor_shift_start,
-                                                            request_timestamp=created_timestamp)
-            except Exception as e:
-                error_detail = str(e)
-                status = False
+            requester_employee_id = int(json_data['data']['requester_employee_id'])
+            requester_employee_detail = EmployeeID.objects.get(pk=requester_employee_id)
+            requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
+            requester = Employee.objects.get(user=requester_user)
+
+            # try:
+            status, error_detail = Assign.finalize_swap(requester=requester,
+                                                        requester_shift_start=requester_shift_start,
+                                                        acceptor=acceptor,
+                                                        acceptor_shift_start=acceptor_shift_start,
+                                                        request_timestamp=created_timestamp)
+            # except Exception as e:
+            #     error_detail = str(e)
+            #     status = False
             status_detail = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
@@ -286,7 +305,8 @@ def swap_request_view(request):
                                                                processing.receiver.user.employee_detail.employee_id),
                                                            'accept': processing.accept,
                                                            'responded': processing.responded,
-                                                           'created': str(processing.created)}
+                                                           'created': str(processing.created),
+                                                           'manager_responded': str(processing.manager_responded)}
             else:
                 total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
                                                            'applicant_shift_end': str(applicant_schedule.shift_end),
@@ -296,7 +316,9 @@ def swap_request_view(request):
                                                                processing.receiver.user.employee_detail.employee_id),
                                                            'accept': processing.accept,
                                                            'responded': processing.responded,
-                                                           'created': str(processing.created)}
+                                                           'created': str(processing.created),
+                                                           'manager_responded': str(processing.manager_responded)
+                                                           }
         return HttpResponse(json.dumps(total_requests), content_type='application/json')
 
 
@@ -424,25 +446,24 @@ def vacation_view(request):
             current_user = request.user
             person_instance = get_object_or_404(Employee, user=current_user)
             manager_instance = person_instance.group.owner
+            person_schedule = Assign.objects.filter(employee=person_instance)
             exist_vacation = VacationNotification.objects.filter(requester=person_instance)
             exist_vacation_set = set()
             for exist_request in exist_vacation:
                 exist_vacation_set.add(exist_request.date)
-            print('exist vacation', exist_vacation_set)
             unregistered_vacation = set(vacation_date) - exist_vacation_set
-            print('unregistered vacation', unregistered_vacation)
             overlap_requests = set(vacation_date).intersection(exist_vacation_set)
-            print('overlap request', overlap_requests)
             for vacation in unregistered_vacation:
+                schedule_conflict = person_schedule.filter(start_date=vacation).exists()
                 notification = VacationNotification(requester=person_instance,
                                                     assignee=manager_instance,
-                                                    date=vacation)
+                                                    date=vacation,
+                                                    schedule_conflict=schedule_conflict)
                 notification.save()
             json_overlap_requests = [str(d) for d in list(overlap_requests)]
             json_registered_vacation = [str(d) for d in list(unregistered_vacation)]
             data = {'overlap_requests': json_overlap_requests,
                     'registered_vacation': json_registered_vacation}
-            print(json.dumps(data))
             return HttpResponse(json.dumps(data), content_type='application/json')
         elif json_data['action'] == 'cancel':
             status = True
@@ -466,12 +487,18 @@ def vacation_view(request):
         today = datetime.datetime.now().date()
         vacation_requests = VacationNotification.objects.filter(requester=person_instance).filter(
             date__gte=today).order_by('-date')
+        total_response = {}
         response = {}
         for vacation_request in vacation_requests:
             response[str(vacation_request.date)] = {'Approved': vacation_request.approved,
-                                                    'Rejected': vacation_request.rejected,
+                                                    'Responded': vacation_request.responded,
                                                     'Delivered': vacation_request.delivered}
-        return HttpResponse(json.dumps(response), content_type='application/json')
+        approved_vacation = Vacation.objects.filter(employee=person_instance)
+        approved_dates = [str(v.date) for v in approved_vacation]
+        total_response['queue'] = response
+        total_response['approved'] = approved_dates
+
+        return HttpResponse(json.dumps(total_response), content_type='application/json')
 
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
@@ -483,37 +510,82 @@ def schedule_view(request):
     :return:
     """
     if request.method == "POST":
-        if request.POST.get("logout"):
-            logout(request)
-            return render(request, 'registration/logged_out.html')
-
-    else:
+        pass
+    elif request.method == 'GET':
+        start_date = parse(request.GET['start_date'])
+        end_date = parse(request.GET['end_date'])
         # get employee belonging to manager
         employees = Employee.objects.all().filter(group=request.user.group)
-        total_schedule = {'name': request.user.first_name, 'schedules': []}
-        for employee in employees:
-            try:
-                schedule = get_schedule(employee)
-                if schedule:
-                    dates = []
-                    shift_start = []
-                    shift_end = []
-                    for s in schedule:
-                        dates.append(s.start_date.strftime("%Y/%m/%d"))
-                        shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
-                        shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
-                    context = {
-                        'dates': dates,
-                        'shift_start': shift_start,
-                        'shift_end': shift_end,
-                        'name': str(employee),
-                    }
-                    total_schedule['schedules'].append(context)
-            except IndexError:
-                logger.exception('some error occured in schedule_view')
+        employee_schedule = Assign.objects.filter(
+            employee__in=employees).filter(
+            start_date__gte=start_date).filter(start_date__lte=end_date)
+        json_employee_schedule = Assign.schedule_sort(employee_schedule)
+        return HttpResponse(json.dumps(json_employee_schedule), content_type='application/json')
 
-        return render(request, 'project_specific/manager_schedules_view.html', context=total_schedule)
 
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def manager_profile_view(request):
+    if request.method == 'POST':
+        pass
+    elif request.method == 'GET':
+        return render(request, 'project_specific/manager_profile.html')
+
+
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def manager_vacation_view(request):
+    if request.method == 'POST':
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        status = True
+        error_detail = ''
+        try:
+            requester_employee_id = int(json_data['data']['requester_employee_id'])
+            requester_employee_detail = EmployeeID.objects.get(pk=requester_employee_id)
+            requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
+            requester = Employee.objects.get(user=requester_user)
+
+            request_date = parse(json_data['data']['request_date'])
+            vacation = VacationNotification.objects.filter(expired=False).filter(
+                assignee=request.user).filter(requester=requester).get(date=request_date)
+            vacation.responded = True
+            if json_data['action'] == 'accept':
+                vacation.approved = True
+                set_vacation = Vacation(date=request_date,
+                                        employee=requester,
+                                        group=requester.group)
+                set_vacation.save()
+            elif json_data['action'] == 'reject':
+                pass
+            vacation.save()
+        except Exception as e:
+            status = False
+            error_detail = str(e)
+
+        output = {'status': status, 'error_detail': error_detail}
+        return HttpResponse(json.dumps(output), content_type='application/json')
+
+    elif request.method == 'GET':
+        current_user = request.user
+        unchecked_vacation = VacationNotification.objects.filter(
+            assignee=current_user).filter(approved=False).filter(responded=False)
+        for v in unchecked_vacation:
+            v.delivered = True
+            v.save()
+        total_unchecked_list = [v.json_format() for v in unchecked_vacation]
+        return HttpResponse(json.dumps(total_unchecked_list), content_type='application/json')
+
+
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def manager_request_view(request):
+    if request.method == 'POST':
+        pass
+    elif request.method == "GET":
+        current_user = request.user
+        unanswered_requests = Request.objects.filter(
+            manager=current_user).filter(manager_responded=False).filter(responded=True)
+        total_response = [v.json_format() for v in unanswered_requests]
+        return HttpResponse(json.dumps(total_response), content_type='application/json')
 
 def logout_view(request):
     if request.method == 'POST':

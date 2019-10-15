@@ -1,12 +1,9 @@
-let shift_dates = JSON.parse(document.getElementById('shift_dates').textContent)
-let shift_start = JSON.parse(document.getElementById('shift_start').textContent)
-let shift_end = JSON.parse(document.getElementById('shift_end').textContent)
-
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 let today = new Date()
 month = today.getMonth()
 year = today.getFullYear()
+let vacationDates = []
 
 function daysInMonth(year, month) {
     return 32 - new Date(year, month, 32).getDate()
@@ -129,6 +126,7 @@ function buildCalendar (year, month) {
         calendarTable.appendChild(row)
     }
     highlightShift(shift_dates)
+    highlightVacationDates()
     resetDateSelectionVariable()
     $('#calendar-body td').click(selectDate)
 }
@@ -149,9 +147,36 @@ function highlightShift (shift_dates) {
     }
 }
 
-function formatMonth (month_variable) {
+function highlightVacationDates () {
+    let calendarTable = document.getElementById('calendar-body')
+    calendarTable.removeAttribute('vacation-highlight')
+    let calendar_date_range = findDateRange()
+    let start_date = new Date(calendar_date_range['start_date'])
+    let end_date = new Date(calendar_date_range['end_date'])
+    let pageDate = document.getElementById('pageDate')
+    let curYear = parseInt(pageDate.dataset.year)
+    let curMonth = parseInt(pageDate.dataset.month)
+    let reverseLookUp = reverseCellDate (curYear, curMonth)
+    for (v in vacationDates)  {
+        let vacation_date = new Date(vacationDates[v])
+        if (start_date <= vacation_date && vacation_date <= end_date) {
+            let str_vacation_date = vacationDates[v].replace(/-/g, '/')
+            let cellLocation = reverseLookUp[str_vacation_date]
+
+            $('#calendar-body tr').eq(cellLocation[0]).find('td').eq(cellLocation[1]).addClass('vacation-highlight')
+        }
+
+    }
+}
+
+function formatMonth (month_variable, add_one=true) {
 // will add one to the js 0-indexed months. Also, 8 => 09. return as str
-    mod_month = ((month_variable+1)<10) ? `0${month_variable+1}`: `${month_variable+1}`
+    if (add_one) {
+        mod_month = ((month_variable+1)<10) ? `0${month_variable+1}`: `${month_variable+1}`
+    } else {
+        mod_month = ((month_variable)<10) ? `0${month_variable}`: `${month_variable}`
+    }
+    
     return mod_month
 }
 
@@ -180,6 +205,18 @@ function formatDateTime (row, date, curYear, curMonth) {
         date_selected = `${curYear}/${str_curMonth}/${str_date}`
     }
     return date_selected
+}
+
+function findDateRange() {
+    let pageDate = document.getElementById('pageDate')
+    let curYear = parseInt(pageDate.dataset.year)
+    let curMonth = parseInt(pageDate.dataset.month)
+    let cellRef = cellDate(curYear, curMonth)
+
+    let start_date = formatDateTime(0,cellRef[[0,0]],curYear, curMonth)
+    let end_date = formatDateTime(5,cellRef[[5,6]], curYear, curMonth)
+
+    return {'start_date': start_date, 'end_date': end_date}
 }
 
 function readWriteDate (row, date, curYear, curMonth, selected_dates, write=false) {
@@ -393,7 +430,7 @@ function sendVacationDate(){
             dataType: 'text',
             success: function(data) {
                 let parse_data = JSON.parse(data)
-                if (parse_data['overlap_requests']) {
+                if (parse_data['overlap_requests'].length !== 0) {
                     alert(`The following dates are already in request: ${parse_data['overlap_requests']}`)
                 }
                 fetchVacationResult()
@@ -402,7 +439,7 @@ function sendVacationDate(){
         })
     } else {
         if (selected_dates.length != 0) {
-            alert('cannot swap shifts in the past')
+            alert('cannot request dates in the past')
         } else {
             alert('no dates to be send')
         }

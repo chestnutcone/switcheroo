@@ -70,6 +70,21 @@ td .square_content {
 .highlight {
   background-color: #D8C3A5; }
 
+.vacation-highlight {
+  background-color: #4287f5; }
+
+.highlight-level1 {
+  background-color: white; }
+
+.highlight-level2 {
+  background-color: #aafaac; }
+
+.highlight-level3 {
+  background-color: #31f335; }
+
+.highlight-level4 {
+  background-color: #099c0c; }
+
 .hidden {
   display: none; }
 

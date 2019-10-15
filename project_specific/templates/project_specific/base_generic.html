@@ -17,8 +17,8 @@
 
 		
 		<body>
-
-			<nav class="nvbar navbar-inverse navbar-default">
+			{% block navbar %}{% endblock %}
+			<!-- <nav class="nvbar navbar-inverse navbar-default">
 				<div class='container-fluid'>
 					<div class='navbar-header'>
 						<a class='navbar-brand' href="#">Switcheroo</a>
@@ -28,17 +28,12 @@
 					</ul>
 
 				<div class='container-fluid'>
-			</nav>	
+			</nav>	 -->
 
 
 				<div class='content-area'>
 						{% block content %}<!-- default content text (typically empty) -->{% endblock %}
-			<!-- 				
-						<form action="" method="post">
-						{% csrf_token %}
-						<input type="submit" name="logout" value="logout">
-						</form> -->
-		
+
 						
 						{% block javascript %}{% endblock %}
 				</div>

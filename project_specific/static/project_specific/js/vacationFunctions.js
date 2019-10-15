@@ -1,4 +1,3 @@
-
 function cancelVacation(param) {
     let parent_element = param.parentNode
     let vacation_date = parent_element.firstChild.textContent
@@ -16,7 +15,6 @@ function cancelVacation(param) {
         dataType: 'json',
         success: function(result) {
             if (result['status']) {
-                alert('Vacation cancelled')
                 fetchVacationResult()
             }
         },

@@ -52,21 +52,20 @@ function displayRequestResult(response) {
         applicant.innerText = `Own Schedule ${processing['applicant_shift_start']} to ${processing['applicant_shift_end']}`
         
         if (processing['responded']) {
-            if (processing['accept']) {
-                status = 'Request Accepted'
-                status_title.setAttribute('class', 'alert alert-success')
-            } else {
-                status = 'Request Denied'
-                status_title.setAttribute('class', 'alert alert-danger')
-            }
             
             if (processing['accept']) {
-                let acceptButton = document.createElement('button')
-                acceptButton.innerText = 'Finalize'
-                acceptButton.setAttribute('onclick', 'finalizeSwap(this)')
-                acceptButton.setAttribute('class', 'btn btn-success')
+                if (processing['manager_responded'] == "True") {
+                    if (processing['manager_accept']) {
+                        // will never reach this step since Request object is deleted as soon as action is approved
+                    } else {
+                        status = 'Request Denied'
+                        status_title.setAttribute('class', 'alert alert-danger')
+                    } 
+                } else {
+                    status = 'Awaiting Approval'
+                    status_title.setAttribute('class', 'alert alert-warning')
+                }
                 status_title.innerText = status
-                button_group.appendChild(acceptButton)
                 button_group.appendChild(cancelButton)
                 status_title.appendChild(button_group)
                 shift_item.appendChild(status_title)
@@ -87,8 +86,6 @@ function displayRequestResult(response) {
             shift_item.appendChild(status_title)
 
         }
-        
-        
         shift_item.appendChild(applicant)
         shift_item.appendChild(receiver)
         
@@ -173,7 +170,6 @@ function displaySwapResult (result, new_info=false) {
                 let info = document.createTextNode(response['error_detail'])
                 swaps.appendChild(info)
                 swapDateList.appendChild(swaps)
-            
             } else {
                 let info = document.createTextNode('cannot find anyone to swap')
                 swaps.appendChild(info)
@@ -192,7 +188,9 @@ function fetchVacationResult () {
         url: "/main/vacation/",
         dataType: 'json',
         success: function(response) {
-            displayVacationResult(response)
+            displayVacationResult(response['queue'])
+            vacationDates = response['approved']
+            highlightVacationDates()
         },
         contentType:'application/json'
     })
@@ -208,6 +206,7 @@ function displayVacationResult (response) {
         cancelButton.innerText = 'Cancel'
         cancelButton.setAttribute('onclick', 'cancelVacation(this)')
         cancelButton.setAttribute('class', 'btn pull-right')
+        
         let vacationDate = document.createElement('h4')
         vacationDate.innerText = date
         vacationDate.appendChild(cancelButton)
@@ -218,12 +217,17 @@ function displayVacationResult (response) {
             vacation_detail.innerText = `${detail}: ${status[detail]}`
             vacationList.appendChild(vacation_detail)
         }
-        if (status['Approved'] && (status['Rejected'] !== true)) {
-            vacationDate.setAttribute('class', 'alert alert-success')
-        } else if (status['Rejected'] && (status['Approved'] !== true)) {
-            vacationDate.setAttribute('class', 'alert alert-danger')
-        } else if (status['Delivered']) {
+
+        if (status['Responded']) {
+            if (status['Approved']) {
+                vacationDate.setAttribute('class', 'alert alert-success')
+                cancelButton.innerText = 'Remove'
+            } else {
+                vacationDate.setAttribute('class', 'alert alert-danger')
+            } 
+        } else {
             vacationDate.setAttribute('class', 'alert alert-info')
+            
         }
         
         vacationResultContainer.appendChild(vacationList)
