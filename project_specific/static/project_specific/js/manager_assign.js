@@ -1,3 +1,7 @@
+let employee_dict = JSON.parse(document.getElementById('employees').textContent)
+let shift_dict = JSON.parse(document.getElementById('shifts').textContent)
+let schedule_dict = JSON.parse(document.getElementById('schedules').textContent)
+
 function setSingleDay(param) {
     $('#singlePerson').removeClass('active')
     $('#automaticAssign').removeClass('active')
@@ -11,13 +15,13 @@ function setSingleDay(param) {
 function setSingleDayTimeBased() {
     $('label[for=shiftStart], #shift-start').removeClass('hide')
     $('label[for=shiftEnd], #shift-end').removeClass('hide')
-    $('#shiftSelection').addClass('hide')
+    $('label[for=shiftSelection], #day-shift-selection').addClass('hide')
 }
 
 function setSingleDayShiftBased() {
     $('label[for=shiftStart], #shift-start').addClass('hide')
     $('label[for=shiftEnd], #shift-end').addClass('hide')
-    $('#shiftSelection').removeClass('hide')
+    $('label[for=shiftSelection], #day-shift-selection').removeClass('hide')
 }
 
 function setSinglePerson(param) {
@@ -85,7 +89,7 @@ function employeeTable(access_id, typeofbox='checkbox') {
 }
 
 function searchTable(param, access_id) {
-    let text = $(param).val().toLowerCase().split(',')
+    let text = $(param).val().toLowerCase()
 
     $(`#${access_id} tr`).filter(
         function () {
@@ -100,7 +104,7 @@ function selectAll(param) {
 }
 
 function selectRadio(param) {
-    $('input[type="radio"]').each(function() {
+    $('input[type="radio"]:checked').each(function() {
         this.checked = false
     })
     param.checked = true
@@ -137,7 +141,6 @@ function setMinDate() {
     let auto_date = document.getElementById('auto-date-picker')
 
     let today =  new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0]
-    console.log(today)
     day_date.setAttribute('min', today)
     person_date.setAttribute('min', today)
     auto_date.setAttribute('min', today)

@@ -21,4 +21,5 @@ urlpatterns = [
         path('manager/vacation', views.manager_vacation_view, name='manager_vacation_view'),
         path('manager/request', views.manager_request_view, name='manager_request_view'),
         path('manager/assign', views.manager_assign_view, name='manager_assign_view'),
+        path('manager/people', views.manager_people_view, name='manager_people_view'),
         ]

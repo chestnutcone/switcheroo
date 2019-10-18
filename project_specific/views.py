@@ -3,7 +3,7 @@ from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
 from schedule.models import *
-from people.models import Employee
+from people.models import *
 from user.models import Group, EmployeeID, CustomUser
 from project_specific.models import VacationNotification
 from django.http import HttpResponseRedirect, HttpResponse
@@ -606,6 +606,35 @@ def manager_assign_view(request):
         return render(request, 'project_specific/manager_assign.html', context={'employees':json_own_employees,
                                                                                 'shifts':json_own_shifts,
                                                                                 'schedules':json_own_schedules})
+
+
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def manager_people_view(request):
+    if request.method == "POST":
+        pass
+    elif request.method == "GET":
+        current_user = request.user
+        manager_group = current_user.group
+        own_unit = Unit.objects.filter(group=manager_group)
+        json_own_unit = [u.json_format() for u in own_unit]
+
+        own_position = Position.objects.filter(group=manager_group)
+        json_own_position = [p.json_format() for p in own_position]
+
+        own_employees = Employee.objects.filter(group=manager_group).order_by('person_unit')
+        json_own_employees = [e.json_format() for e in own_employees]
+
+        workday_pref = Workday.objects.all()
+        json_workday_pref = [w.json_format() for w in workday_pref]
+
+        unregistered_user = CustomUser.objects.filter(is_superuser=False)
+        json_unregistered_user = [u.json_format() for u in unregistered_user]
+
+        return render(request, 'project_specific/manager_people.html', context={'unit': json_own_unit,
+                                                                                'position': json_own_position,
+                                                                                'employees': json_own_employees,
+                                                                                'users': json_unregistered_user,
+                                                                                'workdays': json_workday_pref})
 
 
 def logout_view(request):

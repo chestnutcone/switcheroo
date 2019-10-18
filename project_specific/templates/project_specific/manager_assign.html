@@ -1,35 +1,8 @@
-{% extends "project_specific\base_generic.html" %}
+{% extends "project_specific\manager_base.html" %}
 
 
 {% block title %}
-<title>Profile</title>
-{% endblock %}
-
-{% block sidebar %}
-{% endblock %}
-
-{% block navbar %}
-<nav class="nvbar navbar-inverse navbar-default">
-	<div class='container-fluid'>
-		<div class='navbar-header'>
-			<a class='navbar-brand' href="#">Switcheroo</a>
-        </div>
-        <ul class="nav navbar-nav">
-            <li><a href="/main/manager/assign">Assign</a></li>
-            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Setup<span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="#">People</a></li>
-                <li><a href="#">Schedule</a></li>
-              </ul>
-            </li>
-        </ul>
-        
-		<ul class="nav navbar-nav navbar-right">
-				<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
-		</ul>
-
-	<div class='container-fluid'>
-</nav>	
+<title>Assign</title>
 {% endblock %}
 
 {% block content %}
@@ -52,13 +25,11 @@
     <div class='btn-group'>
         <button id='automaticAssign' class='btn btn-default' onclick='automaticAssign(this)'>Automatic</button>
     </div>
-
-
 </div>
 
 <div class='row hide' id='singleDayForm'>
     <h1 class='col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1'>Set Single Day</h1>
-    <form class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+    <form action='/main/manager/assign' method='post' class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
         <input type="text" placeholder="Search..." 
         class='form-control' onkeyup="searchTable(this, 'day-employees-body')" id='day-search-bar'>
         <table class="table table-striped table-hover table-responsive">
@@ -81,15 +52,17 @@
 
         <div class='form-group '>
             <label for="shiftStart" class='hide'>Shift Start</label>
-            <input type="time" name='shiftStart' id='shift-start' class='form-control hide'>
+            <input type="time" name='shiftStart' id='shift-start' 
+            class='form-control hide' value='09:00'>
         </div>
 
         <div class='form-group '>
             <label for="shiftEnd" class='hide'>Shift End</label>
-            <input type="time" name='shiftEnd' id='shift-end' class='form-control hide'>
+            <input type="time" name='shiftEnd' id='shift-end' 
+            class='form-control hide' value='17:00'>
         </div>
 
-        <div class='form-group '>
+        <div class='form-group'>
             <label for="shiftSelection">Shift</label>
             <select name="shiftSelection" class='form-control' id='day-shift-selection'>
             </select>
@@ -105,7 +78,7 @@
 
 <div class='row hide' id='shiftPatternForm'>
     <h1 class='col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1'>Set Based on Shift Pattern</h1>
-    <form class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+    <form action='/main/manager/assign' method='post' class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
         <input type="text" placeholder="Search..." 
         class='form-control' onkeyup="searchTable(this, 'person-employees-body')" id='person-search-bar'>
         <table class="table table-striped table-hover table-responsive">
@@ -147,7 +120,7 @@
 
 <div class='row hide' id='automaticAssignForm'>
     <h1 class='col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1'>Automatic</h1>
-    <form class='form-group col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+    <form action='/main/manager/assign' method='post' class='form-group col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
 
         <input type="text" placeholder="Search..." 
         class='form-control' onkeyup="searchTable(this, 'auto-employees-body')" id='auto-search-bar'>
@@ -195,7 +168,6 @@
 
 {% block javascript %}
     {% load staticfiles %}
-    <script src="{% static 'project_specific/js/managerVariable.js'%}"></script>
     <script src="{% static 'project_specific/js/manager_assign.js'%}"></script>
 	<script src="{% static 'project_specific/js/daySummary.js'%}"></script>
 	
