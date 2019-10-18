@@ -76,7 +76,9 @@ function managerAcceptRequest(param){
         },
         dataType: 'json',
         success: function(result) {
-            console.log(result)
+            if (result[error_detail]) {
+                console.log(result[error_detail])
+            }
             fetchRequests()
         },
         contentType:'application/json'

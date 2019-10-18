@@ -49,6 +49,13 @@ class Shift(models.Model):
                               null=True,
                               blank=True)
 
+    def json_format(self):
+        result = {'shift_start': str(self.shift_start),
+                  'shift_duration': str(self.shift_duration),
+                  'shift_name': self.shift_name,
+                  'pk': self.pk}
+        return result
+
     def __str__(self):
         return self.shift_name
 
@@ -96,6 +103,13 @@ class Schedule(models.Model):
     def mk_ls(self):
         self.day_list = [self.day_1, self.day_2, self.day_3]
         self.day_list = self.day_list[:self.cycle]
+
+    def json_format(self):
+        self.mk_ls()
+        result = {'schedule_name': self.schedule_name,
+                  'schedule': [s.shift_name if s else 'Rest' for s in self.day_list],
+                  'pk':self.pk}
+        return result
 
     def __str__(self):
         return self.schedule_name

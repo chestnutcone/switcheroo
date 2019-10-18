@@ -276,15 +276,15 @@ def swap_request_view(request):
             requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
             requester = Employee.objects.get(user=requester_user)
 
-            # try:
-            status, error_detail = Assign.finalize_swap(requester=requester,
-                                                        requester_shift_start=requester_shift_start,
-                                                        acceptor=acceptor,
-                                                        acceptor_shift_start=acceptor_shift_start,
-                                                        request_timestamp=created_timestamp)
-            # except Exception as e:
-            #     error_detail = str(e)
-            #     status = False
+            try:
+                status, error_detail = Assign.finalize_swap(requester=requester,
+                                                            requester_shift_start=requester_shift_start,
+                                                            acceptor=acceptor,
+                                                            acceptor_shift_start=acceptor_shift_start,
+                                                            request_timestamp=created_timestamp)
+            except Exception as e:
+                error_detail = str(e)
+                status = False
             status_detail = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
@@ -586,6 +586,27 @@ def manager_request_view(request):
             manager=current_user).filter(manager_responded=False).filter(responded=True)
         total_response = [v.json_format() for v in unanswered_requests]
         return HttpResponse(json.dumps(total_response), content_type='application/json')
+
+
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def manager_assign_view(request):
+    if request.method == "POST":
+        pass
+    elif request.method == 'GET':
+        current_user = request.user
+        manager_group = current_user.group
+        own_employees = Employee.objects.filter(group=manager_group).order_by('person_unit')
+        json_own_employees = [e.json_format() for e in own_employees]
+
+        own_shifts = Shift.objects.filter(group=manager_group).order_by('shift_start')
+        json_own_shifts = [s.json_format() for s in own_shifts]
+
+        own_schedules = Schedule.objects.filter(group=manager_group).order_by('schedule_name')
+        json_own_schedules = [s.json_format() for s in own_schedules]
+        return render(request, 'project_specific/manager_assign.html', context={'employees':json_own_employees,
+                                                                                'shifts':json_own_shifts,
+                                                                                'schedules':json_own_schedules})
+
 
 def logout_view(request):
     if request.method == 'POST':

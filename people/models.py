@@ -98,5 +98,13 @@ class Employee(models.Model):
         print('unit', self.person_unit)
         print('accept shifts', self.accept_swap)
 
+    def json_format(self):
+        result = {'first_name': str(self.user.first_name),
+                  'last_name': str(self.user.last_name),
+                  'unit': str(self.person_unit),
+                  'position': str(self.person_position),
+                  'employee_id': str(self.user.employee_detail.employee_id)}
+        return result
+
     def __str__(self):
         return self.user.first_name + " " + self.user.last_name
