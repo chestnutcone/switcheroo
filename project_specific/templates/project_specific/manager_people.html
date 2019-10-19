@@ -27,6 +27,10 @@
         </div>
     </div>
 
+<div class='row' id='people-main-page'>
+    <h1 class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1">Recent Actions</h1>
+</div>
+
 <div class='row hide' id='unit-form'>
     <h1 class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1">View Unit</h1>
     <h1 class="col-xs-12 col-sm-6 col-md-4 col-lg-4">Create Unit</h1>
@@ -46,14 +50,13 @@
         </table>
     </div>
 
-    <form action="/main/manager/people" method='post' 
-    class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
         <div class='form-group'>
             <label for="unit_name_input">Enter Unit Name:</label>
-            <input type="text" name='unit_name_input' class='form-control'>
+            <input type="text" name='unit_name_input' class='form-control' id='unit_name_input'>
         </div>
-        <button type='submit' class='btn btn-default'>Create</button>
-    </form>
+        <button class='btn btn-default' onclick='submitUnit()'>Create</button>
+    </div>
 </div>
 
 <div class='row hide' id='position-form'>
@@ -76,14 +79,14 @@
         </table>
     </div>
 
-    <form action="/main/manager/people" method='post'
-    class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
         <div class='form-group'>
-            <label for="unit_name_input">Enter Position Name:</label>
-            <input type="text" name='unit_name_input' class='form-control'>
+            <label for="position_name_input">Enter Position Name:</label>
+            <input type="text" name='position_name_input' 
+            id='position_name_input' class='form-control'>
         </div>
-        <button type='submit' class='btn btn-default'>Create</button>
-    </form>
+        <button class='btn btn-default' onclick='submitPosition()'>Create</button>
+    </div>
     
 </div>
 
@@ -111,8 +114,7 @@
     </div>
         
     <h1 class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1">Create Employee</h1>
-    <form action="/main/manager/people" method='post'
-    class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1">
+    <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1">
         <input type="text" placeholder="Search..."  class='form-control' 
         onkeyup="searchTable(this, 'user-table-body')" id='user-search-bar'>
         <table class="table table-striped table-hover table-responsive">
@@ -152,8 +154,8 @@
             <input type='date' name='dateSelection' class='form-control' id='date-selection'>
         </div>
 
-        <button type='submit' class='btn btn-default'>Create</button>
-    </form>
+        <button class='btn btn-default' onclick="submitEmployee()">Create</button>
+    </div>
 
 </div>
 {% endblock %}

@@ -4,11 +4,6 @@ $accentColor2: #8E8D8A;
 $textColor1: #E98074;
 $textColor2: #E85A4F;
 
-$level4Color: #099c0c;
-$level3Color: lighten($level4Color, 25%);
-$level2Color: lighten($level4Color, 50%);
-$level1Color: lighten($level4Color, 75%);
-
 $vacationColor: #4287f5;
 
 @media only screen and (min-width: 300px) {
@@ -105,22 +100,6 @@ td .square_content {
 
 .vacation-highlight {
 	background-color: $vacationColor;
-}
-
-.highlight-level1 {
-	background-color: $level1Color;
-}
-
-.highlight-level2 {
-	background-color: $level2Color;
-}
-
-.highlight-level3 {
-	background-color: $level3Color;
-}
-
-.highlight-level4 {
-	background-color: $level4Color;
 }
 
 .hidden {

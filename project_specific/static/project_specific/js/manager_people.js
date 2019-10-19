@@ -13,6 +13,8 @@ function setUnitDisplay(param) {
     $("#position-form").addClass('hide')
     $("#employee-form").addClass('hide')
 
+    $("#people-main-page").addClass('hide')
+
     unitTable()
 }
 
@@ -25,6 +27,8 @@ function setPositionDisplay(param) {
     $("#unit-form").addClass('hide')
     $("#employee-form").addClass('hide')
 
+    $("#people-main-page").addClass('hide')
+
     positionTable()
 }
 
@@ -36,6 +40,8 @@ function setEmployeeDisplay(param) {
     $("#employee-form").removeClass('hide')
     $("#position-form").addClass('hide')
     $("#unit-form").addClass('hide')
+
+    $("#people-main-page").addClass('hide')
 
     employeeTable()
     userTable()
@@ -224,4 +230,134 @@ function selectRadio(param) {
         this.checked = false
     })
     param.checked = true
+}
+
+function getCookie (name) {
+    let cookieValue = null
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';')
+        for (let i=0; i<cookies.length; i++) {
+            let cookie = cookies[i].trim()
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+                break
+            }
+        }
+    }
+    return cookieValue
+}
+
+
+function submitUnit() {
+    let unit_name = document.getElementById('unit_name_input').value
+    let csrftoken = getCookie('csrftoken')
+    if (unit_name) {
+        let send_data = {'action': 'create_unit',
+                    'unit_name': unit_name}
+        send_data = JSON.stringify(send_data)
+        $.ajax({
+            type: "POST",
+            url: "/main/manager/people",
+            data: send_data,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            dataType: 'json',
+            success: function(result) {
+                console.log(result)
+                if (result['status']) {
+                    alert('done')
+                    location.reload();
+                } else {
+                    alert(result['error_detail'])
+                }
+            },
+            contentType:'application/json'
+        })
+    } else {
+        alert('Field cannot be empty. Data not sent')
+    }
+}
+
+function submitPosition() {
+    let pos_name = document.getElementById('position_name_input').value
+    let csrftoken = getCookie('csrftoken')
+    if (pos_name) {
+        let send_data = {'action': 'create_position',
+                    'position_name': pos_name}
+        send_data = JSON.stringify(send_data)
+        $.ajax({
+            type: "POST",
+            url: "/main/manager/people",
+            data: send_data,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            dataType: 'json',
+            success: function(result) {
+                console.log(result)
+                if (result['status']) {
+                    alert('done')
+                    location.reload();
+                } else {
+                    alert(result['error_detail'])
+                }
+            },
+            contentType:'application/json'
+        })
+    } else {
+        alert('Field cannot be empty. Data not sent')
+    }
+}
+
+function submitEmployee() {
+    let employee = $('input[type="radio"]:checked')[0]
+    let employee_id = null
+    if (employee) {
+        employee_id = employee.parentNode.parentNode.dataset.employee_id
+    }
+    
+    let pos_employee = document.getElementById('position-selection').value
+    let unit_employee = document.getElementById('unit-selection').value
+    let workday_employee = document.getElementById('workday-selection').selectedOptions
+    let workday_chosen = []
+    for (let i=0; i<workday_employee.length; i++) {
+        workday_chosen.push(workday_employee[i].value)
+    }
+    let date_joined = document.getElementById('date-selection').value
+
+    let condition = employee_id && pos_employee && 
+    unit_employee && workday_chosen && date_joined
+
+    let csrftoken = getCookie('csrftoken') 
+    if (condition) {
+        let send_data = {'action': 'create_employee',
+                        'position_pk': pos_employee,
+                        'unit_pk': unit_employee,
+                        'workday_pk': workday_chosen,
+                        'date_joined': date_joined,
+                        'employee_id': employee_id}
+        send_data = JSON.stringify(send_data)
+        $.ajax({
+            type: "POST",
+            url: "/main/manager/people",
+            data: send_data,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            dataType: 'json',
+            success: function(result) {
+                console.log(result)
+                if (result['status']) {
+                    alert('done')
+                    location.reload();
+                } else {
+                    alert(result['error_detail'])
+                }
+            },
+            contentType:'application/json'
+        })
+    } else {
+        alert('Field cannot be empty. Data not sent')
+    }
 }

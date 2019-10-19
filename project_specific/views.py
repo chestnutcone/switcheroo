@@ -611,7 +611,59 @@ def manager_assign_view(request):
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_people_view(request):
     if request.method == "POST":
-        pass
+        current_user = request.user
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        status = True
+        error_detail = ''
+        if json_data['action'] == 'create_unit':
+            try:
+                new_unit = Unit(unit_choice=json_data['unit_name'],
+                                group=current_user.group)
+                new_unit.save()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'create_position':
+            try:
+                new_pos = Position(position_choice=json_data['position_name'],
+                                   group=current_user.group)
+                new_pos.save()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'create_employee':
+            try:
+                employee_id = int(json_data['employee_id'])
+                employee_detail = EmployeeID.objects.get(pk=employee_id)
+                employee_user = CustomUser.objects.get(employee_detail=employee_detail)
+
+                employee_position = Position.objects.get(pk=int(json_data['position_pk']))
+                employee_unit = Unit.objects.get(pk=int(json_data['unit_pk']))
+
+                new_employee = Employee(user=employee_user,
+                                        person_position=employee_position,
+                                        person_unit=employee_unit,
+                                        group=current_user.group,
+                                        date_joined=parse(json_data['date_joined']))
+                new_employee.save()
+                for i in json_data['workday_pk']:
+                    workday_instance = Workday.objects.get(day=int(i))
+                    new_employee.workday.add(workday_instance)
+                new_employee.save()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+
+
     elif request.method == "GET":
         current_user = request.user
         manager_group = current_user.group

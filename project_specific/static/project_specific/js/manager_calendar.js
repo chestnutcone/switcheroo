@@ -128,6 +128,7 @@ function buildCalendar (year, month) {
     }
     resetDateSelectionVariable()
     $('#calendar-body td').click(selectDate)
+    highlightCalendar()
 }
 
 
@@ -144,17 +145,19 @@ function highlightCalendar() {
         let format_day = formatDate(split_date[2])
         let format_date = `${split_date[0]}-${format_month}-${format_day}`
         let cellNum = cellLookup[format_date]
-
-        switch (monthSchedules[date]['daily_bin']) {
-            case 0:
-                $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level1')
-            case 1:
-                $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level2')
-            case 2:
-                $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level3')
-            case 3:
-                $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level4')
+        if (cellNum) {
+            switch (monthSchedules[date]['daily_bin']) {
+                case 0:
+                    $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level1')
+                case 1:
+                    $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level2')
+                case 2:
+                    $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level3')
+                case 3:
+                    $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level4')
+            }
         }
+        
 
     }
 

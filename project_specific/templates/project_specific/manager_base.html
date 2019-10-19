@@ -1,6 +1,8 @@
 {% extends "project_specific\base_generic.html" %}
 
-{% block sidebar %}
+{% block static %}
+{% load staticfiles %}
+<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/manager.css'%}">
 {% endblock %}
 
 {% block navbar %}
@@ -20,7 +22,7 @@
         </ul>
         
 		<ul class="nav navbar-nav navbar-right">
-				<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+				<li><a href="/main/logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
 		</ul>
 
 	<div class='container-fluid'>

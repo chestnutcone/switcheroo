@@ -1,0 +1,51 @@
+#curYear, #curMonth {
+  display: none; }
+
+#calendar-table td {
+  width: 14.286%;
+  position: relative; }
+
+#calendar-table td:after {
+  content: '';
+  display: block;
+  margin-top: 100%; }
+
+#calendar-table td .square_content {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0; }
+
+#calendar-body:hover {
+  cursor: pointer; }
+
+#calendar-body {
+  text-align: center; }
+
+#calendar-button {
+  margin-top: 20px; }
+
+@keyframes date-fill-animation {
+  from {
+    background-color: white; }
+  to {
+    background-color: #E98074; } }
+.highlight-level1 {
+  background-color: white; }
+
+.highlight-level2 {
+  background-color: #aafaac; }
+
+.highlight-level3 {
+  background-color: #31f335; }
+
+.highlight-level4 {
+  background-color: #099c0c; }
+
+.date-selection {
+  animation-name: date-fill-animation;
+  animation-duration: 1s;
+  animation-fill-mode: forwards; }
+
+/*# sourceMappingURL=manager.css.map */
