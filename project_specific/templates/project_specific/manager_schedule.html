@@ -25,7 +25,18 @@
 </div>
 
 <div class='row hide' id='shift-form'>
-    <h1 class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1">View Shift</h1>
+    <div width="100%" class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1">
+        <h1 style='float: left;'>View Shift</h1>
+        
+        <div class='form-inline actionForm'>
+            <label for="shiftFormAction">Action</label>
+            <select name="shiftFormAction" class='form-control' id='shiftFormAction'>
+                <option value="null">----</option>
+                <option value="Delete">Delete</option>
+            </select>
+            <button class='btn' onclick="deleteShift()">Go</button>
+        </div>
+    </div>
     <h1 class="col-xs-12 col-sm-6 col-md-4 col-lg-4">Create Shift</h1>
 
     <div class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>    
@@ -73,7 +84,19 @@
 </div>
 
 <div class='row hide' id='schedule-form'>
-    <h1 class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1">View Schedule</h1>
+    <div width="100%" class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1">
+        <h1 style='float: left;'>View Schedule</h1>
+        
+        <div class='form-inline actionForm'>
+            <label for="scheduleFormAction">Action</label>
+            <select name="schedueFormAction" class='form-control' id='scheduleFormAction'>
+                <option value="null">----</option>
+                <option value="Delete">Delete</option>
+            </select>
+            <button class='btn' onclick="deleteSchedule()">Go</button>
+        </div>
+    </div>
+
     <h1 class="col-xs-12 col-sm-6 col-md-4 col-lg-4">Create Schedule</h1>
 
     <div class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>    

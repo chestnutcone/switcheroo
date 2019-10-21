@@ -197,4 +197,75 @@ function submitSchedule() {
     }
 }
 
+function deleteShift() {
+    let action = document.getElementById('shiftFormAction').value
+    if (action == "Delete") {
+        let selected_shift = $("#shift-table-body input[type='checkbox']:checked")
+        let all_shift_pk = []
+        selected_shift.each(function() {
+            let selected_shift_pk = this.parentNode.parentNode.dataset.shift_pk
+            all_shift_pk.push(selected_shift_pk)
+        })
+        let confirmation = confirm(`Are you sure you want to DELETE ${all_shift_pk.length} Shift(s)`)
+        if (confirmation) {
+            let send_data = {'action': 'delete_shift',
+                            'shift_pks': all_shift_pk}
+            send_data= JSON.stringify(send_data)
+            let csrftoken = getCookie('csrftoken') 
+            $.ajax({
+                type: "POST",
+                url: "/main/manager/schedule",
+                data: send_data,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                dataType: 'json',
+                success: function(result) {
+                    if (result['status']) {
+                        location.reload();
+                    } else {
+                        alert(result['error_detail'])
+                    }
+                },
+                contentType:'application/json'
+            })
+        }
+    }
+}
+
+function deleteSchedule() {
+    let action = document.getElementById('scheduleFormAction').value
+    if (action == "Delete") {
+        let selected_schedule = $("#schedule-table-body input[type='checkbox']:checked")
+        let all_schedule_pk = []
+        selected_schedule.each(function() {
+            let selected_schedule_pk = this.parentNode.parentNode.dataset.schedule_pk
+            all_schedule_pk.push(selected_schedule_pk)
+        })
+        let confirmation = confirm(`Are you sure you want to DELETE ${all_schedule_pk.length} Schedule(s)`)
+        if (confirmation) {
+            let send_data = {'action': 'delete_schedule',
+                            'schedule_pks': all_schedule_pk}
+            send_data= JSON.stringify(send_data)
+            let csrftoken = getCookie('csrftoken') 
+            $.ajax({
+                type: "POST",
+                url: "/main/manager/schedule",
+                data: send_data,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                dataType: 'json',
+                success: function(result) {
+                    if (result['status']) {
+                        location.reload();
+                    } else {
+                        alert(result['error_detail'])
+                    }
+                },
+                contentType:'application/json'
+            })
+        }
+    }
+}
 scheduleDaysOptions()

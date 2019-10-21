@@ -33,11 +33,14 @@
 	<div id='pageDate'></div>
 
 	<div class='row'>
-		<h1 id='monthAndYear' class="col-xs-7 col-sm-6 col col-md-4 col-lg-3 col-md-offset-2 col-lg-offset-3"></h1>
-		<div class='btn-group col-xs-5 col-sm-4 col-lg-4' id='calendar-button' role='group'>
-			<button id='previous' onclick='prev()' class='btn btn-secondary'>Prev</button>	
-			<button id='next' onclick="next()" class='btn btn-secondary'>Next</button>
+		<div width="100%" class="col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3">
+			<h1 id='monthAndYear' style="float:left;"></h1>
+			<div class='btn-group' id='calendar-button' role='group' style='float:right;'>
+				<button id='previous' onclick='prev()' class='btn btn-secondary'>Prev</button>	
+				<button id='next' onclick="next()" class='btn btn-secondary'>Next</button>
+			</div>
 		</div>
+		
 	</div>
 
 	<div class='row'>

@@ -782,6 +782,42 @@ def manager_people_view(request):
                 error_detail = str(e)
             output = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'delete_unit':
+            try:
+                unit_pk_list = json_data['unit_pks']
+                unit_pk_list = [int(p) for p in unit_pk_list]
+
+                unit_list = Unit.objects.filter(pk__in=unit_pk_list)
+                unit_list.delete()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'delete_position':
+            try:
+                position_pk_list = json_data['position_pks']
+                position_pk_list = [int(p) for p in position_pk_list]
+
+                position_list = Position.objects.filter(pk__in=position_pk_list)
+                position_list.delete()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'delete_employee':
+            try:
+                employee_id_list = json_data['employee_ids']
+                employee_list = [Employee.get_employee_instance(p) for p in employee_id_list]
+                for e in employee_list:
+                    e.delete()
+
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
 
     elif request.method == "GET":
         current_user = request.user
@@ -798,7 +834,7 @@ def manager_people_view(request):
         workday_pref = Workday.objects.all()
         json_workday_pref = [w.json_format() for w in workday_pref]
 
-        unregistered_user = CustomUser.objects.filter(is_superuser=False)
+        unregistered_user = CustomUser.objects.filter(is_superuser=False).filter(group=None)
         json_unregistered_user = [u.json_format() for u in unregistered_user]
 
         return render(request, 'project_specific/manager_people.html', context={'unit': json_own_unit,
@@ -885,7 +921,30 @@ def manager_schedule_view(request):
 
             output = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'delete_shift':
+            try:
+                shift_pk_list = json_data['shift_pks']
+                shift_pk_list = [int(p) for p in shift_pk_list]
 
+                shift_list = Shift.objects.filter(pk__in=shift_pk_list)
+                shift_list.delete()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'delete_schedule':
+            try:
+                schedule_pk_list = json_data['schedule_pks']
+                schedule_pk_list = [int(p) for p in schedule_pk_list]
+
+                schedule_list = Schedule.objects.filter(pk__in=schedule_pk_list)
+                schedule_list.delete()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
     elif request.method == "GET":
         current_user = request.user
         manager_group = current_user.group

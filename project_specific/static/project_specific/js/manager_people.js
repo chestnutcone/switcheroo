@@ -318,3 +318,111 @@ function submitEmployee() {
         alert('Field cannot be empty. Data not sent')
     }
 }
+
+function deleteUnit() {
+    let action = document.getElementById('unitFormAction').value
+    if (action == "Delete") {
+        let selected_unit = $("#unit-table-body input[type='checkbox']:checked")
+        let all_unit_pk = []
+        selected_unit.each(function() {
+            let selected_unit_pk = this.parentNode.parentNode.dataset.unit_pk
+            all_unit_pk.push(selected_unit_pk)
+        })
+        let confirmation = confirm(`Are you sure you want to DELETE ${all_unit_pk.length} Unit(s)`)
+        if (confirmation) {
+            let send_data = {'action': 'delete_unit',
+                            'unit_pks': all_unit_pk}
+            send_data= JSON.stringify(send_data)
+            let csrftoken = getCookie('csrftoken') 
+            $.ajax({
+                type: "POST",
+                url: "/main/manager/people",
+                data: send_data,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                dataType: 'json',
+                success: function(result) {
+                    if (result['status']) {
+                        location.reload();
+                    } else {
+                        alert(result['error_detail'])
+                    }
+                },
+                contentType:'application/json'
+            })
+        }
+    }
+}
+
+function deletePosition() {
+    let action = document.getElementById('PositionFormAction').value
+    if (action == "Delete") {
+        let selected_position = $("#position-table-body input[type='checkbox']:checked")
+        let all_position_pk = []
+        selected_position.each(function() {
+            let selected_position_pk = this.parentNode.parentNode.dataset.position_pk
+            all_position_pk.push(selected_position_pk)
+        })
+        let confirmation = confirm(`Are you sure you want to DELETE ${all_position_pk.length} position(s)`)
+        if (confirmation) {
+            let send_data = {'action': 'delete_position',
+                            'position_pks': all_position_pk}
+            send_data= JSON.stringify(send_data)
+            let csrftoken = getCookie('csrftoken') 
+            $.ajax({
+                type: "POST",
+                url: "/main/manager/people",
+                data: send_data,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                dataType: 'json',
+                success: function(result) {
+                    if (result['status']) {
+                        location.reload();
+                    } else {
+                        alert(result['error_detail'])
+                    }
+                },
+                contentType:'application/json'
+            })
+        }
+    }
+}
+
+function deleteEmployee() {
+    let action = document.getElementById('EmployeeFormAction').value
+    if (action == "Delete") {
+        let selected_employee = $("#employee-table-body input[type='checkbox']:checked")
+        let all_employee_id = []
+        selected_employee.each(function() {
+            let selected_employee_id = this.parentNode.parentNode.dataset.employee_id
+            all_employee_id.push(selected_employee_id)
+        })
+        let confirmation = confirm(`Are you sure you want to DELETE ${all_employee_id.length} employee(s)`)
+        if (confirmation) {
+            let send_data = {'action': 'delete_employee',
+                            'employee_ids': all_employee_id}
+            send_data= JSON.stringify(send_data)
+            let csrftoken = getCookie('csrftoken') 
+            $.ajax({
+                type: "POST",
+                url: "/main/manager/people",
+                data: send_data,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                },
+                dataType: 'json',
+                success: function(result) {
+                    if (result['status']) {
+                        location.reload();
+                    } else {
+                        alert(result['error_detail'])
+                    }
+                },
+                contentType:'application/json'
+            })
+        }
+    }
+}
