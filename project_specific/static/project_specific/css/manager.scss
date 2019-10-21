@@ -1,0 +1,91 @@
+$primaryColor: #EAE7DC;
+$accentColor1: #D8C3A5;
+$accentColor2: #8E8D8A;
+$textColor1: #E98074;
+$textColor2: #E85A4F;
+
+$level4Color: #099c0c;
+$level3Color: lighten($level4Color, 25%);
+$level2Color: lighten($level4Color, 50%);
+$level1Color: lighten($level4Color, 75%);
+
+$vacationColor: #4287f5;
+
+#curYear, #curMonth {
+	display: none;
+}
+
+#calendar-table td {
+	width: 14.286%;
+	position: relative;
+}
+
+#calendar-table td:after {
+	content: '';
+	display: block;
+	margin-top: 100%;
+}
+
+#calendar-table td .square_content {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
+#calendar-body:hover {
+	cursor: pointer;
+}
+
+#calendar-body {
+	text-align: center;
+}
+
+#employee-calendar-body {
+    text-align: center;
+}
+
+#calendar-button {
+	margin-top: 20px;
+}
+
+@keyframes date-fill-animation {
+	from {background-color: white;}
+	to {background-color: $textColor1;}
+}
+
+.highlight-level1 {
+	background-color: $level1Color;
+}
+
+.highlight-level2 {
+	background-color: $level2Color;
+}
+
+.highlight-level3 {
+	background-color: $level3Color;
+}
+
+.highlight-level4 {
+	background-color: $level4Color;
+}
+
+.highlight {
+	background-color: $accentColor1;
+}
+
+.vacation-highlight {
+	background-color: $vacationColor;
+}
+
+.date-selection {
+	animation-name: date-fill-animation;
+	animation-duration: 1s;
+	animation-fill-mode: forwards;
+}
+
+.actionForm {
+    float: right;
+    padding-top: 20px;
+}

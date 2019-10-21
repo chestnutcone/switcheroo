@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from user.models import Group
+from user.models import *
 
 
 class Position(models.Model):
@@ -11,6 +11,11 @@ class Position(models.Model):
                               on_delete=models.SET_NULL,
                               null=True,
                               blank=True)
+
+    def json_format(self):
+        result = {'position_name': self.position_choice,
+                  'pk': self.pk}
+        return result
 
     def __str__(self):
         return self.position_choice
@@ -25,6 +30,11 @@ class Unit(models.Model):
                               null=True,
                               blank=True)
 
+    def json_format(self):
+        result = {'unit_name': self.unit_choice,
+                  'pk': self.pk}
+        return result
+
     def __str__(self):
         return self.unit_choice
 
@@ -33,6 +43,11 @@ class Workday(models.Model):
     name = models.CharField(max_length=5)
     day = models.PositiveSmallIntegerField(primary_key=True)
     # 0 = monday, 6 = sunday etc
+
+    def json_format(self):
+        result = {'workday_name': self.name,
+                  'pk': self.day}
+        return result
 
     @staticmethod
     def _set_workday():
@@ -87,15 +102,26 @@ class Employee(models.Model):
     workday = models.ManyToManyField(Workday,
                                      blank=True,
                                      help_text="availability")
+    date_joined = models.DateField()
 
-    def get_info(self):
-        print('   ')
-        print('printing all info.....')
-        print('name', self.user.first_name, self.user.last_name)
-        print('email', self.user.email)
-        print('position', self.person_position)
-        print('unit', self.person_unit)
-        print('accept shifts', self.accept_swap)
+    def json_format(self):
+        workday_q = self.workday.all().order_by('pk')
+        workday_preference = [w.name for w in workday_q]
+        result = {'first_name': str(self.user.first_name),
+                  'last_name': str(self.user.last_name),
+                  'unit': str(self.person_unit),
+                  'position': str(self.person_position),
+                  'employee_id': str(self.user.employee_detail.employee_id),
+                  'workday_preference': workday_preference}
+        return result
+
+    @staticmethod
+    def get_employee_instance(employee_id):
+        employee_id = int(employee_id)
+        employee_detail = EmployeeID.objects.get(pk=employee_id)
+        employee_user = CustomUser.objects.get(employee_detail=employee_detail)
+        employee = Employee.objects.get(user=employee_user)
+        return employee
 
     def __str__(self):
         return self.user.first_name + " " + self.user.last_name

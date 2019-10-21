@@ -1,0 +1,122 @@
+$primaryColor: #EAE7DC;
+$accentColor1: #D8C3A5;
+$accentColor2: #8E8D8A;
+$textColor1: #E98074;
+$textColor2: #E85A4F;
+
+$vacationColor: #4287f5;
+
+@media only screen and (min-width: 300px) {
+    .collapse {
+        display: block;
+    }
+
+    .navbar-header {
+        float: left;
+    }
+
+    .navbar-toggle {
+        display: none;
+    }
+
+    .navbar-nav.navbar-left {
+       float: left;
+       margin: 0;
+    }
+
+    .navbar-nav.navbar-right {
+       float: right;
+       margin: 0;
+    }
+    .navbar-nav>li {
+        float: left;
+    }
+    .navbar-nav>li>a {
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+}
+
+@media only screen and (max-width: 420px) {
+     .collapse {
+        display: none;
+     }
+
+	 .navbar-header {
+		 display: block;
+	 }
+}
+
+.content-area {
+ 	background-color:white;
+}	
+
+#curYear, #curMonth {
+	display: none;
+}
+
+table {
+	width: 10%;
+}
+
+td {
+	width: 14.286%;
+	position: relative;
+}
+
+td:after {
+	content: '';
+	display: block;
+	margin-top: 100%;
+}
+
+td .square_content {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
+#calendar-body:hover {
+	cursor: pointer;
+}
+
+#calendar-body {
+	text-align: center;
+}
+
+#calendar-button {
+	margin-top: 20px;
+}
+
+@keyframes date-fill-animation {
+	from {background-color: white;}
+	to {background-color: $textColor1;}
+}
+.highlight {
+	background-color: $accentColor1;
+}
+
+.vacation-highlight {
+	background-color: $vacationColor;
+}
+
+.hidden {
+	display: none;
+}
+
+.date-selection {
+	// background-color: $accentColor2;
+	animation-name: date-fill-animation;
+	animation-duration: 1s;
+	animation-fill-mode: forwards;
+}
+
+.flexbox {
+	display: flex;
+}
+
+button:hover {
+	cursor: pointer;
+}

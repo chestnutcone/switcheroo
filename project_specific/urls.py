@@ -9,9 +9,19 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-        path('', views.profile_view, name='profile'),
+        path('', views.profile_view, name='index'),
+        path('logout/', views.logout_view, name='logout'),
         path('swap/', views.swap_view, name='swap'),
-        path('swap/result',views.swap_result_view, name='swap_result'),
         path('group/', views.group_view, name='group'),
         path('schedule/', views.schedule_view, name='schedule_view'),
+        path('vacation/', views.vacation_view, name='vacation_view'),
+        path('swap/request', views.swap_request_view, name='swap_request'),
+        path('swap/receive', views.receive_request_view, name='receive_swap'),
+        path('manager/', views.manager_profile_view, name='manager_view'),
+        path('manager/vacation', views.manager_vacation_view, name='manager_vacation_view'),
+        path('manager/request', views.manager_request_view, name='manager_request_view'),
+        path('manager/assign', views.manager_assign_view, name='manager_assign_view'),
+        path('manager/people', views.manager_people_view, name='manager_people_view'),
+        path('manager/schedule', views.manager_schedule_view, name='manager_schedule_view'),
+        path('manager/view', views.manager_employee_view, name='manager_employee_view')
         ]

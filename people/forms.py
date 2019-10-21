@@ -11,11 +11,14 @@ from people.models import Position, Unit, Employee
 class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
-        fields = ['user', 'person_position', 'person_unit', 'workday', 'group']
-        labels = {'user': 'Employee',
+        fields = ['user', 'person_position', 'person_unit', 'workday', 'group', 'date_joined']
+        labels = {
+                  'user': 'Employee',
                   'person_position': 'Position',
                   'person_unit': 'Unit',
-                  'workday':'Availability',}
+                  'workday': 'Availability',
+                  'date_joined': 'Date Joined'
+                  }
 
 
 class PositionForm(forms.ModelForm):

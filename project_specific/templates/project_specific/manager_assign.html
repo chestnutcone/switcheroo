@@ -1,0 +1,188 @@
+{% extends "project_specific\manager_base.html" %}
+
+
+{% block title %}
+<title>Assign</title>
+{% endblock %}
+
+{% block content %}
+{{ employees|json_script:"employees"}}
+{{ shifts|json_script:'shifts'}}
+{{ schedules|json_script:"schedules"}}
+
+<div class="btn-group btn-group-justified">
+    <div class='btn-group'>
+        <button id='singleDay' class='btn btn-default dropdown-toggle' data-toggle='dropdown' onclick='setSingleDay(this)'>Set Single Day<span class='caret'></span></button>
+        <ul class='dropdown-menu' role='menu'>
+            <li><button class='btn btn-default' onclick='setSingleDayShiftBased()'>Shift-based</button></li>
+            <li><button class='btn btn-default' onclick='setSingleDayTimeBased()'>Time-based</button></li>
+        </ul>
+    </div>
+
+    <div class='btn-group'>
+        <button id='singlePerson' class='btn btn-default' onclick='setSinglePerson(this)'>Set Single Person</button>
+    </div>
+    <div class='btn-group'>
+        <button id='automaticAssign' class='btn btn-default' onclick='automaticAssign(this)'>Automatic</button>
+    </div>
+</div>
+
+<div class='row hide' id='singleDayForm'>
+    <div class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+        <h1>Set Single Day</h1>
+        <input type="text" placeholder="Search..." 
+        class='form-control' onkeyup="searchTable(this, 'day-employees-body')" id='day-search-bar'>
+        <table class="table table-striped table-hover table-responsive">
+            <thead>
+                <tr>
+                    <th>Choose</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Unit</th>
+                    <th>Position</th>
+                </tr>
+            </thead>
+            <tbody id='day-employees-body'></tbody>	
+        </table>
+
+        <div class='form-group '>
+            <label for="dateSelection">Start Date</label>
+            <input type='date' name='dateSelection' class='form-control' id='day-date-picker'>
+        </div>
+
+        <div class='form-group '>
+            <label for="shiftStart" class='hide'>Shift Start</label>
+            <input type="time" name='shiftStart' id='shift-start' 
+            class='form-control hide' value='09:00'>
+        </div>
+
+        <div class='form-group '>
+            <label for="shiftEnd" class='hide'>Shift End</label>
+            <input type="time" name='shiftEnd' id='shift-end' 
+            class='form-control hide' value='17:00'>
+        </div>
+
+        <div class='form-group'>
+            <label for="shiftSelection">Shift</label>
+            <select name="shiftSelection" class='form-control' id='day-shift-selection'>
+            </select>
+        </div>
+
+        <div class='form-group '>
+            <label>Override<input type="checkbox" class='form-control' id='day-override'></label>
+        </div>
+
+        <button class='btn btn-default' onclick="submitSingleDay()">Submit</button>
+    </div>
+    <div class='col-xs-12 col-sm-5 col-md-5 col-lg-5 hide' id='singleDay-status'>
+        <h1 id='singleDay-status-title' class='alert'></h1>
+        <ul id='singleDay-error-msg'></ul>
+        <ul id='singleDay-holiday'></ul>
+    </div>
+</div>
+
+
+<div class='row hide' id='shiftPatternForm'>
+    <div class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+        <h1>Set Based on Schedule Pattern</h1>
+        <input type="text" placeholder="Search..." 
+        class='form-control' onkeyup="searchTable(this, 'person-employees-body')" id='person-search-bar'>
+        <table class="table table-striped table-hover table-responsive">
+            <thead>
+                <tr>
+                    <th>Choose</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Unit</th>
+                    <th>Position</th>
+                </tr>
+            </thead>
+            <tbody id='person-employees-body'></tbody>	
+        </table>
+
+        <div class='form-group '>
+            <label for="dateSelection">Start Date</label>
+            <input type='date' name='dateSelection' class='form-control' id='person-date-picker'>
+        </div>
+
+        <div class='form-group '>
+            <label for="scheduleSelection">Schedule</label>
+            <select name="scheduleSelection" class='form-control' id='person-schedule-selection'>
+            </select>
+        </div>
+
+        <div class='form-group '>
+            <label for="repeat">Repeat</label>
+            <input type="number" min='1' class='form-control' id='person-schedule-repeat' value='1'>
+        </div>
+
+        <div class='form-group '>
+            <label>Override<input type="checkbox" class='form-control' id='person-override'></label>
+        </div>
+
+        <button class='btn btn-default' onclick='submitSchedulePatternForm()'>Submit</button>
+    </div>
+    <div class='col-xs-12 col-sm-5 col-md-5 col-lg-5 hide' id='personPattern-status'>
+        <h1 id='personPattern-status-title' class='alert'></h1>
+        <ul id='personPattern-error-msg'></ul>
+        <ul id='personPattern-overridable'></ul>
+        <ul id='personPattern-non_overridable'></ul>
+        <ul id='personPattern-holiday'></ul>
+    </div>
+</div>
+
+<div class='row hide' id='automaticAssignForm'>
+    <div class='form-group col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+        <h1>Automatic</h1>
+        <input type="text" placeholder="Search..." 
+        class='form-control' onkeyup="searchTable(this, 'auto-employees-body')" id='auto-search-bar'>
+
+        <table class="table table-striped table-hover table-responsive">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" onclick='selectAll(this)' id='auto-select-all'>Select All</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Unit</th>
+                    <th>Position</th>
+                </tr>
+            </thead>
+            <tbody id='auto-employees-body'></tbody>	
+        </table>
+
+        <div class='form-group'>
+            <label for="dateSelection">Start Date</label>
+            <input type='date' name='dateSelection' class='form-control' id='auto-date-picker'>
+        </div>
+
+        <div class='form-group '>
+            <label for="scheduleSelection">Schedule</label>
+            <select name="scheduleSelection" class='form-control' id='auto-schedule-selection'>
+            </select>
+        </div>
+
+        <div class='form-group '>
+            <label for="workersPerDay">Workers Per Day</label>
+            <input type="number" min='1' class='form-control' id='auto-workers-per-day' value=1>
+        </div>
+
+        <div class='form-group '>
+            <label for="dayLength">Day Length</label>
+            <input type="number" min='1' class='form-control' id='auto-days-length' value=1>
+        </div>
+
+        <button class='btn btn-default' onclick='submitAutoAssign()'>Submit</button>
+    </div>
+
+    <div class='col-xs-12 col-sm-5 col-md-5 col-lg-5 hide' id='autoAssign-status'>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block javascript %}
+    {% load staticfiles %}
+    <script src="{% static 'project_specific/js/manager_commonFunc.js'%}"></script>
+    <script src="{% static 'project_specific/js/manager_assign.js'%}"></script>
+{% endblock %}

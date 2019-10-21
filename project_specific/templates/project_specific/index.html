@@ -1,0 +1,115 @@
+{% extends "project_specific\base_generic.html" %}
+
+
+{% block title %}
+{% load staticfiles %}
+<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/base.css'%}">
+<title>Profile</title>
+{% endblock %}
+
+{% block sidebar %}	
+{% endblock %}
+
+{% block navbar %}
+<nav class="nvbar navbar-inverse navbar-default">
+	<div class='container-fluid'>
+		<div class='navbar-header'>
+			<a class='navbar-brand' href="#">Switcheroo</a>
+		</div>
+		<ul class="nav navbar-nav navbar-right">
+				<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+		</ul>
+
+	<div class='container-fluid'>
+</nav>	
+{% endblock %}
+
+{% block content %}
+
+	<div id='today-summary'>
+
+	</div>
+
+	<div id='pageDate'></div>
+
+	<div class='row'>
+		<div width="100%" class="col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3">
+			<h1 id='monthAndYear' style="float:left;"></h1>
+			<div class='btn-group' id='calendar-button' role='group' style='float:right;'>
+				<button id='previous' onclick='prev()' class='btn btn-secondary'>Prev</button>	
+				<button id='next' onclick="next()" class='btn btn-secondary'>Next</button>
+			</div>
+		</div>
+		
+	</div>
+
+	<div class='row'>
+		<div class="col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3">
+			<table class="table table-borderless table-responsive">
+				<thead>
+					<tr>
+						<th width='14.286%' style='text-align: center'>Sun</th>
+						<th width='14.286%' style='text-align: center'>Mon</th>
+						<th width='14.286%' style='text-align: center'>Tues</th>
+						<th width='14.286%' style='text-align: center'>Wed</th>
+						<th width='14.286%' style='text-align: center'>Thurs</th>
+						<th width='14.286%' style='text-align: center'>Fri</th>
+						<th width='14.286%' style='text-align: center'>Sat</th>
+					</tr>
+				</thead>
+				<tbody id='calendar-body'></tbody>	
+			</table>	
+		</div>
+		<div class='col-xs-12 col-sm-4 col-md-4 col-lg-4'>
+			<div id='event-container'>
+				<h2 id='event-date'></h2>
+				<ul id='event-detail'></ul>
+			</div>
+		</div>
+	</div>
+
+	<div class='row'>
+		<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+			<h2>Swap Requests<button onclick="sendSwapDate()" class='btn pull-right'>Swap</button></h2>
+			<div id='swapResult-container'>
+			</div>
+
+			<h2>Swap Request Status</h2>
+			<div id='swapRequest-container'>
+			</div>
+		</div>
+
+		<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+			<h2>Receive Swap</h2>
+			<div id='ReceiveRequest-container'></div>
+			<h2>Notification</h2>
+			<div id='notification-container'>
+			</div>
+		</div>
+
+		<div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+			<h2>Vacation Requests<button onclick="sendVacationDate()" class='btn pull-right'>Vacation</button></h2>
+			<div id='vacationResult-container'>
+			</div>
+		</div>
+
+	</div>
+	
+	{{ dates|json_script:"shift_dates"}}
+	{{ shift_start|json_script:"shift_start" }}
+	{{ shift_end|json_script:"shift_end" }}
+
+{% endblock %}
+
+{% block javascript %}
+	{% load staticfiles %}
+	<script src="{% static 'project_specific/js/employeeVariable.js'%}"></script>
+	<script src="{% static 'project_specific/js/calendar.js'%}"></script>
+	<script src="{% static 'project_specific/js/fetchDisplay.js'%}"></script>
+	<script src="{% static 'project_specific/js/receiverFunctions.js'%}"></script>
+	<script src="{% static 'project_specific/js/requestFunctions.js'%}"></script>
+	<script src="{% static 'project_specific/js/swapFunctions.js'%}"></script>
+	<script src="{% static 'project_specific/js/vacationFunctions.js'%}"></script>
+	<script src="{% static 'project_specific/js/daySummary.js'%}"></script>
+	
+{% endblock %}
