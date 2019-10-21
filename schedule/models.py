@@ -175,8 +175,17 @@ class Assign(models.Model):
             shift_start_date = str(shift.start_date)
             daily_schedule = total_schedule.get(shift_start_date)
             if daily_schedule:
-                daily_schedule[employee_id]['shift_start'].append(str(shift.shift_start))
-                daily_schedule[employee_id]['shift_end'].append(str(shift.shift_end))
+                daily_schedule_employee = daily_schedule.get(employee_id)
+                if daily_schedule_employee:
+                    daily_schedule[employee_id]['shift_start'].append(str(shift.shift_start))
+                    daily_schedule[employee_id]['shift_end'].append(str(shift.shift_end))
+
+                else:
+                    total_schedule[shift_start_date][employee_id] = {'first_name': str(shift.employee.user.first_name),
+                                                                      'last_name': str(shift.employee.user.last_name),
+                                                                      'shift_start': [str(shift.shift_start)],
+                                                                      'shift_end': [str(shift.shift_end)],
+                                                                      }
                 daily_schedule['employee_count'] += 1
             else:
                 total_schedule[shift_start_date] = {employee_id:{'first_name': str(shift.employee.user.first_name),
@@ -186,7 +195,10 @@ class Assign(models.Model):
                                                                  },
                                                     'employee_count': 1}
         daily_counts = [day['employee_count'] for day in total_schedule.values()]
-        max_count = max(daily_counts)
+        if daily_counts:
+            max_count = max(daily_counts)
+        else:
+            max_count = 0
         worker_bins = np.array([max_count*0.25, max_count*0.5, max_count*0.75])
         for day in total_schedule.values():
             day['daily_bin'] = int(np.digitize(day['employee_count'], worker_bins))
@@ -345,7 +357,6 @@ class Request(models.Model):
         return output
 
 
-
 def get_schedule(person):
     """
     get a person's schedules sorted by date
@@ -355,13 +366,15 @@ def get_schedule(person):
     return existing_schedule
 
 
-def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=None, override=False):
+def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=None,
+                     override=False):
     """
     set schedule for a single day on that person
     
     person is Employee instance
     start_day is datetime.date
-    shift is Shift instance"""
+    shift is Shift instance
+    if using shift_start or shift_end, they are in datetime.datetime instance"""
     if shift is None:
         assert (shift_start is not None)
         assert (shift_end is not None)
@@ -369,7 +382,7 @@ def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=
     status_detail = {'overridable': [],
                      'non_overridable': [],
                      'holiday': [],
-                     'employee': person}
+                     'employee': person.pk}
     try:
         org = Organization.objects.get(pk=1)
     except ObjectDoesNotExist:
@@ -409,7 +422,7 @@ def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=
                     group=person.group).filter(
                     shift_start=shift_start).get(
                     shift_duration=(shift_end - shift_start))
-            status_detail['overridable'].append((start_day, shift))
+            status_detail['overridable'].append((str(start_day), shift.shift_name, shift.pk))
             return status, status_detail
 
     if not (existing_schedule or vacation_schedule):
@@ -430,17 +443,15 @@ def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=
             for exist_shift in existing_schedule:
                 overlap = exist_shift.shift_start <= shift_start < exist_shift.shift_end
                 if overlap:
-                    # if found an overlap
                     break
 
         if overlap:
-            # if there is overlap of shifts
             if shift is None:
                 shift = Shift.objects.filter(
                     group=person.group).filter(
                     shift_start=shift_start).get(
                     shift_duration=(shift_end - shift_start))
-            status_detail['non_overridable'].append((start_day, shift))
+            status_detail['non_overridable'].append((str(start_day), shift.shift_name))
             status = False
         else:
             # if no overlap (but allow double shifts ie shift continuation)
@@ -467,7 +478,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
         'overridable': [],
         'non_overridable': [],
         'holiday': [],
-        'args': (person, start_date, shift_pattern, repeat)
+        'args': (person.user.employee_detail.employee_id, str(start_date), shift_pattern.pk, repeat)
     }
     if person.group != shift_pattern.group:
         status = False
@@ -497,7 +508,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
             continue
         if date.weekday() not in workdays:
             if not override:
-                status_detail['overridable'].append((date, pattern))
+                status_detail['overridable'].append((str(date), pattern.shift_name, pattern.pk))
                 continue
 
         if holiday_model is not None and date in holiday_model:
@@ -537,7 +548,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
 
             if overlap:
                 # if there is overlap of shifts
-                status_detail['non_overridable'].append((date, pattern))
+                status_detail['non_overridable'].append((str(date), pattern.shift_name))
             else:
                 # if no overlap (but allow double shifts ie shift continuation)
                 schedule = Assign(start_date=date,
@@ -683,11 +694,13 @@ def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, da
         status, status_detail = set_schedule(employee, mock_match.pattern_start_date,
                                              shift_pattern, repeat=int(day_length / shift_len))
         for date, shift in mock_match.non_pattern_dates.items():
-            indv_status, indv_status_detail = set_schedule_day(employee, date, shift)
-            status_detail['overridable'].extend(indv_status_detail['overridable'])
-            status_detail['non_overridable'].extend(indv_status_detail['non_overridable'])
-            status_detail['holiday'].extend(indv_status_detail['holiday'])
-        total_status_detail[employee] = status_detail
+            if shift:
+                indv_status, indv_status_detail = set_schedule_day(person=employee, start_day=date, shift=shift)
+                status_detail['overridable'].extend(indv_status_detail['overridable'])
+                status_detail['non_overridable'].extend(indv_status_detail['non_overridable'])
+                status_detail['holiday'].extend(indv_status_detail['holiday'])
+        total_status_detail[employee.pk] = status_detail
+        total_status_detail[employee.pk]['employee_name'] = str(employee)
     return total_status_detail
 
 

@@ -88,6 +88,7 @@ function next() {
     nextYear = (curMonth == 11) ? curYear +1: curYear
     nextMonth = (curMonth+1) % 12
     buildCalendar(nextYear, nextMonth)
+    fetchSchedules()
 }
 
 function prev() {
@@ -97,6 +98,7 @@ function prev() {
     prevYear = (curMonth == 0) ? curYear -1: curYear
     prevMonth = (curMonth == 0) ? 11:curMonth-1
     buildCalendar(prevYear, prevMonth)
+    fetchSchedules()
 }
 
 
@@ -138,7 +140,6 @@ function highlightCalendar() {
     let curYear = parseInt(pageDate.dataset.year)
     let curMonth = parseInt(pageDate.dataset.month)
     let cellLookup = reverseCellDate(curYear, curMonth)
-
     for (date in monthSchedules) {
         let split_date = date.split('-')
         let format_month = formatMonth(split_date[1], add_one=false)
@@ -149,12 +150,16 @@ function highlightCalendar() {
             switch (monthSchedules[date]['daily_bin']) {
                 case 0:
                     $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level1')
+                    break
                 case 1:
                     $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level2')
+                    break
                 case 2:
                     $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level3')
+                    break
                 case 3:
                     $('#calendar-body tr').eq(cellNum[0]).find('td').eq(cellNum[1]).addClass('highlight-level4')
+                    break
             }
         }
         

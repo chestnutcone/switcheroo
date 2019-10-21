@@ -27,6 +27,13 @@ class CustomUser(AbstractUser):
                   'employee_id': self.employee_detail.employee_id}
         return result
 
+    @staticmethod
+    def get_employee_user(employee_id):
+        employee_id = int(employee_id)
+        employee_detail = EmployeeID.objects.get(pk=employee_id)
+        employee_user = CustomUser.objects.get(employee_detail=employee_detail)
+        return employee_user
+
     def __str__(self):
         return self.first_name + ' ' + self.last_name
 

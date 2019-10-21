@@ -28,8 +28,8 @@
 </div>
 
 <div class='row hide' id='singleDayForm'>
-    <h1 class='col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1'>Set Single Day</h1>
-    <form action='/main/manager/assign' method='post' class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+    <div class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+        <h1>Set Single Day</h1>
         <input type="text" placeholder="Search..." 
         class='form-control' onkeyup="searchTable(this, 'day-employees-body')" id='day-search-bar'>
         <table class="table table-striped table-hover table-responsive">
@@ -69,16 +69,22 @@
         </div>
 
         <div class='form-group '>
-            <label>Override<input type="checkbox" class='form-control'></label>
+            <label>Override<input type="checkbox" class='form-control' id='day-override'></label>
         </div>
 
-        <button type='submit' class='btn btn-default'>Submit</button>
-    </form>
+        <button class='btn btn-default' onclick="submitSingleDay()">Submit</button>
+    </div>
+    <div class='col-xs-12 col-sm-5 col-md-5 col-lg-5 hide' id='singleDay-status'>
+        <h1 id='singleDay-status-title' class='alert'></h1>
+        <ul id='singleDay-error-msg'></ul>
+        <ul id='singleDay-holiday'></ul>
+    </div>
 </div>
 
+
 <div class='row hide' id='shiftPatternForm'>
-    <h1 class='col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1'>Set Based on Shift Pattern</h1>
-    <form action='/main/manager/assign' method='post' class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+    <div class='col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+        <h1>Set Based on Schedule Pattern</h1>
         <input type="text" placeholder="Search..." 
         class='form-control' onkeyup="searchTable(this, 'person-employees-body')" id='person-search-bar'>
         <table class="table table-striped table-hover table-responsive">
@@ -107,21 +113,27 @@
 
         <div class='form-group '>
             <label for="repeat">Repeat</label>
-            <input type="number" min='1' class='form-control'>
+            <input type="number" min='1' class='form-control' id='person-schedule-repeat' value='1'>
         </div>
 
         <div class='form-group '>
-            <label>Override<input type="checkbox" class='form-control'></label>
+            <label>Override<input type="checkbox" class='form-control' id='person-override'></label>
         </div>
 
-        <button type='submit' class='btn btn-default'>Submit</button>
-    </form>
+        <button class='btn btn-default' onclick='submitSchedulePatternForm()'>Submit</button>
+    </div>
+    <div class='col-xs-12 col-sm-5 col-md-5 col-lg-5 hide' id='personPattern-status'>
+        <h1 id='personPattern-status-title' class='alert'></h1>
+        <ul id='personPattern-error-msg'></ul>
+        <ul id='personPattern-overridable'></ul>
+        <ul id='personPattern-non_overridable'></ul>
+        <ul id='personPattern-holiday'></ul>
+    </div>
 </div>
 
 <div class='row hide' id='automaticAssignForm'>
-    <h1 class='col-xs-12 col-sm-12 col-md-10 col-lg-10 col-md-offset-1 col-lg-offset-1'>Automatic</h1>
-    <form action='/main/manager/assign' method='post' class='form-group col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
-
+    <div class='form-group col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1'>
+        <h1>Automatic</h1>
         <input type="text" placeholder="Search..." 
         class='form-control' onkeyup="searchTable(this, 'auto-employees-body')" id='auto-search-bar'>
 
@@ -151,16 +163,18 @@
 
         <div class='form-group '>
             <label for="workersPerDay">Workers Per Day</label>
-            <input type="number" min='1' class='form-control'>
+            <input type="number" min='1' class='form-control' id='auto-workers-per-day' value=1>
         </div>
 
         <div class='form-group '>
             <label for="dayLength">Day Length</label>
-            <input type="number" min='1' class='form-control'>
+            <input type="number" min='1' class='form-control' id='auto-days-length' value=1>
         </div>
 
-        <button type='submit' class='btn btn-default'>Submit</button>
-    </form>
+        <button class='btn btn-default' onclick='submitAutoAssign()'>Submit</button>
+    </div>
+    <div class='col-xs-12 col-sm-5 col-md-5 col-lg-5 hide' id='autoAssign-status'>
+    </div>
 </div>
 
 
@@ -168,7 +182,6 @@
 
 {% block javascript %}
     {% load staticfiles %}
+    <script src="{% static 'project_specific/js/manager_commonFunc.js'%}"></script>
     <script src="{% static 'project_specific/js/manager_assign.js'%}"></script>
-	<script src="{% static 'project_specific/js/daySummary.js'%}"></script>
-	
 {% endblock %}

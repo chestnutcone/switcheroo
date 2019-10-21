@@ -181,14 +181,14 @@ class AssignModelTest(TestCase):
         start_date = datetime.date(2019, 9, 1)  # sunday
         diff = datetime.timedelta(days=3)
         expected_status = [False, True, False]
-        expected_status_detail = [{'overridable': [(datetime.date(2019, 9, 1), morning_shift)],
+        expected_status_detail = [{'overridable': [(str(datetime.date(2019, 9, 1)), morning_shift.shift_name, morning_shift.pk)],
                                    'non_overridable': [],
                                    'holiday': ['Labour Day']},
                                   {'overridable': [],
                                    'non_overridable': [],
                                    'holiday': []},
-                                  {'overridable': [(datetime.date(2019, 9, 7), morning_shift),
-                                                   (datetime.date(2019, 9, 8), morning_shift)],
+                                  {'overridable': [(str(datetime.date(2019, 9, 7)), morning_shift.shift_name, morning_shift.pk),
+                                                   (str(datetime.date(2019, 9, 8)), morning_shift.shift_name, morning_shift.pk)],
                                    'non_overridable': [],
                                    'holiday': []},
                                   ]
@@ -201,12 +201,12 @@ class AssignModelTest(TestCase):
         diff = datetime.timedelta(days=3)
         expected_status = [False, False, False]
         expected_status_detail = [{'overridable': [],
-                                   'non_overridable': [(datetime.date(2019, 9, 2), morning_shift)],
+                                   'non_overridable': [(str(datetime.date(2019, 9, 2)), morning_shift.shift_name)],
                                    'holiday': ['Labour Day']},
-                                  {'overridable': [(datetime.date(2019, 9, 7), night_shift)],
-                                   'non_overridable': [(datetime.date(2019, 9, 5), morning_shift)],
+                                  {'overridable': [(str(datetime.date(2019, 9, 7)), night_shift.shift_name, night_shift.pk)],
+                                   'non_overridable': [(str(datetime.date(2019, 9, 5)), morning_shift.shift_name)],
                                    'holiday': []},
-                                  {'overridable': [(datetime.date(2019, 9, 8), morning_shift)],
+                                  {'overridable': [(str(datetime.date(2019, 9, 8)), morning_shift.shift_name, morning_shift.pk)],
                                    'non_overridable': [],
                                    'holiday': []},
                                   ]
@@ -225,14 +225,14 @@ class AssignModelTest(TestCase):
         diff = datetime.timedelta(days=3)
         expected_status = [False, False, False]
         expected_status_detail = [{'overridable': [],
-                                   'non_overridable': [(datetime.date(2019, 9, 4), night_shift)],
+                                   'non_overridable': [(str(datetime.date(2019, 9, 4)), night_shift.shift_name)],
                                    'holiday': []},
-                                  {'overridable': [(datetime.date(2019, 9, 7), night_shift),
-                                                   (datetime.date(2019, 9, 8), night_shift)],
+                                  {'overridable': [(str(datetime.date(2019, 9, 7)), night_shift.shift_name, night_shift.pk),
+                                                   (str(datetime.date(2019, 9, 8)), night_shift.shift_name, night_shift.pk)],
                                    'non_overridable': [],
                                    'holiday': []},
                                   {'overridable': [],
-                                   'non_overridable': [(datetime.date(2019, 9, 10), night_shift)],
+                                   'non_overridable': [(str(datetime.date(2019, 9, 10)), night_shift.shift_name)],
                                    'holiday': []},
                                   ]
 
@@ -277,46 +277,46 @@ class AssignModelTest(TestCase):
                 self.assertEquals(status_detail[key], expected_status_detail[key])
 
         # lands on weekend, wont work
-        output, status_detail = sm.set_schedule_day(e1, start_date, morning_shift)
+        output, status_detail = sm.set_schedule_day(person=e1, start_day=start_date, shift=morning_shift)
         expected = False
-        expected_status_detail = {'overridable': [(start_date, morning_shift)],
+        expected_status_detail = {'overridable': [(str(start_date), morning_shift.shift_name, morning_shift.pk)],
                                   'non_overridable': [],
                                   'holiday': [],
-                                  'employee': e1}
+                                  'employee': e1.pk}
         self.assertEquals(output, expected)
         compare_status_detail(status_detail, expected_status_detail)
 
         start_date = datetime.date(2019, 9, 2)
-        output, status_detail = sm.set_schedule_day(e1, start_date, morning_shift)
+        output, status_detail = sm.set_schedule_day(person=e1, start_day=start_date, shift=morning_shift)
         expected = True
         expected_status_detail = {'overridable': [],
                                   'non_overridable': [],
                                   'holiday': ['Labour Day'],
-                                  'employee': e1}
+                                  'employee': e1.pk}
 
         self.assertEquals(output, expected)
         compare_status_detail(status_detail, expected_status_detail)
 
         start_date = datetime.date(2019, 9, 2)
         # schedule conflict wont work
-        output, status_detail = sm.set_schedule_day(e1, start_date, morning_shift)
+        output, status_detail = sm.set_schedule_day(person=e1, start_day=start_date, shift=morning_shift)
         expected = False
         expected_status_detail = {'overridable': [],
-                                  'non_overridable': [(start_date, morning_shift)],
+                                  'non_overridable': [(str(start_date), morning_shift.shift_name)],
                                   'holiday': ['Labour Day'],
-                                  'employee': e1}
+                                  'employee': e1.pk}
 
         self.assertEquals(output, expected)
         compare_status_detail(status_detail, expected_status_detail)
 
         start_date = datetime.date(2019, 9, 2)
         # currently allows shift overlap
-        output, status_detail = sm.set_schedule_day(e1, start_date, night_shift)
+        output, status_detail = sm.set_schedule_day(person=e1, start_day=start_date, shift=night_shift)
         expected = True
         expected_status_detail = {'overridable': [],
                                   'non_overridable': [],
                                   'holiday': ['Labour Day'],
-                                  'employee': e1}
+                                  'employee': e1.pk}
 
         self.assertEquals(output, expected)
         compare_status_detail(status_detail, expected_status_detail)
@@ -326,7 +326,7 @@ class AssignModelTest(TestCase):
         night_shift_2 = Shift.objects.filter(group=group2).get(shift_name='night')
 
         start_date = datetime.date(2019, 9, 3)
-        output, status_detail = sm.set_schedule_day(e1, start_date, night_shift_2)
+        output, status_detail = sm.set_schedule_day(person=e1, start_day=start_date, shift=night_shift_2)
         expected = False
         expected_detail = ['Employee group does not match shift group']
         self.assertEquals(output, expected)

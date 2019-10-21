@@ -211,43 +211,6 @@ function positionTable() {
     }
 }
 
-function searchTable(param, access_id) {
-    let text = $(param).val().toLowerCase()
-    $(`#${access_id} tr`).filter(
-        function () {
-        $(this).toggle($(this).text().toLowerCase().indexOf(text) > -1)
-    })
-}
-
-function selectAll(param) {
-    $('input[type="checkbox"]:visible').each(function() {
-        this.checked = param.checked
-    })
-}
-
-function selectRadio(param) {
-    $('input[type="radio"]:checked').each(function() {
-        this.checked = false
-    })
-    param.checked = true
-}
-
-function getCookie (name) {
-    let cookieValue = null
-    if (document.cookie && document.cookie !== '') {
-        let cookies = document.cookie.split(';')
-        for (let i=0; i<cookies.length; i++) {
-            let cookie = cookies[i].trim()
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
-                break
-            }
-        }
-    }
-    return cookieValue
-}
-
-
 function submitUnit() {
     let unit_name = document.getElementById('unit_name_input').value
     let csrftoken = getCookie('csrftoken')
@@ -264,9 +227,7 @@ function submitUnit() {
             },
             dataType: 'json',
             success: function(result) {
-                console.log(result)
                 if (result['status']) {
-                    alert('done')
                     location.reload();
                 } else {
                     alert(result['error_detail'])
@@ -295,9 +256,7 @@ function submitPosition() {
             },
             dataType: 'json',
             success: function(result) {
-                console.log(result)
                 if (result['status']) {
-                    alert('done')
                     location.reload();
                 } else {
                     alert(result['error_detail'])
@@ -347,9 +306,7 @@ function submitEmployee() {
             },
             dataType: 'json',
             success: function(result) {
-                console.log(result)
                 if (result['status']) {
-                    alert('done')
                     location.reload();
                 } else {
                     alert(result['error_detail'])

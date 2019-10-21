@@ -98,9 +98,10 @@ def swap_view(request):
                                                           for output_shift in result['available_shifts']]
                         elif result['available_people']:
                             available_people = result['available_people']
-                            available_people_dict = [{'receiver_employee_id':str(p.user.employee_detail.employee_id),
-                                                      'receiver_first_name':str(p.user.first_name),
-                                                      'receiver_last_name':str(p.user.last_name)} for p in available_people]
+                            available_people_dict = [{'receiver_employee_id': str(p.user.employee_detail.employee_id),
+                                                      'receiver_first_name': str(p.user.first_name),
+                                                      'receiver_last_name': str(p.user.last_name)} for p in
+                                                     available_people]
                             result['available_people'] = available_people_dict
                     total_result[str(timezone_start_time)] = result
                     store_data = SwapResult(applicant=person_instance,
@@ -206,13 +207,13 @@ def swap_request_view(request):
                                             manager=requester.user.group.owner)
                     request_queue.save()
                     status_detail = {'status': True,
-                                     'acceptor_error':'',
-                                     'requester_error':'',
+                                     'acceptor_error': '',
+                                     'requester_error': '',
                                      'already_exist': request_exist}
                 else:
                     status_detail = {'status': False,
-                                     'acceptor_error':'',
-                                     'requester_error':'',
+                                     'acceptor_error': '',
+                                     'requester_error': '',
                                      'already_exist': request_exist}
             status_detail['data_type'] = json_data['data']['data_type']
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
@@ -591,7 +592,109 @@ def manager_request_view(request):
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_assign_view(request):
     if request.method == "POST":
-        pass
+        current_user = request.user
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+
+        get_employee_id = json_data.get('employee_id')
+        if get_employee_id:
+            employee_id = int(get_employee_id)
+            employee_detail = EmployeeID.objects.get(pk=employee_id)
+            employee_user = CustomUser.objects.get(employee_detail=employee_detail)
+            employee = Employee.objects.get(user=employee_user)
+
+        if json_data['action'] == 'assign_day_shift_based':
+            shift_instance = Shift.objects.get(pk=int(json_data['shift_pk']))
+            status, status_detail = set_schedule_day(person=employee,
+                                                     start_day=parse(json_data['start_date']),
+                                                     shift=shift_instance,
+                                                     override=json_data['override'])
+            output = {'status': status,
+                      'status_detail': status_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'assign_day_time_based':
+            shift_start_time = parse(json_data['shift_start']).time()
+            shift_end_time = parse(json_data['shift_end']).time()
+            shift_day = parse(json_data['start_date'])
+            shift_start = datetime.datetime.combine(shift_day, shift_start_time)
+            shift_end = datetime.datetime.combine(shift_day, shift_end_time)
+            status, status_detail = set_schedule_day(person=employee,
+                                                     start_day=parse(json_data['start_date']),
+                                                     shift_start=shift_start,
+                                                     shift_end=shift_end,
+                                                     override=json_data['override'])
+            output = {'status': status,
+                      'status_detail': status_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'assign_schedule':
+            schedule_instance = Schedule.objects.get(pk=int(json_data['schedule_pk']))
+            status, status_detail = set_schedule(person=employee,
+                                                 start_date=parse(json_data['start_date']),
+                                                 shift_pattern=schedule_instance,
+                                                 repeat=int(json_data['repeat']),
+                                                 override=json_data['override'])
+            output = {'status': status,
+                      'status_detail': status_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'override_assign_schedule':
+            employee_data = json_data['employee_data']
+            overridable_schedules = employee_data['overridable']
+            total_status = []
+            total_status_detail = {'overridable': [],
+                                   'non_overridable': [],
+                                   'holiday': [],
+                                   'args': employee_data['args']}
+            for o in overridable_schedules:
+                start_datetime = parse(o[0])
+                shift_type = Shift.objects.get(pk=int(o[2]))
+                status, status_detail = set_schedule_day(person=employee,
+                                                         start_day=start_datetime.date(),
+                                                         shift=shift_type,
+                                                         override=True)
+                total_status.append(status)
+                total_status_detail['overridable'].extend(status_detail['overridable'])
+                total_status_detail['non_overridable'].extend(status_detail['non_overridable'])
+                total_status_detail['holiday'].extend(status_detail['holiday'])
+            output = {'status': all(total_status),
+                      'status_detail': total_status_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'group_set_schedule':
+            employees_id_list = json_data['employees_id_list']
+            employee_user_list = [CustomUser.get_employee_user(eid) for eid in employees_id_list]
+            employees_queryset = Employee.objects.filter(
+                group=current_user.group).filter(user__in=employee_user_list)
+            schedule_instance = Schedule.objects.get(pk=int(json_data['schedule_pk']))
+            total_status_detail = group_set_schedule(employees=employees_queryset,
+                                                     shift_pattern=schedule_instance,
+                                                     start_date=parse(json_data['start_date']),
+                                                     workers_per_day=int(json_data['workers_per_day']),
+                                                     day_length=int(json_data['day_length']))
+            return HttpResponse(json.dumps(total_status_detail), content_type='application/json')
+        elif json_data['action'] == 'override_auto_assign':
+            employee_data = json_data['employee_data']
+            employee_instance = Employee.objects.get(pk=int(json_data['employee_pk']))
+            total_status = []
+            total_status_detail = {'overridable': [],
+                                   'non_overridable': [],
+                                   'holiday': [],
+                                   'args': employee_data['args']}
+            for o in employee_data['overridable']:
+                start_datetime = parse(o[0])
+                shift_type = Shift.objects.get(pk=int(o[2]))
+                status, status_detail = set_schedule_day(person=employee_instance,
+                                                         start_day=start_datetime.date(),
+                                                         shift=shift_type,
+                                                         override=True)
+                total_status.append(status)
+                total_status_detail['overridable'].extend(status_detail['overridable'])
+                total_status_detail['non_overridable'].extend(status_detail['non_overridable'])
+                total_status_detail['holiday'].extend(status_detail['holiday'])
+            output = {'status': all(total_status),
+                      'status_detail': total_status_detail,
+                      'employee_name': str(employee_instance)}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+
     elif request.method == 'GET':
         current_user = request.user
         manager_group = current_user.group
@@ -603,9 +706,9 @@ def manager_assign_view(request):
 
         own_schedules = Schedule.objects.filter(group=manager_group).order_by('schedule_name')
         json_own_schedules = [s.json_format() for s in own_schedules]
-        return render(request, 'project_specific/manager_assign.html', context={'employees':json_own_employees,
-                                                                                'shifts':json_own_shifts,
-                                                                                'schedules':json_own_schedules})
+        return render(request, 'project_specific/manager_assign.html', context={'employees': json_own_employees,
+                                                                                'shifts': json_own_shifts,
+                                                                                'schedules': json_own_schedules})
 
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
@@ -663,7 +766,6 @@ def manager_people_view(request):
             output = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(output), content_type='application/json')
 
-
     elif request.method == "GET":
         current_user = request.user
         manager_group = current_user.group
@@ -687,6 +789,67 @@ def manager_people_view(request):
                                                                                 'employees': json_own_employees,
                                                                                 'users': json_unregistered_user,
                                                                                 'workdays': json_workday_pref})
+
+
+def manager_schedule_view(request):
+    if request.method == 'POST':
+        current_user = request.user
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        status = True
+        error_detail = ''
+        if json_data['action'] == 'create_shift':
+
+            try:
+                new_shift = Shift(shift_start=parse(json_data['shift_start_time']),
+                                  shift_name=json_data['shift_name'],
+                                  shift_duration=datetime.timedelta(hours=int(json_data['shift_dur_hr']),
+                                                                    minutes=int(json_data['shift_dur_min'])),
+                                  group=current_user.group)
+                new_shift.save()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif json_data['action'] == 'create_schedule':
+            try:
+                shift_pk = json_data['shift_pk']
+                print(shift_pk)
+                adding_shifts = []
+                for shift in shift_pk:
+                    if shift:
+                        s = Shift.objects.get(pk=shift)
+                        adding_shifts.append(s)
+                    else:
+                        adding_shifts.append(None)
+                print(adding_shifts)
+                new_schedule = Schedule(schedule_name=json_data['schedule_name'],
+                                        cycle=json_data['cycle'],
+                                        day_1=adding_shifts[0],
+                                        day_2=adding_shifts[1],
+                                        day_3=adding_shifts[2],
+                                        group=current_user.group)
+                new_schedule.save()
+            except Exception as e:
+                status = False
+                error_detail = str(e)
+
+            output = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+
+    elif request.method == "GET":
+        current_user = request.user
+        manager_group = current_user.group
+        own_shift = Shift.objects.filter(group=manager_group)
+        json_own_shift = [s.json_format() for s in own_shift]
+        own_schedule = Schedule.objects.filter(group=manager_group)
+        json_own_schedule = [s.json_format() for s in own_schedule]
+
+        return render(request, 'project_specific/manager_schedule.html', context={'shifts': json_own_shift,
+                                                                                  'schedules': json_own_schedule})
 
 
 def logout_view(request):

@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from user.models import Group
+from user.models import *
 
 
 class Position(models.Model):
@@ -114,6 +114,14 @@ class Employee(models.Model):
                   'employee_id': str(self.user.employee_detail.employee_id),
                   'workday_preference': workday_preference}
         return result
+
+    @staticmethod
+    def get_employee_instance(employee_id):
+        employee_id = int(employee_id)
+        employee_detail = EmployeeID.objects.get(pk=employee_id)
+        employee_user = CustomUser.objects.get(employee_detail=employee_detail)
+        employee = Employee.objects.get(user=employee_user)
+        return employee
 
     def __str__(self):
         return self.user.first_name + " " + self.user.last_name
