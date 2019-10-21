@@ -40,7 +40,8 @@ function fetchSchedules() {
     $.ajax({
         type: "GET",
         url: "/main/schedule/",
-        data: date_range,
+        data: {'action': 'all_employees',
+            'date_range':date_range},
         dataType: 'json',
         success: function(response) {
             monthSchedules = response

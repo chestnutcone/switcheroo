@@ -323,6 +323,7 @@ def swap_request_view(request):
         return HttpResponse(json.dumps(total_requests), content_type='application/json')
 
 
+@login_required
 def receive_request_view(request):
     if request.method == "POST":
         str_data = request.body
@@ -513,15 +514,31 @@ def schedule_view(request):
     if request.method == "POST":
         pass
     elif request.method == 'GET':
-        start_date = parse(request.GET['start_date'])
-        end_date = parse(request.GET['end_date'])
-        # get employee belonging to manager
-        employees = Employee.objects.all().filter(group=request.user.group)
-        employee_schedule = Assign.objects.filter(
-            employee__in=employees).filter(
-            start_date__gte=start_date).filter(start_date__lte=end_date)
-        json_employee_schedule = Assign.schedule_sort(employee_schedule)
-        return HttpResponse(json.dumps(json_employee_schedule), content_type='application/json')
+        if request.GET['action'] == 'single_person':
+            start_date = parse(request.GET['date_range[start_date]'])
+            end_date = parse(request.GET['date_range[end_date]'])
+            employee_id = request.GET['employee_id']
+            employee = Employee.get_employee_instance(employee_id)
+            employee_schedule = Assign.objects.filter(employee=employee).filter(
+                start_date__gte=start_date).filter(start_date__lte=end_date)
+            json_employee_schedule = [s.json_format() for s in employee_schedule]
+
+            employee_vacation = Vacation.objects.filter(employee=employee).filter(
+                date__gte=start_date).filter(date__lte=end_date)
+            json_employee_vacation = [str(v.date) for v in employee_vacation]
+            output = {'schedules': json_employee_schedule,
+                      'vacations': json_employee_vacation}
+            return HttpResponse(json.dumps(output), content_type='application/json')
+        elif request.GET['action'] == 'all_employees':
+            start_date = parse(request.GET['date_range[start_date]'])
+            end_date = parse(request.GET['date_range[end_date]'])
+            # get employee belonging to manager
+            employees = Employee.objects.all().filter(group=request.user.group)
+            employee_schedule = Assign.objects.filter(
+                employee__in=employees).filter(
+                start_date__gte=start_date).filter(start_date__lte=end_date)
+            json_employee_schedule = Assign.schedule_sort(employee_schedule)
+            return HttpResponse(json.dumps(json_employee_schedule), content_type='application/json')
 
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
@@ -790,7 +807,36 @@ def manager_people_view(request):
                                                                                 'users': json_unregistered_user,
                                                                                 'workdays': json_workday_pref})
 
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def manager_employee_view(request):
+    if request.method == "POST":
+        pass
+    if request.method == "GET":
+        current_user = request.user
+        manager_group = current_user.group
+        own_unit = Unit.objects.filter(group=manager_group)
+        json_own_unit = [u.json_format() for u in own_unit]
 
+        own_position = Position.objects.filter(group=manager_group)
+        json_own_position = [p.json_format() for p in own_position]
+
+        own_employees = Employee.objects.filter(group=manager_group).order_by('person_unit')
+        json_own_employees = [e.json_format() for e in own_employees]
+
+        workday_pref = Workday.objects.all()
+        json_workday_pref = [w.json_format() for w in workday_pref]
+
+        unregistered_user = CustomUser.objects.filter(is_superuser=False)
+        json_unregistered_user = [u.json_format() for u in unregistered_user]
+
+        return render(request, 'project_specific/manager_view.html', context={'unit': json_own_unit,
+                                                                                'position': json_own_position,
+                                                                                'employees': json_own_employees,
+                                                                                'users': json_unregistered_user,
+                                                                                'workdays': json_workday_pref})
+
+
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_schedule_view(request):
     if request.method == 'POST':
         current_user = request.user

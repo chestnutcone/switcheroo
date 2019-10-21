@@ -9,23 +9,17 @@
 <div id='pageDate'></div>
 
 <div class='row'>
-    <h1 id='monthAndYear' class="col-xs-7 col-sm-6 col col-md-4 col-lg-2" style="background-color:burlywood;"></h1>
-    <div class='btn-group col-xs-5 col-sm-4 col-lg-2' id='calendar-button' role='group' style='background-color: blue;'>
-        <button id='next' onclick="next()" class='btn btn-secondary pull-right'>Next</button>
-        <button id='previous' onclick='prev()' class='btn btn-secondary pull-right'>Prev</button>	
-    </div>
-
-    <div class='col-xs-12 col-sm-12 col-md-4 col-lg-4' style='background-color: chocolate;'>
-        <h1>Daily Summary</h1>
-    </div>
-
-    <div class='col-xs-12 col-sm-12 col-md-4 col-lg-4' style='background-color:cyan;'>
-        <h1>Schedule Stats</h1>
-    </div>
-</div>
-
-<div class='row'>
     <div class="col-xs-12 col-sm-8 col-md-6 col-lg-4">
+        <div width='100%'>
+            <h1 id='monthAndYear' style="background-color:burlywood; float:left;">
+            </h1>
+            <div class='btn-group ' id='calendar-button' role='group' style='background-color: blue; float:right;'>
+                <button id='previous' onclick='prev()' class='btn btn-secondary'>Prev</button>	
+                <button id='next' onclick="next()" class='btn btn-secondary'>Next</button>
+            </div>
+        </div>
+        
+        
         <table class="table table-borderless table-responsive" id='calendar-table'>
             <thead>
                 <tr>
@@ -46,7 +40,9 @@
     style="background-color: cornflowerblue;">
     </div>
     
-    <div id='statistics' class="col-xs-12 col-sm-4 col-md-6 col-lg-4"></div>
+    <div id='statistics' class="col-xs-12 col-sm-4 col-md-6 col-lg-4">
+        <h1>Schedule Stats</h1>
+    </div>
 </div>
 
 <div class='row'>
@@ -80,6 +76,7 @@
 
 {% block javascript %}
     {% load staticfiles %}
+    <script src="{% static 'project_specific/js/manager_commonFunc.js'%}"></script>
     <script src="{% static 'project_specific/js/manager_calendar.js'%}"></script>
     <script src="{% static 'project_specific/js/manager_vacationFunctions.js'%}"></script>
     <script src="{% static 'project_specific/js/manager_fetchDisplay.js'%}"></script>

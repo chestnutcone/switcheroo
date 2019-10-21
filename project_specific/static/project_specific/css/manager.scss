@@ -9,6 +9,7 @@ $level3Color: lighten($level4Color, 25%);
 $level2Color: lighten($level4Color, 50%);
 $level1Color: lighten($level4Color, 75%);
 
+$vacationColor: #4287f5;
 
 #curYear, #curMonth {
 	display: none;
@@ -41,6 +42,10 @@ $level1Color: lighten($level4Color, 75%);
 	text-align: center;
 }
 
+#employee-calendar-body {
+    text-align: center;
+}
+
 #calendar-button {
 	margin-top: 20px;
 }
@@ -66,8 +71,15 @@ $level1Color: lighten($level4Color, 75%);
 	background-color: $level4Color;
 }
 
+.highlight {
+	background-color: $accentColor1;
+}
+
+.vacation-highlight {
+	background-color: $vacationColor;
+}
+
 .date-selection {
-	// background-color: $accentColor2;
 	animation-name: date-fill-animation;
 	animation-duration: 1s;
 	animation-fill-mode: forwards;

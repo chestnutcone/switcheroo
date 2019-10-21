@@ -23,6 +23,9 @@
 #calendar-body {
   text-align: center; }
 
+#employee-calendar-body {
+  text-align: center; }
+
 #calendar-button {
   margin-top: 20px; }
 
@@ -42,6 +45,12 @@
 
 .highlight-level4 {
   background-color: #099c0c; }
+
+.highlight {
+  background-color: #D8C3A5; }
+
+.vacation-highlight {
+  background-color: #4287f5; }
 
 .date-selection {
   animation-name: date-fill-animation;
