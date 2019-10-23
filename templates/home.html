@@ -1,15 +1,126 @@
-<!-- templates/home.html -->
 {% extends 'base.html' %}
+
+{% block static %}
+{% load staticfiles %}
+<link rel='stylesheet' type='text/css' href="{% static '/css/home.css'%}">
+{% endblock %}
 
 {% block title %}Home{% endblock %}
 
 {% block content %}
-{% if user.is_authenticated %}
-  Hi {{ user.username }}!
-  <p><a href="{% url 'logout' %}">logout</a></p>
-{% else %}
-  <p>You are not logged in</p>
-  <a href="{% url 'login' %}">login</a> |
-  <a href="{% url 'signup' %}">signup</a>
-{% endif %}
+
+<nav class="nvbar navbar-inverse navbar-default">
+  <div class='container-fluid'>
+    <div class='navbar-header'>
+      <a class='navbar-brand' href="">Switcheroo</a>
+        </div>
+        
+    <ul class="nav navbar-nav navbar-right">
+        <li><a href="/users/login/"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+    </ul>
+</nav>	
+
+<div class='container-fluid'>
+  <div class='row'>
+    <div id='titleSection' class='hero-text'>
+      <h1>Switcheroo</h1>
+      <h4>Scheduling made easy</h4>
+    </div>
+  </div>
+  <div class='row col-xs-10 col-sm-10 col-md-10 col-lg-10 
+  col-xs-offset-1 col-sm-offset-1 col-md-offset-1 col-lg-offset-1'>
+      <div id='introduction'>
+        <h2>What is Switcheroo?</h2>
+        <p>Switcheroo is a web app that solves the tedious task of arranging shifts for employee and shift switching. 
+          It is useful for organization with a lot of employees that have the same position.
+        </p>
+
+        <h4>Problems addressed</h4>
+        <h5 style='font-weight: bold;'>Scheduling</h5>
+        <p>Some managers sit down at their desk and spend hours arranging shifts for employees on Excel. 
+          This is horribly inefficient. With Switcheroo, scheduling can be done on a pattern basis. Suppose
+          you have a 2 morning shifts, 2 night shifts, 4 rest days schedule for your employees, you can 
+          create that scheduling pattern with Switcheroo and assign to users repeatedly. Furthermore, you can assign
+          shifts automatically across multiple users at once.
+        </p>
+
+        <h5 style='font-weight: bold;'>Shift Switching</h5>
+        <p>When the employee pool grows, it becomes harder to keep track who is open to accept shifts. With 
+          Switcheroo, you no longer have to text every co-workers asking if they are free. The algorithm takes 
+          care of finding the right match for you. All you have to do is select who you want switch the shift with. 
+          The finalizing of shift switch is automatically sent to manager for approval.
+        </p>
+      </div>
+  </div>
+    
+
+  <div class='row'>
+      <div id='managerFeatures' class='col-xs-8 col-sm-8 col-md-8 col-lg-8 
+      col-md-offset-1 col-lg-offset-1'>
+        <h3>Features for managers</h3>
+          <ul>Schedule assignment based on shifts patterns
+            <li>Shifts are the unit block of schedules. Combine different shifts to form a schedule pattern</li>
+            <li>Schedule patterns are in blocks of days</li>
+          </ul>
+
+          <ul>Scheduling
+            <li>Assignments are done with starting dates</li>
+            <li>Scheduling can also be done automatic! The algorithm will sort out the optimal shift assignment
+                based on the workers needed per day, employees' preferred work days, and seniority</li>
+          </ul>
+
+          <ul>View employee's schedule
+            <li>Easily view each employee's schedule in calendar</li>
+          </ul>
+
+          <ul>Employee management
+            <li>One manager is in charge of a group of employees. The shifts and schedule patterns created belong only to this group</li>
+            <li>Each employee only belongs to one group</li>
+            <li>A manager can be an employee as well. This means you can stack your employees and create a whole organization!</li>
+          </ul>
+
+          <ul>People
+            <li>Each group can contain different types of employees with different units and positions</li>
+            <li>Units and positions are internal to the group. For example, manager A's unit "logistics" is different from manager B's "logistics". Same for positions</li>
+            <li>You can create as many different types of units and positions as requied. Note: shifts switches are only made within employees that belong to same group, unit, and position</li>
+          </ul>
+      </div>
+      <div id='managerIllustrations' class='col-xs-4 col-sm-8 col-md-2 col-lg-2'>
+        <img src="static/switcheroo-explanation.png" alt="switcheroo explanation" class='img-fluid'>
+      </div>
+  </div>
+
+  <div class='row'>
+    <div id='employeeFeatures' class='col-xs-8 col-sm-8 col-md-8 col-lg-8 
+    col-md-offset-1 col-lg-offset-1'>
+      <h3>Features for employees</h3>
+      <ul>Shift switching
+        <li>If you want to switch shift with someone on a particular day, all you have to do is choose a shift on the calendar, and click swap. The algorithm
+          will find the a list of possible matches. Once you select a shift to swap with, the request will be sent to the receiver. 
+          If receiver agrees, the request will be finalized for approval by manager. If manager agrees, the swap will be done automatically.
+        </li>
+        <li>You can switch a range of shifts all at once! No more texting other employees asking if they are free</li>
+        <li>Options to accept more shifts</li>
+        <li>View shift switch approval status</li>
+      </ul>
+
+      <ul>Vacation days
+        <li>Directly request vacation dates. Vacation dates will be sent to manager for approval</li>
+        <li>Once approved, the shift scheduling will not assign any shift on the vacation day</li>
+        <li>View vacation approval status</li>
+      </ul>
+
+    </div>
+
+    <div id='employeeIllustrations' class='col-xs-8 col-sm-8 col-md-8 col-lg-8 
+    col-md-offset-1 col-lg-offset-1'>
+      <img src="" alt="">
+    </div>
+  </div>
+    
+    
+  
+
+</div>
+
 {% endblock %}

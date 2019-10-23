@@ -28,7 +28,7 @@ urlpatterns += [
         path('schedule/',include('schedule.urls')),
         path('accounts/',include('django.contrib.auth.urls')),
         path('main/', include('project_specific.urls')),
-        path('', TemplateView.as_view(template_name='home.html'), name='home'),
+        path('', views.mainView, name='home'),
         path('users/', include('user.urls')),
         path('users/', include('django.contrib.auth.urls')),
         url(r'^login/$', views.loginView, name='login'),

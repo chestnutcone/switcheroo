@@ -13,3 +13,13 @@ def loginView(request):
     else:
         form = AuthenticationForm()
     return render(request, 'registration/login.html', {'form': form})
+
+
+def mainView(request):
+    if request.method == "POST":
+        pass
+    elif request.method == "GET":
+        if request.user.is_authenticated:
+            return redirect('main/')
+        else:
+            return render(request, 'home.html')

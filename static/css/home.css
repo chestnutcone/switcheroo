@@ -1,0 +1,21 @@
+#titleSection {
+  padding-top: 50px;
+  padding-bottom: 50px;
+  text-align: center;
+  color: white;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("bricks-background.jpg"); }
+  #titleSection h1 {
+    margin-top: 0;
+    font-size: 60px; }
+
+#managerFeatures ul {
+  font-size: 20px; }
+#managerFeatures li {
+  font-size: 14px; }
+
+#employeeFeatures ul {
+  font-size: 20px; }
+#employeeFeatures li {
+  font-size: 14px; }
+
+/*# sourceMappingURL=home.css.map */
