@@ -1,13 +1,33 @@
-<!-- templates/registration/login.html -->
 {% extends 'base.html' %}
+
+{% block static %}
+{% load staticfiles %}
+<link rel='stylesheet' type='text/css' href="{% static '/css/login.css'%}">
+{% endblock %}
 
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<h2>Login</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Login</button>
-</form>
+
+<div id='form-container'>
+  <form method="POST" id='loginForm' class='col-xs-10 col-sm-6 col-md-4 col-lg-4 
+  col-xs-offset-1 col-sm-offset-3 col-md-offset-4 col-lg-offset-4'>
+      {% csrf_token %}
+      <h1>Login</h1>
+      <div class='form-group'>
+        <label>Email</label>
+        <input type="text" name="username" placeholder="Enter email" class='form-control'>
+      </div>
+  
+      <div class='form-group'>
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Enter password" class='form-control'>
+      </div>
+  
+      <button type="submit" class='btn btn-block'>Login</button>
+  </form>
+</div>
+
+{% load staticfiles %}
+<script src="{% static '/js/login.js'%}"></script>
 {% endblock %}

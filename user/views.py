@@ -34,6 +34,7 @@ class SignUpView(CreateView):
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
+        print('form valid', form.is_valid())
         if form.is_valid():
             email = form.cleaned_data['email']
             first_name = form.cleaned_data['first_name']
@@ -46,16 +47,19 @@ class SignUpView(CreateView):
             employee_detail, created = EmployeeID.objects.get_or_create(pk=employee_id)
             employee_detail.is_manager = is_manager
             employee_detail.save()
-            logger.info('employee detail created:', created, 'employee detail:', employee_detail)
-            user = CustomUser(username=email,
-                              first_name=first_name,
-                              last_name=last_name,
-                              password=password,
-                              employee_detail=employee_detail)
-            if user.employee_detail.is_manager:
-                user.is_staff = True
-            user.save()
-
+            logger.info('employee detail created:', str(created))
+            exist_user = CustomUser.objects.filter(employee_detail=employee_detail)
+            if not exist_user.exists():
+                user = CustomUser(username=email,
+                                  first_name=first_name,
+                                  last_name=last_name,
+                                  password=password,
+                                  employee_detail=employee_detail)
+                if user.employee_detail.is_manager:
+                    user.is_staff = True
+                user.save()
+            else:
+                user = exist_user[0]
             if user.employee_detail.is_manager:
                 manager_group, created = Group.objects.get_or_create(name="Manager")
                 if created:
