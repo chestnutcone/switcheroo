@@ -61,4 +61,8 @@
   float: right;
   padding-top: 20px; }
 
+#recentActionsList {
+  list-style-type: none;
+  font-size: 18px; }
+
 /*# sourceMappingURL=manager.css.map */

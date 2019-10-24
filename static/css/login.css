@@ -1,5 +1,6 @@
 html {
-  background-image: url("bricks-background.jpg"); }
+  background-image: url("bricks-background.jpg");
+  background-size: cover; }
 
 #loginForm {
   background-color: white;

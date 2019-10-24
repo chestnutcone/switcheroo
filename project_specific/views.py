@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
+from django.contrib.admin.models import LogEntry
 from schedule.models import *
 from people.models import *
 from user.models import Group, EmployeeID, CustomUser
@@ -837,11 +838,15 @@ def manager_people_view(request):
         unregistered_user = CustomUser.objects.filter(is_superuser=False).filter(group=None)
         json_unregistered_user = [u.json_format() for u in unregistered_user]
 
+        action_logs = LogEntry.objects.filter(user=current_user)[:10]
+        short_action_logs = json.dumps([[l.object_repr, l.action_flag] for l in action_logs])
+
         return render(request, 'project_specific/manager_people.html', context={'unit': json_own_unit,
                                                                                 'position': json_own_position,
                                                                                 'employees': json_own_employees,
                                                                                 'users': json_unregistered_user,
-                                                                                'workdays': json_workday_pref})
+                                                                                'workdays': json_workday_pref,
+                                                                                'action_logs': short_action_logs})
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_employee_view(request):
@@ -953,8 +958,11 @@ def manager_schedule_view(request):
         own_schedule = Schedule.objects.filter(group=manager_group)
         json_own_schedule = [s.json_format() for s in own_schedule]
 
+        action_logs = LogEntry.objects.filter(user=current_user)[:10]
+        short_action_logs = json.dumps([[l.object_repr, l.action_flag] for l in action_logs])
         return render(request, 'project_specific/manager_schedule.html', context={'shifts': json_own_shift,
-                                                                                  'schedules': json_own_schedule})
+                                                                                  'schedules': json_own_schedule,
+                                                                                  'action_logs': short_action_logs})
 
 
 def logout_view(request):
