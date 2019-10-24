@@ -4,6 +4,7 @@ from .province_state import province_state
 from people.models import Employee
 from user.models import CustomUser
 
+
 class Organization(models.Model):
     """
     this will store organization's data
@@ -52,3 +53,16 @@ class VacationNotification(models.Model):
                   'schedule_conflict': str(self.schedule_conflict),
                   }
         return output
+
+
+class RecentActions(models.Model):
+    """
+    action 1: add  2: change 3: delete
+    """
+    user = models.ForeignKey(CustomUser,
+                             on_delete=models.CASCADE,
+                             null=True)
+    action = models.PositiveSmallIntegerField()
+    object_name = models.TextField(max_length=200)
+    object_class = models.TextField(max_length=200)
+    created = models.DateTimeField(auto_now_add=True)

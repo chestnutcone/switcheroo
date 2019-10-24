@@ -18,15 +18,20 @@ let employee_schedule = {}
 months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
-function findPerson() {
+function findEmployeeId() {
     let employees = $("#employee-table-body input[type='radio']:checked")
     let employees_id = null
     if (employees.length) {
         employees.each(function() {
         employees_id = this.parentNode.parentNode.dataset.employee_id
-    })
-    fetchSchedule(param=null, employee_id=employees_id)
+        })
     }
+    return employees_id
+}
+
+function findPerson() {
+    let employee_id = findEmployeeId()
+    fetchSchedule(param=null, employee_id=employee_id)
 }
 function next() {
     let pageDate = document.getElementById('pageDate')
@@ -194,18 +199,55 @@ function selectDate(){
 
 function checkEvent() {
     let event = employee_schedule[selected_dates]
+    let chosen_date = new Date(selected_dates)
+    let date = selected_dates.split('-')[2]
+    $("#event-date").text(`${weekdays[chosen_date.getDay()]} ${date}`)
     if (event) {
         let detail_container = $('#event-detail')
         detail_container.empty()
-        let chosen_date = new Date(selected_dates)
-        $("#event-date").text(`${weekdays[chosen_date.getDay()]} ${chosen_date.getDate()}`)
+        
         for (e in event['shift_start']) {
             let list_item = document.createElement('li')
             let shift_start = event['shift_start']
             let shift_end = event['shift_end']
+            let delete_button = document.createElement('button')
+            delete_button.setAttribute('class', 'btn btn-default')
+            delete_button.setAttribute('onclick', 'deleteShift(this)')
+            delete_button.innerText = 'Delete'
+            list_item.setAttribute('data-shift_start', shift_start)
             list_item.innerText = `From ${shift_start} to ${shift_end}`
+            list_item.appendChild(delete_button)
             detail_container.append(list_item)
         }
+    }
+}
+
+function deleteShift(param) {
+    let shift_start = param.parentNode.dataset.shift_start
+    let employee_id = findEmployeeId()
+    let csrftoken = getCookie('csrftoken')
+    if (shift_start && employee_id) {
+        let send_data = {'action': 'delete_employee_shift',
+                    'shift_start': shift_start,
+                    'employee_id': employee_id}
+        send_data = JSON.stringify(send_data)
+        $.ajax({
+            type: "POST",
+            url: "/main/manager/view",
+            data: send_data,
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            dataType: 'json',
+            success: function(result) {
+                if (result['status']) {
+                    location.reload();
+                } else {
+                    alert(result['error_detail'])
+                }
+            },
+            contentType:'application/json'
+        })
     }
 }
 

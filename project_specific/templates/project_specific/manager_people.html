@@ -11,6 +11,7 @@
 {{ position|json_script:"positions"}}
 {{ users|json_script:"users"}}
 {{ workdays|json_script:"workdays"}}
+{{ action_logs|json_script:"action_logs"}}
 
 <div class="btn-group btn-group-justified">
         <div class='btn-group'>
@@ -27,8 +28,11 @@
         </div>
     </div>
 
-<div class='row' id='people-main-page'>
-    <h1 class="col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1">Recent Actions</h1>
+<div class='row col-xs-12 col-sm-6 col-md-6 col-lg-6 col-md-offset-1 col-lg-offset-1' id='people-main-page'>
+    <h1>Recent Actions</h1>
+    <ul id='recentActionsList'>
+
+    </ul>
 </div>
 
 <div class='row hide' id='unit-form'>

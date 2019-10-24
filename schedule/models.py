@@ -734,32 +734,6 @@ def clear_schedule(person):
         print("person's schedule not deleted")
 
 
-def del_schedule(person, date):
-    """delete a person's schedule on a particular date
-    person is Employee instance
-    date is datetime.date
-    """
-    schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=date)
-    if schedule.count() > 1:
-        # if there are more than one schedule on that date
-        for n, s in enumerate(schedule):
-            print('id: {}, start time: {}, end time: {}'.format(n, s.shift_start, s.shift_end))
-
-        print("there are more than one schedule on this day. Which one would you like to delete?")
-        while True:
-            try:
-                option = input('Please enter a valid index (int)'
-                               'of the object you want to delete ')
-                if option.isdigit() and int(option) <= schedule.count():
-                    break
-            except:
-                pass
-
-        schedule[option].delete()
-    else:
-        schedule.delete()
-
-
 def swap(person, swap_shift_start):
     """
     this function will check if swap shift is possible

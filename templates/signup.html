@@ -4,10 +4,73 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<h2>Sign up</h2>
+<!-- <h2>Sign up</h2>
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
   <button type="submit">Sign up</button>
-</form>
+</form> -->
+{% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="alert alert-danger">
+                <strong>{{ error|escape }}</strong>
+            </div>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger">
+            <strong>{{ error|escape }}</strong>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div id='form-container'>
+    <form method="POST" id='signUpForm' class='col-xs-10 col-sm-6 col-md-4 col-lg-4 
+    col-xs-offset-1 col-sm-offset-3 col-md-offset-4 col-lg-offset-4'>
+        {% csrf_token %}
+        <h1>Sign Up</h1>
+        <div class='form-group'>
+          <label for='id_email'>Email</label>
+          <input type="text" id='id_email' name="email" placeholder="Enter email" 
+          required class='form-control' maxlength='254'>
+        </div>
+
+        <div class='form-group'>
+            <label for="id_first_ame">First Name</label>
+            <input type="text" id='id_first_ame' name='first_name' required 
+            class='form-control' maxlength='30'>
+        </div>
+
+        <div class='form-group'>
+          <label for="id_last_name">Last Name</label>
+          <input type="text" id='id_last_name' name='last_name' required 
+          class='form-control' maxlength="150">
+        </div>
+    
+        <div class='form-group'>
+          <label for='id_password1'>Password</label>
+          <input type="password" id='id_password1' name="password1" placeholder="Enter password" required
+          class='form-control'>
+        </div>
+
+        <div class='form-group'>
+          <label for='id_password2'>Password</label>
+          <input type="password" id='id_password2' name="password2" placeholder="Enter password" required
+          class='form-control'>
+        </div>
+    
+        <div class='form-group'>
+          <label for="id_employee_id">Employee ID</label>
+          <input type="number" id='id_employee_id' name='employee_id' min='0' required class='form-control'>
+        </div>
+
+        <div class="form-group">
+          <label for="id_is_manager">Manager Status</label>
+          <input type="checkbox" id='id_is_manager' name='is_manager' class='form-control'>
+        </div>
+        <button type="submit" class='btn btn-block'>Sign Up</button>
+    </form>
+  </div>
+  
 {% endblock %}

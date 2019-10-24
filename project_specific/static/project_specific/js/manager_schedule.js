@@ -1,5 +1,6 @@
 let shifts = JSON.parse(document.getElementById('shifts').textContent)
 let schedules = JSON.parse(document.getElementById('schedules').textContent)
+let action_logs = JSON.parse(document.getElementById('action_logs').textContent)
 
 function setShiftDisplay(param) {
     $(param).addClass('active')
@@ -268,4 +269,29 @@ function deleteSchedule() {
         }
     }
 }
+
+function fetchRecentActions() {
+    let action_list = document.getElementById('recentActionsList')
+    action_logs = JSON.parse(action_logs)
+    // let action_meaning = {1:"Addition", 2:"Change", 3:"Deletion"}
+    for (a of action_logs) {
+        let action_item = document.createElement('li')
+        let action_icon = null
+        switch (a[1]) {
+            case 1:
+                action_icon = '<span class="glyphicon glyphicon-plus text-success"></span>'
+                break;
+            case 2:
+                action_icon = '<span class="glyphicon glyphicon-pencil text-warning"></span>'
+                break;
+            case 3:
+                action_icon = '<span class="glyphicon glyphicon-minus text-danger"></span>'
+                break;
+        }
+        action_item.innerHTML = `${action_icon} ${a[0]} (${a[2]})`
+        action_list.appendChild(action_item)
+    }
+}
+
+fetchRecentActions()
 scheduleDaysOptions()

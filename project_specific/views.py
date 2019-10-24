@@ -2,10 +2,11 @@ from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
+# from django.contrib.admin.models import LogEntry
 from schedule.models import *
 from people.models import *
 from user.models import Group, EmployeeID, CustomUser
-from project_specific.models import VacationNotification
+from project_specific.models import VacationNotification, RecentActions
 from django.http import HttpResponseRedirect, HttpResponse
 from .forms import GroupCreateForm, GroupJoinForm
 import logging
@@ -742,6 +743,11 @@ def manager_people_view(request):
                 new_unit = Unit(unit_choice=json_data['unit_name'],
                                 group=current_user.group)
                 new_unit.save()
+                new_action = RecentActions(user=current_user,
+                                           action=1,
+                                           object_name=json_data['unit_name'],
+                                           object_class="Unit")
+                new_action.save()
             except Exception as e:
                 status = False
                 error_detail = str(e)
@@ -753,6 +759,12 @@ def manager_people_view(request):
                 new_pos = Position(position_choice=json_data['position_name'],
                                    group=current_user.group)
                 new_pos.save()
+
+                new_action = RecentActions(user=current_user,
+                                           action=1,
+                                           object_name=json_data['position_name'],
+                                           object_class="Position")
+                new_action.save()
             except Exception as e:
                 status = False
                 error_detail = str(e)
@@ -777,6 +789,12 @@ def manager_people_view(request):
                     workday_instance = Workday.objects.get(day=int(i))
                     new_employee.workday.add(workday_instance)
                 new_employee.save()
+
+                new_action = RecentActions(user=current_user,
+                                           action=1,
+                                           object_name=str(new_employee),
+                                           object_class="Employee")
+                new_action.save()
             except Exception as e:
                 status = False
                 error_detail = str(e)
@@ -788,6 +806,13 @@ def manager_people_view(request):
                 unit_pk_list = [int(p) for p in unit_pk_list]
 
                 unit_list = Unit.objects.filter(pk__in=unit_pk_list)
+
+                for u in unit_list:
+                    new_action = RecentActions(user=current_user,
+                                               action=3,
+                                               object_name=u.unit_choice,
+                                               object_class="Unit")
+                    new_action.save()
                 unit_list.delete()
             except Exception as e:
                 status = False
@@ -800,6 +825,12 @@ def manager_people_view(request):
                 position_pk_list = [int(p) for p in position_pk_list]
 
                 position_list = Position.objects.filter(pk__in=position_pk_list)
+                for p in position_list:
+                    new_action = RecentActions(user=current_user,
+                                               action=3,
+                                               object_name=p.position_choice,
+                                               object_class="Position")
+                    new_action.save()
                 position_list.delete()
             except Exception as e:
                 status = False
@@ -811,6 +842,11 @@ def manager_people_view(request):
                 employee_id_list = json_data['employee_ids']
                 employee_list = [Employee.get_employee_instance(p) for p in employee_id_list]
                 for e in employee_list:
+                    new_action = RecentActions(user=current_user,
+                                               action=3,
+                                               object_name=str(e),
+                                               object_class="Employee")
+                    new_action.save()
                     e.delete()
 
             except Exception as e:
@@ -837,16 +873,34 @@ def manager_people_view(request):
         unregistered_user = CustomUser.objects.filter(is_superuser=False).filter(group=None)
         json_unregistered_user = [u.json_format() for u in unregistered_user]
 
+        action_logs = RecentActions.objects.filter(user=current_user).order_by('-created')[:10]
+        short_action_logs = json.dumps([[l.object_name, l.action, l.object_class] for l in action_logs])
+
         return render(request, 'project_specific/manager_people.html', context={'unit': json_own_unit,
                                                                                 'position': json_own_position,
                                                                                 'employees': json_own_employees,
                                                                                 'users': json_unregistered_user,
-                                                                                'workdays': json_workday_pref})
+                                                                                'workdays': json_workday_pref,
+                                                                                'action_logs': short_action_logs})
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_employee_view(request):
     if request.method == "POST":
-        pass
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        status = True
+        error_detail = ''
+        if json_data['action'] == 'delete_employee_shift':
+            try:
+                employee = Employee.get_employee_instance(int(json_data['employee_id']))
+                employee_shift = Assign.objects.filter(employee=employee).get(shift_start=parse(json_data['shift_start']))
+                employee_shift.delete()
+            except Exception as e:
+                error_detail = str(e)
+                status = False
+            status_detail = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(status_detail), content_type='application/json')
     if request.method == "GET":
         current_user = request.user
         manager_group = current_user.group
@@ -890,6 +944,11 @@ def manager_schedule_view(request):
                                                                     minutes=int(json_data['shift_dur_min'])),
                                   group=current_user.group)
                 new_shift.save()
+                new_action = RecentActions(user=current_user,
+                                           action=1,
+                                           object_name=json_data['shift_name'],
+                                           object_class="Shift")
+                new_action.save()
             except Exception as e:
                 status = False
                 error_detail = str(e)
@@ -907,7 +966,6 @@ def manager_schedule_view(request):
                         adding_shifts.append(s)
                     else:
                         adding_shifts.append(None)
-                print(adding_shifts)
                 new_schedule = Schedule(schedule_name=json_data['schedule_name'],
                                         cycle=json_data['cycle'],
                                         day_1=adding_shifts[0],
@@ -915,6 +973,11 @@ def manager_schedule_view(request):
                                         day_3=adding_shifts[2],
                                         group=current_user.group)
                 new_schedule.save()
+                new_action = RecentActions(user=current_user,
+                                           action=1,
+                                           object_name=json_data['schedule_name'],
+                                           object_class="Schedule")
+                new_action.save()
             except Exception as e:
                 status = False
                 error_detail = str(e)
@@ -927,6 +990,13 @@ def manager_schedule_view(request):
                 shift_pk_list = [int(p) for p in shift_pk_list]
 
                 shift_list = Shift.objects.filter(pk__in=shift_pk_list)
+                for s in shift_list:
+                    new_action = RecentActions(user=current_user,
+                                               action=3,
+                                               object_name=s.shift_name,
+                                               object_class="Shift")
+                    new_action.save()
+
                 shift_list.delete()
             except Exception as e:
                 status = False
@@ -939,6 +1009,12 @@ def manager_schedule_view(request):
                 schedule_pk_list = [int(p) for p in schedule_pk_list]
 
                 schedule_list = Schedule.objects.filter(pk__in=schedule_pk_list)
+                for s in schedule_list:
+                    new_action = RecentActions(user=current_user,
+                                               action=3,
+                                               object_name=s.schedule_name,
+                                               object_class="Schedule")
+                    new_action.save()
                 schedule_list.delete()
             except Exception as e:
                 status = False
@@ -953,8 +1029,11 @@ def manager_schedule_view(request):
         own_schedule = Schedule.objects.filter(group=manager_group)
         json_own_schedule = [s.json_format() for s in own_schedule]
 
+        action_logs = RecentActions.objects.filter(user=current_user).order_by('-created')[:10]
+        short_action_logs = json.dumps([[l.object_name, l.action, l.object_class] for l in action_logs])
         return render(request, 'project_specific/manager_schedule.html', context={'shifts': json_own_shift,
-                                                                                  'schedules': json_own_schedule})
+                                                                                  'schedules': json_own_schedule,
+                                                                                  'action_logs': short_action_logs})
 
 
 def logout_view(request):
