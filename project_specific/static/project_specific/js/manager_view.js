@@ -199,11 +199,13 @@ function selectDate(){
 
 function checkEvent() {
     let event = employee_schedule[selected_dates]
+    let chosen_date = new Date(selected_dates)
+    let date = selected_dates.split('-')[2]
+    $("#event-date").text(`${weekdays[chosen_date.getDay()]} ${date}`)
     if (event) {
         let detail_container = $('#event-detail')
         detail_container.empty()
-        let chosen_date = new Date(selected_dates)
-        $("#event-date").text(`${weekdays[chosen_date.getDay()]} ${chosen_date.getDate()}`)
+        
         for (e in event['shift_start']) {
             let list_item = document.createElement('li')
             let shift_start = event['shift_start']
