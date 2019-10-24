@@ -851,7 +851,21 @@ def manager_people_view(request):
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_employee_view(request):
     if request.method == "POST":
-        pass
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        status = True
+        error_detail = ''
+        if json_data['action'] == 'delete_employee_shift':
+            try:
+                employee = Employee.get_employee_instance(int(json_data['employee_id']))
+                employee_shift = Assign.objects.filter(employee=employee).get(shift_start=parse(json_data['shift_start']))
+                employee_shift.delete()
+            except Exception as e:
+                error_detail = str(e)
+                status = False
+            status_detail = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(status_detail), content_type='application/json')
     if request.method == "GET":
         current_user = request.user
         manager_group = current_user.group
