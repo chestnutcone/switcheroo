@@ -3,7 +3,7 @@
   padding-bottom: 50px;
   text-align: center;
   color: white;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("bricks-background.jpg"); }
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("light-leather-background.jpg"); }
   #titleSection h1 {
     margin-top: 0;
     font-size: 60px; }
@@ -17,5 +17,8 @@
   font-size: 20px; }
 #employeeFeatures li {
   font-size: 14px; }
+
+#footer-container {
+  background-color: black; }
 
 /*# sourceMappingURL=home.css.map */
