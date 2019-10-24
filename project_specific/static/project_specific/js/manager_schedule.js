@@ -288,7 +288,7 @@ function fetchRecentActions() {
                 action_icon = '<span class="glyphicon glyphicon-minus text-danger"></span>'
                 break;
         }
-        action_item.innerHTML = `${action_icon} ${a[0]}`
+        action_item.innerHTML = `${action_icon} ${a[0]} (${a[2]})`
         action_list.appendChild(action_item)
     }
 }
