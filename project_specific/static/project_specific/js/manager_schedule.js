@@ -98,12 +98,12 @@ function scheduleDaysDisplay(param) {
 
 function scheduleDaysOptions() {
     $("select[name='schedule_day']").each(function() {
-        for (s in shifts) {
-            let cur_opt = document.createElement('option')
-            cur_opt.setAttribute('value', null)
-            cur_opt.innerText = 'Rest'
-            this.appendChild(cur_opt)
-        }
+
+        let cur_opt = document.createElement('option')
+        cur_opt.setAttribute('value', null)
+        cur_opt.innerText = 'Rest'
+        this.appendChild(cur_opt)
+
         for (s in shifts) {
             let shift = shifts[s]
             let cur_opt = document.createElement('option')
