@@ -1,6 +1,7 @@
 .idea
 to_do.txt
 superuser_acc.txt
+heroku environment variable.txt
 .env
 logs\project_specific_views.log
 logs\schedule_models.log
