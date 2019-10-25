@@ -1,0 +1,1 @@
+web: gunicorn switcheroo.wsgi --log-file -

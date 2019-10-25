@@ -407,12 +407,11 @@ def group_view(request):
                 name = form.cleaned_data['name']
                 group = Group(owner=request.user, name=name, password=password)
                 group.save()
-                print('group id:', group.id)
                 request.user.group = group
                 request.user.save()
 
                 # return to join group page
-                return HttpResponseRedirect(reverse('profile'))
+                return HttpResponseRedirect(reverse('index'))
         elif request.POST.get('join_submit'):
             form = GroupJoinForm(request.POST)
             if form.is_valid():
@@ -423,7 +422,7 @@ def group_view(request):
                 request.user.group = group
                 request.user.save()
 
-                return HttpResponseRedirect(reverse('profile'))
+                return HttpResponseRedirect(reverse('index'))
 
     else:
         if request.user.employee_detail.is_manager:
@@ -784,6 +783,9 @@ def manager_people_view(request):
                                         person_unit=employee_unit,
                                         group=current_user.group,
                                         date_joined=parse(json_data['date_joined']))
+                employee_user.group = current_user.group
+                employee_user.save()
+
                 new_employee.save()
                 for i in json_data['workday_pk']:
                     workday_instance = Workday.objects.get(day=int(i))
@@ -842,6 +844,9 @@ def manager_people_view(request):
                 employee_id_list = json_data['employee_ids']
                 employee_list = [Employee.get_employee_instance(p) for p in employee_id_list]
                 for e in employee_list:
+                    employee_user = e.user
+                    employee_user.group = None
+                    employee_user.save()
                     new_action = RecentActions(user=current_user,
                                                action=3,
                                                object_name=str(e),
