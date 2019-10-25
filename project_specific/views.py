@@ -963,10 +963,9 @@ def manager_schedule_view(request):
         elif json_data['action'] == 'create_schedule':
             try:
                 shift_pk = json_data['shift_pk']
-                print(shift_pk)
                 adding_shifts = []
                 for shift in shift_pk:
-                    if shift:
+                    if shift != 'null':
                         s = Shift.objects.get(pk=shift)
                         adding_shifts.append(s)
                     else:
