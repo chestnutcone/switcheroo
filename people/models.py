@@ -62,7 +62,7 @@ class Workday(models.Model):
 
 
 # execute to ensure the weekday objects exist. Need to find out how to register once only.
-# Workday._set_workday()
+Workday._set_workday()
 
 
 class Employee(models.Model):
