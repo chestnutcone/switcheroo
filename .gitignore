@@ -1,6 +1,7 @@
 .idea
 to_do.txt
 superuser_acc.txt
+.env
 logs\project_specific_views.log
 logs\schedule_models.log
 logs\user_views.log
