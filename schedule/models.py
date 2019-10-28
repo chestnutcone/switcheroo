@@ -474,6 +474,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
     start_date is datetime.date object
     shift is shift pattern from Schedule
     """
+    print('setting schedule')
     status_detail = {
         'overridable': [],
         'non_overridable': [],

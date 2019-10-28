@@ -121,6 +121,7 @@ function fetchSchedule(param=null, employee_id=null) {
         success: function(response) {
             shift_dates = []
             vacation_date = []
+            employee_schedule = []
             for (s in response['schedules']) {
                 let d = response['schedules'][s]
                 shift_dates.push(d['start_date'])
@@ -202,10 +203,10 @@ function checkEvent() {
     let chosen_date = new Date(selected_dates)
     let date = selected_dates.split('-')[2]
     $("#event-date").text(`${weekdays[chosen_date.getDay()]} ${date}`)
-    if (event) {
-        let detail_container = $('#event-detail')
-        detail_container.empty()
-        
+
+    let detail_container = $('#event-detail')
+    detail_container.empty()
+    if (event) {       
         for (e in event['shift_start']) {
             let list_item = document.createElement('li')
             let shift_start = event['shift_start']
@@ -259,7 +260,12 @@ function highlightShift (shift_dates) {
 
     reverseLookUp = reverseCellDate(curYear, curMonth)
     for (date of shift_dates) {
-        answer = reverseLookUp[date]
+        let separated_dates = date.split('-')
+        let new_month = parseInt(separated_dates[1])
+        let new_date = parseInt(separated_dates[2])
+        let formatted_date = [separated_dates[0], new_month, new_date].join('-')
+        answer = reverseLookUp[formatted_date]
+
         if (answer) {
             $('#employee-calendar-body tr').eq(answer[0]).find('td').eq(answer[1]).addClass('highlight')
         }

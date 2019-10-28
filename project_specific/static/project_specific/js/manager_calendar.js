@@ -74,11 +74,12 @@ function highlightCalendar() {
     let curMonth = parseInt(pageDate.dataset.month)
     let cellLookup = reverseCellDate(curYear, curMonth)
     for (date in monthSchedules) {
-        let split_date = date.split('-')
-        let format_month = formatMonth(split_date[1], add_one=false)
-        let format_day = formatDate(split_date[2])
-        let format_date = `${split_date[0]}-${format_month}-${format_day}`
-        let cellNum = cellLookup[format_date]
+        let separated_dates = date.split('-')
+        let new_month = parseInt(separated_dates[1])
+        let new_date = parseInt(separated_dates[2])
+        let formatted_date = [separated_dates[0], new_month, new_date].join('-')
+        let cellNum = cellLookup[formatted_date]
+
         if (cellNum) {
             switch (monthSchedules[date]['daily_bin']) {
                 case 0:
