@@ -31,6 +31,19 @@ if not logger.handlers:
     logger.addHandler(file_handler)
 
 
+def handler500(request):
+    import sys, traceback
+    ltype, lvalue, ltraceback = sys.exc_info()
+    # print('ltype:', ltype)
+    # print('lvalue:', lvalue)
+    # print(dir(ltraceback))
+    # print('ltraceback', ltraceback.tb_frame())
+    traceback.print_tb(ltraceback)
+    return render(request, 'project_specific/500.html', context={'type':ltype,
+                                                'value':lvalue,
+                                                'traceback':str(ltraceback)})
+
+
 @login_required
 def profile_view(request):
     if request.method == 'POST':

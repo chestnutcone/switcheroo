@@ -33,3 +33,6 @@ urlpatterns += [
         path('users/', include('django.contrib.auth.urls')),
         url(r'^login/$', views.loginView, name='login'),
         ]
+
+import project_specific
+handler500 = project_specific.views.handler500

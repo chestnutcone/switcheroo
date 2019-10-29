@@ -25,3 +25,4 @@ urlpatterns = [
         path('manager/schedule', views.manager_schedule_view, name='manager_schedule_view'),
         path('manager/view', views.manager_employee_view, name='manager_employee_view')
         ]
+
