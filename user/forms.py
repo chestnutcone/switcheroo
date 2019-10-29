@@ -25,7 +25,7 @@ class CustomUserChangeForm(UserChangeForm):
         fields = ('email', 'first_name', 'last_name')
 
 
-class GroupForm(forms.ModelForm):
-    class Meta:
-        model = Group
-        fields = ['name', 'owner', 'password']
+# class GroupForm(forms.ModelForm):
+#     class Meta:
+#         model = Group
+#         fields = ['name', 'owner', 'password']

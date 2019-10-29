@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .forms import CustomUserCreationForm, CustomUserChangeForm, GroupForm
+from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import CustomUser, Group
 
 
@@ -28,8 +28,9 @@ class CustomUserAdmin(UserAdmin):
 
 
 class GroupAdmin(admin.ModelAdmin):
-    form = GroupForm
-    list_display = ('name', 'id', 'owner')
+    # form = GroupForm
+    # list_display = ('name', 'id', 'owner')
+    list_display = ('id', 'owner')
     label = {'id': 'Group ID'}
 
 

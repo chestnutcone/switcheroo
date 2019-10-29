@@ -56,9 +56,10 @@ def profile_view(request):
             # superuser is not manager, and will not have group assigned
             return HttpResponseRedirect('/admin/')
         else:
-            if not request.user.group:
+            if not current_user.group:
                 # cannot find group id because group doesnt exist yet
-                return HttpResponseRedirect(reverse('group'))
+                Group.objects.create(owner=current_user)
+                return HttpResponseRedirect('manager/')
             elif current_user.employee_detail.is_manager:
                 # if not superuser and is manager, and has a group, redirect to admin
                 return HttpResponseRedirect('manager/')

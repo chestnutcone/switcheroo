@@ -43,8 +43,8 @@ class Group(models.Model):
                               on_delete=models.SET_NULL,
                               null=True,
                               related_name='group_owner')
-    name = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
+    # name = models.CharField(max_length=50)
+    # password = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
