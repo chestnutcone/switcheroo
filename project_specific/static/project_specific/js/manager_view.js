@@ -209,14 +209,17 @@ function checkEvent() {
     if (event) {       
         for (e in event['shift_start']) {
             let list_item = document.createElement('li')
-            let shift_start = event['shift_start']
-            let shift_end = event['shift_end']
+            let shift_start = event['shift_start'][e]
+            let shift_end = event['shift_end'][e]
+
             let delete_button = document.createElement('button')
             delete_button.setAttribute('class', 'btn btn-default')
             delete_button.setAttribute('onclick', 'deleteShift(this)')
             delete_button.innerText = 'Delete'
+            let format_start = formatTime(shift_start)
+            let format_end = formatTime(shift_end)
             list_item.setAttribute('data-shift_start', shift_start)
-            list_item.innerText = `From ${shift_start} to ${shift_end}`
+            list_item.innerText = `From ${format_start} to ${format_end}`
             list_item.appendChild(delete_button)
             detail_container.append(list_item)
         }
@@ -260,11 +263,11 @@ function highlightShift (shift_dates) {
 
     reverseLookUp = reverseCellDate(curYear, curMonth)
     for (date of shift_dates) {
-        let separated_dates = date.split('-')
-        let new_month = parseInt(separated_dates[1])
-        let new_date = parseInt(separated_dates[2])
-        let formatted_date = [separated_dates[0], new_month, new_date].join('-')
-        answer = reverseLookUp[formatted_date]
+        // let separated_dates = date.split('-')
+        // let new_month = parseInt(separated_dates[1])
+        // let new_date = parseInt(separated_dates[2])
+        // let formatted_date = [separated_dates[0], new_month, new_date].join('-')
+        answer = reverseLookUp[date]
 
         if (answer) {
             $('#employee-calendar-body tr').eq(answer[0]).find('td').eq(answer[1]).addClass('highlight')

@@ -58,9 +58,9 @@ function formatDateTime (row, date, curYear, curMonth) {
 function formatMonth (month_variable, add_one=true) {
     // will add one to the js 0-indexed months. Also, 8 => 09. return as str
         if (add_one) {
-            mod_month = ((month_variable+1)<10) ? `${month_variable+1}`: `${month_variable+1}`
+            mod_month = ((month_variable+1)<10) ? `0${month_variable+1}`: `${month_variable+1}`
         } else {
-            mod_month = ((month_variable)<10) ? `${month_variable}`: `${month_variable}`
+            mod_month = ((month_variable)<10) ? `0${month_variable}`: `${month_variable}`
         }
         
         return mod_month
@@ -68,7 +68,7 @@ function formatMonth (month_variable, add_one=true) {
     
 function formatDate (date_variable) {
     // Also, 9 => 09. return as str
-    mod_date = (date_variable < 10) ? `${date_variable}`: `${date_variable}`
+    mod_date = (date_variable < 10) ? `0${date_variable}`: `${date_variable}`
     return mod_date
 }
 
@@ -151,4 +151,17 @@ function readWriteDate (row, date, curYear, curMonth, selected_dates, write=fals
         return date_selected
     }
     
+}
+
+function formatTime(time) {
+    // time given in format 2019-10-31 09:00:00
+    let split_datetime = time.split(' ')
+    let date = split_datetime[0]
+    let split_date = date.split('-').slice(1,3).join('-')
+    let time_format = split_datetime[1]
+    let time_only = time_format.split('+')
+    let time_hm = time_only[0].slice(0,5)
+
+    let return_time = `${split_date} ${time_hm}`
+    return return_time
 }
