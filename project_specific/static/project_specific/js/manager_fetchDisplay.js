@@ -70,7 +70,7 @@ function managerAcceptRequest(param){
     let send_data = JSON.stringify({"action": "finalize", "data":data})
     $.ajax({
         type: "POST",
-        url: "/main/swap/request",
+        url: "/main/manager/request",
         data: send_data,
         headers: {
             'X-CSRFToken': csrftoken
@@ -93,7 +93,7 @@ function managerRejectRequest(param){
     let send_data = JSON.stringify({"action": "reject", "data":data})
     $.ajax({
         type: "POST",
-        url: "/main/swap/request",
+        url: "/main/manager/request",
         data: send_data,
         headers: {
             'X-CSRFToken': csrftoken

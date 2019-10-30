@@ -25,8 +25,7 @@ function updateSettings() {
     let accept_swap = document.getElementById('accept_swap').checked
     let csrftoken = getCookie('csrftoken')
 
-    send_data = {'type': 'employee',
-                'accept_swap': accept_swap}
+    send_data = {'accept_swap': accept_swap}
     send_data = JSON.stringify(send_data)
     $.ajax({
         type: "POST",

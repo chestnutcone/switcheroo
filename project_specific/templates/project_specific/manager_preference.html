@@ -1,0 +1,45 @@
+{% extends "project_specific/manager_base.html" %}
+
+
+{% block title %}
+{% load staticfiles %}
+<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/slider_switch.css'%}">
+<title>Settings</title>
+{% endblock %}
+
+{% block content %}
+    <div class='row'>
+        <div class='col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3'>
+            <h2>Settings</h2>
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class='form-inline col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3'>
+            <div class='form-group'>
+                <label for="approve_all_swap" style='padding-right: 20px; font-size: 18px;' data-toggle='tooltip' data-placement='bottom' title='Automatically approve 
+                all swap requests'>Approve all swap</label>
+                <label class="switch">
+                    <input type="checkbox" id='approve_all_swap'>
+                    <span class="slider round"></span>
+                </label>
+                
+            </div>           
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class='col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3'>
+            <button class='btn' style='margin-top:20px;' onclick=updateSettings()>Save</button>
+        </div>
+    </div>
+
+    {{ approve_all_swaps|json_script:"old_approve_all_swap"}}
+{% endblock %}
+
+{% block javascript %}
+    {% load staticfiles %}
+    <script src="{% static 'project_specific/js/manager_commonFunc.js'%}"></script>
+    <script src="{% static 'project_specific/js/manager_preference.js'%}"></script>
+	
+{% endblock %}

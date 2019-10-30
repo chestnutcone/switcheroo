@@ -81,26 +81,23 @@ def profile_view(request):
             context = {'name': 'Please register user in Employee'}
         return render(request, 'project_specific/index.html', context=context)
 
+
 @login_required
 def preference_view(request):
     if request.method == 'POST':
         str_data = request.body
         str_data = str_data.decode('utf-8')
         json_data = json.loads(str_data)
-        if json_data['type'] == 'employee':
 
-            cur_employee = Employee.objects.get(user=request.user)
-            cur_employee.accept_swap = json_data['accept_swap']
-            cur_employee.save()
-            return HttpResponse('success')
+        cur_employee = Employee.objects.get(user=request.user)
+        cur_employee.accept_swap = json_data['accept_swap']
+        cur_employee.save()
+        return HttpResponse('success')
     elif request.method == "GET":
-        if request.user.employee_detail.is_manager:
-            pass
-        else:
-            cur_employee = Employee.objects.get(user=request.user)
+        cur_employee = Employee.objects.get(user=request.user)
 
-            context = {'accept_swap': cur_employee.accept_swap}
-            return render(request, 'project_specific/preference.html', context=context)
+        context = {'accept_swap': cur_employee.accept_swap}
+        return render(request, 'project_specific/preference.html', context=context)
 
 
 @login_required
@@ -196,7 +193,6 @@ def swap_request_view(request):
                                  'data_type': json_data['data']['data_type']}
                 return HttpResponse(json.dumps(status_detail), content_type='application/json')
             if json_data['data']['data_type'] == 'shift':
-                print('json data', json_data['data'])
                 acceptor_shift_start = parse(acceptor_data['acceptor_shift_start'])
                 acceptor_shift = Assign.objects.filter(employee=acceptor).filter(shift_start=acceptor_shift_start)
                 acceptor_error = Assign.assure_one_and_same(acceptor_shift, acceptor_shift_start, acceptor)
@@ -271,55 +267,6 @@ def swap_request_view(request):
                 status = False
             status_detail = {'status': status, 'error_detail': error_detail}
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
-        elif json_data['action'] == 'reject':
-            created_timestamp = json_data['data']['created']
-            created_timestamp = parse(created_timestamp)
-
-            requester_employee_id = int(json_data['data']['requester_employee_id'])
-            requester_employee_detail = EmployeeID.objects.get(pk=requester_employee_id)
-            requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
-            requester = Employee.objects.get(user=requester_user)
-
-            swap_request = Request.objects.filter(
-                applicant=requester).get(created=created_timestamp)
-
-            swap_request.manager_responded = True
-            swap_request.save()
-            print('action done')
-            return HttpResponse('request rejected')
-
-        elif json_data['action'] == 'finalize':
-            created_timestamp = json_data['data']['created']
-            created_timestamp = parse(created_timestamp)
-
-            requester_shift_start = json_data['data']['requester_shift_start']
-            requester_shift_start = parse(requester_shift_start)
-
-            acceptor_shift_start = json_data['data']['acceptor_shift_start']
-            if acceptor_shift_start:
-                acceptor_shift_start = parse(acceptor_shift_start)
-
-            acceptor_employee_id = int(json_data['data']['acceptor_employee_id'])
-            acceptor_employee_detail = EmployeeID.objects.get(pk=acceptor_employee_id)
-            acceptor_user = CustomUser.objects.get(employee_detail=acceptor_employee_detail)
-            acceptor = Employee.objects.get(user=acceptor_user)
-
-            requester_employee_id = int(json_data['data']['requester_employee_id'])
-            requester_employee_detail = EmployeeID.objects.get(pk=requester_employee_id)
-            requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
-            requester = Employee.objects.get(user=requester_user)
-
-            try:
-                status, error_detail = Assign.finalize_swap(requester=requester,
-                                                            requester_shift_start=requester_shift_start,
-                                                            acceptor=acceptor,
-                                                            acceptor_shift_start=acceptor_shift_start,
-                                                            request_timestamp=created_timestamp)
-            except Exception as e:
-                error_detail = str(e)
-                status = False
-            status_detail = {'status': status, 'error_detail': error_detail}
-            return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
     elif request.method == 'GET':
         current_user = request.user
@@ -379,6 +326,12 @@ def receive_request_view(request):
                 request_instance.responded = True
                 request_instance.accept = True
                 request_instance.save()
+                if applicant_user.group.approve_all_swaps:
+                    status, error_detail = Assign.finalize_swap(requester=request_instance.applicant,
+                                                                requester_shift_start=request_instance.applicant_schedule.shift_start,
+                                                                acceptor=request_instance.receiver,
+                                                                acceptor_shift_start=request_instance.receiver_schedule.shift_start,
+                                                                request_timestamp=request_instance.created)
             elif json_data['action'] == 'reject':
                 request_instance.responded = True
                 request_instance.save()
@@ -628,7 +581,57 @@ def manager_vacation_view(request):
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_request_view(request):
     if request.method == 'POST':
-        pass
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        if json_data['action'] == 'reject':
+            created_timestamp = json_data['data']['created']
+            created_timestamp = parse(created_timestamp)
+
+            requester_employee_id = int(json_data['data']['requester_employee_id'])
+            requester_employee_detail = EmployeeID.objects.get(pk=requester_employee_id)
+            requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
+            requester = Employee.objects.get(user=requester_user)
+
+            swap_request = Request.objects.filter(
+                applicant=requester).get(created=created_timestamp)
+
+            swap_request.manager_responded = True
+            swap_request.save()
+            return HttpResponse('request rejected')
+
+        elif json_data['action'] == 'finalize':
+            created_timestamp = json_data['data']['created']
+            created_timestamp = parse(created_timestamp)
+
+            requester_shift_start = json_data['data']['requester_shift_start']
+            requester_shift_start = parse(requester_shift_start)
+
+            acceptor_shift_start = json_data['data']['acceptor_shift_start']
+            if acceptor_shift_start:
+                acceptor_shift_start = parse(acceptor_shift_start)
+
+            acceptor_employee_id = int(json_data['data']['acceptor_employee_id'])
+            acceptor_employee_detail = EmployeeID.objects.get(pk=acceptor_employee_id)
+            acceptor_user = CustomUser.objects.get(employee_detail=acceptor_employee_detail)
+            acceptor = Employee.objects.get(user=acceptor_user)
+
+            requester_employee_id = int(json_data['data']['requester_employee_id'])
+            requester_employee_detail = EmployeeID.objects.get(pk=requester_employee_id)
+            requester_user = CustomUser.objects.get(employee_detail=requester_employee_detail)
+            requester = Employee.objects.get(user=requester_user)
+
+            try:
+                status, error_detail = Assign.finalize_swap(requester=requester,
+                                                            requester_shift_start=requester_shift_start,
+                                                            acceptor=acceptor,
+                                                            acceptor_shift_start=acceptor_shift_start,
+                                                            request_timestamp=created_timestamp)
+            except Exception as e:
+                error_detail = str(e)
+                status = False
+            status_detail = {'status': status, 'error_detail': error_detail}
+            return HttpResponse(json.dumps(status_detail), content_type='application/json')
     elif request.method == "GET":
         current_user = request.user
         unanswered_requests = Request.objects.filter(
@@ -1069,6 +1072,23 @@ def manager_schedule_view(request):
         return render(request, 'project_specific/manager_schedule.html', context={'shifts': json_own_shift,
                                                                                   'schedules': json_own_schedule,
                                                                                   'action_logs': short_action_logs})
+
+
+@user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
+def manager_preference_view(request):
+    if request.method == 'POST':
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        manager_group = Group.objects.get(owner=request.user)
+        manager_group.approve_all_swaps = json_data['approve_all_swap']
+        manager_group.save()
+        return HttpResponse('succses')
+
+    elif request.method == "GET":
+        manager_group = Group.objects.get(owner=request.user)
+        context = {'approve_all_swaps': manager_group.approve_all_swaps}
+        return render(request, 'project_specific/manager_preference.html', context=context)
 
 
 def logout_view(request):

@@ -770,6 +770,7 @@ def swap(person, swap_shift_start):
     available_people = []
     error = False
     swap_shift_start = pytz.UTC.localize(swap_shift_start)
+    print('swap shift start', swap_shift_start)
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
     error_detail = Assign.assure_one_and_same(swap_day, swap_shift_start, person)
     if error_detail:
@@ -821,12 +822,14 @@ def swap(person, swap_shift_start):
         output = swapper_shifts
     else:
         # get from people that are accepting shifts that are in the same group, unit, position
+        employees_working = Assign.objects.filter(shift_start=swap_shift_start)
+        employees_working = [e.employee for e in employees_working]
         acceptors = Employee.objects.filter(
             person_unit=person.person_unit).filter(
             person_position=person.person_position).filter(accept_swap__exact=True)
         # find people that are accepting shifts who are not working on that day
         backup_swapper_shifts = Assign.objects.exclude(employee__exact=person).filter(employee__in=acceptors).exclude(
-            shift_start__exact=swap_shift_start)
+            shift_start__exact=swap_shift_start).exclude(employee__in=employees_working)
 
         # looking for possible trades on the accepting swaps
         for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):

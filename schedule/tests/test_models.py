@@ -9,16 +9,14 @@ import datetime
 import pytz
 
 
-def create_user(employee_id, group_name='', group=None, is_manager=False):
+def create_user(employee_id, group=None, is_manager=False):
     if is_manager:
         user_detail = EmployeeID.objects.create(employee_id=employee_id,
                                                 is_manager=is_manager)
         # print('username', 'user{}'.format(employee_id))
         user = CustomUser.objects.create(employee_detail=user_detail,
                                          username='user{}'.format(employee_id))
-        group = Group.objects.create(owner=user,
-                                     name=group_name,
-                                     password='test1234')
+        group = Group.objects.create(owner=user)
         user.group = group
         user.save()
         return user, group
@@ -89,9 +87,8 @@ def date_generator():
         start_date = start_date + time_delta
 
 
-def create_employee_pool(mor_start, nig_start, shift_dur, group_name, id_gen, date_gen, rest_day=False):
+def create_employee_pool(mor_start, nig_start, shift_dur, id_gen, date_gen, rest_day=False):
     manager, group = create_user(employee_id=next(id_gen),
-                                 group_name=group_name,
                                  is_manager=True)
     u1 = create_user(employee_id=next(id_gen),
                      group=group)
@@ -132,22 +129,22 @@ class AssignModelTest(TestCase):
 
         # create group 1
         create_employee_pool(mor_start=mor_start, nig_start=night_start, shift_dur=shift_dur,
-                             group_name='group1', id_gen=id_gen, date_gen=date_gen)
+                             id_gen=id_gen, date_gen=date_gen)
 
         # create group 2
         create_employee_pool(mor_start=mor_start, nig_start=night_start, shift_dur=shift_dur,
-                             group_name='group2', id_gen=id_gen, date_gen=date_gen)
+                             id_gen=id_gen, date_gen=date_gen)
 
         # create group 3, which has schedule for rest day
         create_employee_pool(mor_start=mor_start, nig_start=night_start, shift_dur=shift_dur,
-                             group_name='group3', id_gen=id_gen, date_gen=date_gen, rest_day=True)
+                             id_gen=id_gen, date_gen=date_gen, rest_day=True)
 
         _ = Organization.objects.create(name='test_org',
                                         country='CAN',
                                         province='BC')
 
     def test_set_schedule(self):
-        group1 = Group.objects.get(name='group1')
+        group1 = Group.objects.get(pk=1)
         group1_pool = Employee.objects.filter(group=group1)
         shift_pattern = Schedule.objects.filter(group=group1).get(schedule_name='standard')
         morning_shift = Shift.objects.filter(group=group1).get(shift_name='morning')
@@ -241,7 +238,7 @@ class AssignModelTest(TestCase):
                          expected_status, expected_status_detail)
 
         # test assigning different groups (should fail)
-        group2 = Group.objects.get(name='group2')
+        group2 = Group.objects.get(pk=2)
         shift_pattern_2 = Schedule.objects.filter(group=group2).get(schedule_name='standard')
         start_date = datetime.date(2019, 10, 1)
         expected_status = False
@@ -257,7 +254,7 @@ class AssignModelTest(TestCase):
             self.assertEquals(status_detail[key], expected_status_detail[key])
 
     def test_set_schedule_day(self):
-        group1 = Group.objects.get(name='group1')
+        group1 = Group.objects.get(pk=1)
         group1_pool = Employee.objects.filter(group=group1)
         morning_shift = Shift.objects.filter(group=group1).get(shift_name='morning')
         night_shift = Shift.objects.filter(group=group1).get(shift_name='night')
@@ -322,7 +319,7 @@ class AssignModelTest(TestCase):
         compare_status_detail(status_detail, expected_status_detail)
 
         # test assigning group1 employee to group2 shift (should not allow)
-        group2 = Group.objects.get(name='group2')
+        group2 = Group.objects.get(pk=2)
         night_shift_2 = Shift.objects.filter(group=group2).get(shift_name='night')
 
         start_date = datetime.date(2019, 9, 3)
@@ -333,7 +330,7 @@ class AssignModelTest(TestCase):
         self.assertEquals(status_detail['non_overridable'], expected_detail)
 
     def test_swap(self):
-        group1 = Group.objects.get(name='group1')
+        group1 = Group.objects.get(pk=1)
         group1_pool = Employee.objects.filter(group=group1)
         shift_pattern_1 = Schedule.objects.filter(group=group1).get(schedule_name='standard')
 
@@ -342,7 +339,7 @@ class AssignModelTest(TestCase):
             if not person.user.employee_detail.is_manager:
                 employees_1.append(person)
 
-        group2 = Group.objects.get(name='group2')
+        group2 = Group.objects.get(pk=2)
         group2_pool = Employee.objects.filter(group=group2)
         shift_pattern_2 = Schedule.objects.filter(group=group2).get(schedule_name='standard')
 
@@ -446,7 +443,7 @@ class AssignModelTest(TestCase):
         self.assertEquals(status['available_people'][0], expected_status['available_people'][0])
 
     def test_group_set_schedule(self):
-        group3 = Group.objects.get(name='group3')
+        group3 = Group.objects.get(pk=3)
         group3_pool = Employee.objects.filter(group=group3)
         shift_pattern_3 = Schedule.objects.filter(group=group3).get(schedule_name='standard')
         # u1 will be most senior
