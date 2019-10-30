@@ -34,7 +34,6 @@ class SignUpView(CreateView):
 
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
-        print('form valid', form.is_valid())
         if form.is_valid():
             email = form.cleaned_data['email']
             first_name = form.cleaned_data['first_name']

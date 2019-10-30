@@ -41,7 +41,7 @@ function displayRequestResult(response) {
         if (processing['receiver_shift_start']) {
             shift_item.setAttribute('data-receiver_shift_start', processing['receiver_shift_start'])
             shift_item.setAttribute('data-receiver_shift_end', processing['receiver_shift_end'])
-            receiver.innerText = `Swap Schedule ${processing['receiver_shift_start']} to ${processing['receiver_shift_end']}`
+            receiver.innerText = `Swap Schedule ${formatTime(processing['receiver_shift_start'])} to ${formatTime(processing['receiver_shift_end'])}`
         } else {
             shift_item.setAttribute('data-receiver_shift_start', '')
             shift_item.setAttribute('data-receiver_shift_end', '')
@@ -49,7 +49,7 @@ function displayRequestResult(response) {
         }
         
 
-        applicant.innerText = `Own Schedule ${processing['applicant_shift_start']} to ${processing['applicant_shift_end']}`
+        applicant.innerText = `Own Schedule ${formatTime(processing['applicant_shift_start'])} to ${formatTime(processing['applicant_shift_end'])}`
         
         if (processing['responded']) {
             

@@ -184,15 +184,18 @@ def swap_view(request):
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
     elif request.method == "GET":
-        today = datetime.datetime.now().date()
-        current_user = request.user
-        person_instance = Employee.objects.filter(user__exact=current_user)[0]
-        stored_data_query = SwapResult.objects.filter(applicant=person_instance).filter(
-            action=False).filter(
-            shift_start__gte=today).order_by('-shift_start')
-        total_result = {str(stored_data.shift_start): json.loads(stored_data.json_data) for stored_data in
-                        stored_data_query}
-        return HttpResponse(json.dumps(total_result), content_type='application/json')
+        try:
+            today = datetime.datetime.now().date()
+            current_user = request.user
+            person_instance = Employee.objects.get(user=current_user)
+            stored_data_query = SwapResult.objects.filter(applicant=person_instance).filter(
+                action=False).filter(
+                shift_start__gte=today).order_by('-shift_start')
+            total_result = {str(stored_data.shift_start): json.loads(stored_data.json_data) for stored_data in
+                            stored_data_query}
+            return HttpResponse(json.dumps(total_result), content_type='application/json')
+        except ObjectDoesNotExist:
+            return HttpResponse('')
 
 
 @login_required
@@ -304,37 +307,39 @@ def swap_request_view(request):
 
     elif request.method == 'GET':
         current_user = request.user
-        requester = Employee.objects.get(user=current_user)
-        current_requests = Request.objects.filter(applicant=requester)
-        total_requests = {}
-        for processing in current_requests:
-            applicant_schedule = processing.applicant_schedule
-            receiver_schedule = processing.receiver_schedule
-            if receiver_schedule:
-                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
-                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
-                                                           'receiver_shift_start': str(receiver_schedule.shift_start),
-                                                           'receiver_shift_end': str(receiver_schedule.shift_end),
-                                                           'receiver_employee_id': str(
-                                                               processing.receiver.user.employee_detail.employee_id),
-                                                           'accept': processing.accept,
-                                                           'responded': processing.responded,
-                                                           'created': str(processing.created),
-                                                           'manager_responded': str(processing.manager_responded)}
-            else:
-                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
-                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
-                                                           'receiver_shift_start': '',
-                                                           'receiver_shift_end': '',
-                                                           'receiver_employee_id': str(
-                                                               processing.receiver.user.employee_detail.employee_id),
-                                                           'accept': processing.accept,
-                                                           'responded': processing.responded,
-                                                           'created': str(processing.created),
-                                                           'manager_responded': str(processing.manager_responded)
-                                                           }
-        return HttpResponse(json.dumps(total_requests), content_type='application/json')
-
+        try:
+            requester = Employee.objects.get(user=current_user)
+            current_requests = Request.objects.filter(applicant=requester)
+            total_requests = {}
+            for processing in current_requests:
+                applicant_schedule = processing.applicant_schedule
+                receiver_schedule = processing.receiver_schedule
+                if receiver_schedule:
+                    total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                               'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                               'receiver_shift_start': str(receiver_schedule.shift_start),
+                                                               'receiver_shift_end': str(receiver_schedule.shift_end),
+                                                               'receiver_employee_id': str(
+                                                                   processing.receiver.user.employee_detail.employee_id),
+                                                               'accept': processing.accept,
+                                                               'responded': processing.responded,
+                                                               'created': str(processing.created),
+                                                               'manager_responded': str(processing.manager_responded)}
+                else:
+                    total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                               'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                               'receiver_shift_start': '',
+                                                               'receiver_shift_end': '',
+                                                               'receiver_employee_id': str(
+                                                                   processing.receiver.user.employee_detail.employee_id),
+                                                               'accept': processing.accept,
+                                                               'responded': processing.responded,
+                                                               'created': str(processing.created),
+                                                               'manager_responded': str(processing.manager_responded)
+                                                               }
+            return HttpResponse(json.dumps(total_requests), content_type='application/json')
+        except ObjectDoesNotExist:
+            return HttpResponse('')
 
 @login_required
 def receive_request_view(request):
@@ -377,82 +382,85 @@ def receive_request_view(request):
         return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
     elif request.method == "GET":
-        current_user = request.user
-        requester = Employee.objects.get(user=current_user)
-        current_requests = Request.objects.filter(receiver=requester).filter(responded=False)
-        total_requests = {}
-        for processing in current_requests:
-            applicant_schedule = processing.applicant_schedule
-            receiver_schedule = processing.receiver_schedule
-            if receiver_schedule:
-                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
-                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
-                                                           'receiver_shift_start': str(receiver_schedule.shift_start),
-                                                           'receiver_shift_end': str(receiver_schedule.shift_end),
-                                                           'receiver_employee_id': str(
-                                                               processing.receiver.user.employee_detail.employee_id),
-                                                           'applicant_employee_id': str(
-                                                               processing.applicant.user.employee_detail.employee_id
-                                                           ),
-                                                           'accept': processing.accept,
-                                                           'responded': processing.responded,
-                                                           'created': str(processing.created)}
-            else:
-                total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
-                                                           'applicant_shift_end': str(applicant_schedule.shift_end),
-                                                           'receiver_shift_start': '',
-                                                           'receiver_shift_end': '',
-                                                           'receiver_employee_id': str(
-                                                               processing.receiver.user.employee_detail.employee_id),
-                                                           'applicant_employee_id': str(
-                                                               processing.applicant.user.employee_detail.employee_id
-                                                           ),
-                                                           'accept': processing.accept,
-                                                           'responded': processing.responded,
-                                                           'created': str(processing.created)}
+        try:
+            current_user = request.user
+            requester = Employee.objects.get(user=current_user)
+            current_requests = Request.objects.filter(receiver=requester).filter(responded=False)
+            total_requests = {}
+            for processing in current_requests:
+                applicant_schedule = processing.applicant_schedule
+                receiver_schedule = processing.receiver_schedule
+                if receiver_schedule:
+                    total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                               'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                               'receiver_shift_start': str(receiver_schedule.shift_start),
+                                                               'receiver_shift_end': str(receiver_schedule.shift_end),
+                                                               'receiver_employee_id': str(
+                                                                   processing.receiver.user.employee_detail.employee_id),
+                                                               'applicant_employee_id': str(
+                                                                   processing.applicant.user.employee_detail.employee_id
+                                                               ),
+                                                               'accept': processing.accept,
+                                                               'responded': processing.responded,
+                                                               'created': str(processing.created)}
+                else:
+                    total_requests[str(processing.created)] = {'applicant_shift_start': str(applicant_schedule.shift_start),
+                                                               'applicant_shift_end': str(applicant_schedule.shift_end),
+                                                               'receiver_shift_start': '',
+                                                               'receiver_shift_end': '',
+                                                               'receiver_employee_id': str(
+                                                                   processing.receiver.user.employee_detail.employee_id),
+                                                               'applicant_employee_id': str(
+                                                                   processing.applicant.user.employee_detail.employee_id
+                                                               ),
+                                                               'accept': processing.accept,
+                                                               'responded': processing.responded,
+                                                               'created': str(processing.created)}
 
-        return HttpResponse(json.dumps(total_requests), content_type='application/json')
+            return HttpResponse(json.dumps(total_requests), content_type='application/json')
+        except ObjectDoesNotExist:
+            return HttpResponse('')
 
 
-@login_required
-def group_view(request):
-    """this page is to register the group if the user is currently unregistered. Note superuser remains unregistered"""
-    if request.method == 'POST':
-        if request.POST.get('create_submit'):
-            form = GroupCreateForm(request.POST)
-            if form.is_valid():
-                password = form.cleaned_data['password']
-                name = form.cleaned_data['name']
-                group = Group(owner=request.user, name=name, password=password)
-                group.save()
-                request.user.group = group
-                request.user.save()
-
-                # return to join group page
-                return HttpResponseRedirect(reverse('index'))
-        elif request.POST.get('join_submit'):
-            form = GroupJoinForm(request.POST)
-            if form.is_valid():
-                group_id = form.cleaned_data['group_id']
-
-                group = Group.objects.get(pk=group_id)
-
-                request.user.group = group
-                request.user.save()
-
-                return HttpResponseRedirect(reverse('index'))
-
-    else:
-        if request.user.employee_detail.is_manager:
-            # render a group creating form
-            form = GroupCreateForm()
-            context = {'form': form}
-            return render(request, 'project_specific/group_create.html', context=context)
-        else:
-            # render a join group form
-            form = GroupJoinForm()
-            context = {'form': form}
-            return render(request, 'project_specific/group_join.html', context=context)
+# @login_required
+# def group_view(request):
+#     """this page is to register the group if the user is currently unregistered. Note superuser remains unregistered"""
+#     if request.method == 'POST':
+#         if request.POST.get('create_submit'):
+#             form = GroupCreateForm(request.POST)
+#             if form.is_valid():
+#                 password = form.cleaned_data['password']
+#                 name = form.cleaned_data['name']
+#                 group = Group(owner=request.user, name=name, password=password)
+#                 group.save()
+#                 request.user.group = group
+#                 request.user.save()
+#
+#                 # return to join group page
+#                 return HttpResponseRedirect(reverse('index'))
+#         elif request.POST.get('join_submit'):
+#             form = GroupJoinForm(request.POST)
+#             if form.is_valid():
+#                 group_id = form.cleaned_data['group_id']
+#
+#                 group = Group.objects.get(pk=group_id)
+#
+#                 request.user.group = group
+#                 request.user.save()
+#
+#                 return HttpResponseRedirect(reverse('index'))
+#
+#     else:
+#         if request.user.employee_detail.is_manager:
+#             # render a group creating form
+#             form = GroupCreateForm()
+#             context = {'form': form}
+#             return render(request, 'project_specific/group_create.html', context=context)
+#         else:
+#             # render a join group form
+#             form = GroupJoinForm()
+#             context = {'form': form}
+#             return render(request, 'project_specific/group_join.html', context=context)
 
 
 @login_required
@@ -502,24 +510,26 @@ def vacation_view(request):
             return HttpResponse(json.dumps(status_detail), content_type='application/json')
 
     if request.method == 'GET':
-        current_user = request.user
-        person_instance = get_object_or_404(Employee, user=current_user)
-        today = datetime.datetime.now().date()
-        vacation_requests = VacationNotification.objects.filter(requester=person_instance).filter(
-            date__gte=today).order_by('-date')
-        total_response = {}
-        response = {}
-        for vacation_request in vacation_requests:
-            response[str(vacation_request.date)] = {'Approved': vacation_request.approved,
-                                                    'Responded': vacation_request.responded,
-                                                    'Delivered': vacation_request.delivered}
-        approved_vacation = Vacation.objects.filter(employee=person_instance)
-        approved_dates = [str(v.date) for v in approved_vacation]
-        total_response['queue'] = response
-        total_response['approved'] = approved_dates
+        try:
+            current_user = request.user
+            person_instance = Employee.objects.get(user=current_user)
+            today = datetime.datetime.now().date()
+            vacation_requests = VacationNotification.objects.filter(requester=person_instance).filter(
+                date__gte=today).order_by('-date')
+            total_response = {}
+            response = {}
+            for vacation_request in vacation_requests:
+                response[str(vacation_request.date)] = {'Approved': vacation_request.approved,
+                                                        'Responded': vacation_request.responded,
+                                                        'Delivered': vacation_request.delivered}
+            approved_vacation = Vacation.objects.filter(employee=person_instance)
+            approved_dates = [str(v.date) for v in approved_vacation]
+            total_response['queue'] = response
+            total_response['approved'] = approved_dates
 
-        return HttpResponse(json.dumps(total_response), content_type='application/json')
-
+            return HttpResponse(json.dumps(total_response), content_type='application/json')
+        except ObjectDoesNotExist:
+            return HttpResponse('')
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def schedule_view(request):
