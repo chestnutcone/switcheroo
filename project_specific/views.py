@@ -69,9 +69,9 @@ def profile_view(request):
             shift_start = []
             shift_end = []
             for s in schedule:
-                dates.append(s.start_date.strftime("%Y/%m/%d"))
-                shift_start.append(s.shift_start.strftime("%Y/%m/%d, %H:%M:%S"))
-                shift_end.append(s.shift_end.strftime("%Y/%m/%d, %H:%M:%S"))
+                dates.append(s.start_date.strftime("%Y-%m-%d"))
+                shift_start.append(s.shift_start.strftime("%Y-%m-%d, %H:%M:%S"))
+                shift_end.append(s.shift_end.strftime("%Y-%m-%d, %H:%M:%S"))
 
             context = {'dates': dates,
                        'shift_start': shift_start,

@@ -160,7 +160,7 @@ function highlightVacationDates () {
     for (v in vacationDates)  {
         let vacation_date = new Date(vacationDates[v])
         if (start_date <= vacation_date && vacation_date <= end_date) {
-            let str_vacation_date = vacationDates[v].replace(/-/g, '/')
+            // let str_vacation_date = vacationDates[v].replace(/-/g, '/')
             let cellLocation = reverseLookUp[str_vacation_date]
 
             $('#calendar-body tr').eq(cellLocation[0]).find('td').eq(cellLocation[1]).addClass('vacation-highlight')
@@ -198,11 +198,11 @@ function formatDateTime (row, date, curYear, curMonth) {
     let str_nextMonth = formatMonth(nextMonth)
 
     if (row==0 && date>=22) {
-        date_selected = `${prevYear}/${str_prevMonth}/${str_date}`
+        date_selected = `${prevYear}-${str_prevMonth}-${str_date}`
     } else if (row>=4 && date<=14) {
-        date_selected = `${nextYear}/${str_nextMonth}/${str_date}`
+        date_selected = `${nextYear}-${str_nextMonth}-${str_date}`
     } else {
-        date_selected = `${curYear}/${str_curMonth}/${str_date}`
+        date_selected = `${curYear}-${str_curMonth}-${str_date}`
     }
     return date_selected
 }
@@ -322,7 +322,7 @@ function checkEvent (dateRow, date, curYear, curMonth) {
         shift_start_index = getShift(single_date)
         
         for (index of shift_start_index) {
-            total_shifts.push(`${shift_start[index]} to ${shift_end[index]}`)
+            total_shifts.push(`From ${formatTime(shift_start[index])} to ${formatTime(shift_end[index])}`)
         }
         
         for (shift_detail of total_shifts) {
@@ -445,6 +445,19 @@ function sendVacationDate(){
         }
     }
     
+}
+
+function formatTime(time) {
+    // time given in format 2019-10-31 09:00:00
+    let split_datetime = time.split(' ')
+    let date = split_datetime[0]
+    let split_date = date.split('-').slice(1,3).join('-')
+    let time_format = split_datetime[1]
+    let time_only = time_format.split('+')
+    let time_hm = time_only[0].slice(0,5)
+
+    let return_time = `${split_date} ${time_hm}`
+    return return_time
 }
 
 buildCalendar (year, month)

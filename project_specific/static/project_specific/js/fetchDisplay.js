@@ -118,7 +118,7 @@ function displaySwapResult (result, new_info=false) {
         let swapDateListContainer = document.createElement('div')
         swapDateListContainer.setAttribute('data-shift_start', `${date}`)
         let shift_title = document.createElement('h4')
-        shift_title.innerText = date
+        shift_title.innerText = `${formatTime(date)}`
 
         shift_title = createCancelButton(shift_title)
         swapDateListContainer.appendChild(shift_title)
@@ -141,7 +141,7 @@ function displaySwapResult (result, new_info=false) {
                     swaps.setAttribute("data-receiver_employee_id", `${employee['employee_id']}`)
                     swaps.setAttribute("data-datatype", "shift")
                     
-                    let info = document.createTextNode(`${employee_name} ${shift_start} to ${shift_end}`)
+                    let info = document.createTextNode(`${employee_name} ${formatTime(shift_start)} to ${formatTime(shift_end)}`)
                     swaps.appendChild(info)
                     swaps = createAcceptRejectButton(swaps)
                     swapDateList.appendChild(swaps)
