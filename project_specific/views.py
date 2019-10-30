@@ -1,7 +1,9 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import logout
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib import messages
 # from django.contrib.admin.models import LogEntry
 from schedule.models import *
 from people.models import *
@@ -39,13 +41,9 @@ def handler500(request):
                                                 'value':lvalue,
                                                 'traceback':str(ltraceback)})
 
-
 @login_required
-def profile_view(request):
-    if request.method == 'POST':
-        if request.POST.get("swap"):
-            return HttpResponseRedirect(reverse('swap'))
-    else:
+def main_view(request):
+    if request.method == 'GET':
         current_user = request.user
         if current_user.is_superuser:
             # if superuser, skip group join/create
@@ -63,6 +61,31 @@ def profile_view(request):
                 if current_user.employee_detail.is_manager:
                     # if not superuser and is manager, and has a group, redirect to admin
                     return HttpResponseRedirect('manager/')
+            return redirect('/main/profile')
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        if request.POST.get("swap"):
+            return HttpResponseRedirect(reverse('swap'))
+    else:
+        current_user = request.user
+        # if current_user.is_superuser:
+        #     # if superuser, skip group join/create
+        #     # superuser is not manager, and will not have group assigned
+        #     return HttpResponseRedirect('/admin/')
+        # else:
+        #     if not current_user.group:
+        #         # cannot find group id because group doesnt exist yet
+        #         if current_user.employee_detail.is_manager:
+        #             _ , _ = Group.objects.create_or_create(owner=current_user)
+        #             return HttpResponseRedirect('manager/')
+        #         else:
+        #             pass
+        #     else:
+        #         if current_user.employee_detail.is_manager:
+        #             # if not superuser and is manager, and has a group, redirect to admin
+        #             return HttpResponseRedirect('manager/')
 
         # will throw index error if the user is not registered under Employee
         try:
@@ -84,7 +107,10 @@ def profile_view(request):
                        'error':''}
         except IndexError:
             context = {'error': 'Please have your manager to register you as Employee'}
-        return render(request, 'project_specific/index.html', context=context)
+        if current_user.employee_detail.is_manager:
+            return render(request, 'project_specific/manager_employee.html', context=context)
+        else:
+            return render(request, 'project_specific/index.html', context=context)
 
 
 @login_required
@@ -99,9 +125,12 @@ def preference_view(request):
         cur_employee.save()
         return HttpResponse('success')
     elif request.method == "GET":
-        cur_employee = Employee.objects.get(user=request.user)
-
-        context = {'accept_swap': cur_employee.accept_swap}
+        try:
+            cur_employee = Employee.objects.get(user=request.user)
+            context = {'accept_swap': cur_employee.accept_swap}
+        except ObjectDoesNotExist:
+            messages.add_message(request, messages.INFO, "Cannot access employee settings because not registered as Employee")
+            return HttpResponseRedirect(reverse('index'))
         return render(request, 'project_specific/preference.html', context=context)
 
 

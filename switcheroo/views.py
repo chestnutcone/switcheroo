@@ -1,16 +1,18 @@
 from django.contrib.auth import login
 from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
+from django.http import HttpResponseRedirect
+from user.models import Group
 
 
 def loginView(request):
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
-        print('herenothit ling')
+
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            print('logged in')
+
             return redirect('/main/')
     else:
         form = AuthenticationForm()
@@ -22,6 +24,6 @@ def mainView(request):
         pass
     elif request.method == "GET":
         if request.user.is_authenticated:
-            return redirect('main/')
+            return redirect('/main/')
         else:
             return render(request, 'home.html')

@@ -9,7 +9,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-        path('', views.profile_view, name='index'),
+        path('', views.main_view, name='main'),
+        path('profile/', views.profile_view, name='index'),
         path('logout/', views.logout_view, name='logout'),
         path('settings/', views.preference_view, name='preference'),
         path('swap/', views.swap_view, name='swap'),

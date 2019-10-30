@@ -21,7 +21,7 @@
 			<li><a href="/main/settings/">Settings</a></li>
 		</ul>
 		<ul class="nav navbar-nav navbar-right">
-			<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+			<li><a href="/main/logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
 		</ul>
 
 	<div class='container-fluid'>
@@ -29,6 +29,15 @@
 {% endblock %}
 
 {% block content %}
+{% if messages %}
+
+	{% for message in messages %}
+	<script>alert('{{ message }}')</script>
+
+    {% endfor %}
+
+{% endif %}
+
 {% if error %}
 	<div class="alert alert-danger">
 		<strong>{{ error|escape }}</strong>
