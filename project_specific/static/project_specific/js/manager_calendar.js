@@ -138,14 +138,14 @@ function checkEvent () {
             let personName = document.createElement('h3')
             personName.innerText = `${person['first_name']} ${person['last_name']}`
             personList.appendChild(personName)
-            
-            let shift_start = person['shift_start']
-            let shift_end = person['shift_end']
-            for (shift in shift_start) {
+
+            let shifts = person['shift']
+
+            for (shift in shifts) {
                 
                 let shiftList = document.createElement('li')
-                let format_start = formatTime(shift_start[shift])
-                let format_end = formatTime(shift_end[shift])
+                let format_start = formatTime(shifts[shift][0])
+                let format_end = formatTime(shifts[shift][1])
                 shiftList.innerText = `From ${format_start} to ${format_end}`
                 personList.appendChild(shiftList)
             }

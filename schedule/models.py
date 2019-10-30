@@ -177,23 +177,25 @@ class Assign(models.Model):
             if daily_schedule:
                 daily_schedule_employee = daily_schedule.get(employee_id)
                 if daily_schedule_employee:
-                    daily_schedule[employee_id]['shift_start'].append(str(shift.shift_start))
-                    daily_schedule[employee_id]['shift_end'].append(str(shift.shift_end))
+                    daily_schedule[employee_id]['shift'].append([str(shift.shift_start), str(shift.shift_end)])
 
                 else:
                     total_schedule[shift_start_date][employee_id] = {'first_name': str(shift.employee.user.first_name),
                                                                       'last_name': str(shift.employee.user.last_name),
-                                                                      'shift_start': [str(shift.shift_start)],
-                                                                      'shift_end': [str(shift.shift_end)],
+                                                                      'shift': [[str(shift.shift_start), str(shift.shift_end)]],
                                                                       }
                 daily_schedule['employee_count'] += 1
             else:
                 total_schedule[shift_start_date] = {employee_id:{'first_name': str(shift.employee.user.first_name),
                                                                  'last_name': str(shift.employee.user.last_name),
-                                                                 'shift_start': [str(shift.shift_start)],
-                                                                 'shift_end': [str(shift.shift_end)],
+                                                                 'shift': [[str(shift.shift_start), str(shift.shift_end)]],
                                                                  },
                                                     'employee_count': 1}
+        for s in total_schedule.values():
+            s_items = s.items()
+            for ek, ev in s_items:
+                if ek != 'employee_count':
+                    ev['shift'].sort()
         daily_counts = [day['employee_count'] for day in total_schedule.values()]
         if daily_counts:
             max_count = max(daily_counts)
@@ -699,6 +701,8 @@ def group_set_schedule(employees, shift_pattern, start_date, workers_per_day, da
                 status_detail['overridable'].extend(indv_status_detail['overridable'])
                 status_detail['non_overridable'].extend(indv_status_detail['non_overridable'])
                 status_detail['holiday'].extend(indv_status_detail['holiday'])
+        status_detail['overridable'].sort()
+        status_detail['non_overridable'].sort()
         total_status_detail[employee.pk] = status_detail
         total_status_detail[employee.pk]['employee_name'] = str(employee)
     return total_status_detail

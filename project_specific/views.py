@@ -34,10 +34,6 @@ if not logger.handlers:
 def handler500(request):
     import sys, traceback
     ltype, lvalue, ltraceback = sys.exc_info()
-    # print('ltype:', ltype)
-    # print('lvalue:', lvalue)
-    # print(dir(ltraceback))
-    # print('ltraceback', ltraceback.tb_frame())
     traceback.print_tb(ltraceback)
     return render(request, 'project_specific/500.html', context={'type':ltype,
                                                 'value':lvalue,
@@ -84,6 +80,27 @@ def profile_view(request):
         except IndexError:
             context = {'name': 'Please register user in Employee'}
         return render(request, 'project_specific/index.html', context=context)
+
+@login_required
+def preference_view(request):
+    if request.method == 'POST':
+        str_data = request.body
+        str_data = str_data.decode('utf-8')
+        json_data = json.loads(str_data)
+        if json_data['type'] == 'employee':
+
+            cur_employee = Employee.objects.get(user=request.user)
+            cur_employee.accept_swap = json_data['accept_swap']
+            cur_employee.save()
+            return HttpResponse('success')
+    elif request.method == "GET":
+        if request.user.employee_detail.is_manager:
+            pass
+        else:
+            cur_employee = Employee.objects.get(user=request.user)
+
+            context = {'accept_swap': cur_employee.accept_swap}
+            return render(request, 'project_specific/preference.html', context=context)
 
 
 @login_required

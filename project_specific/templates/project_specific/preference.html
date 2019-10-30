@@ -1,0 +1,64 @@
+{% extends "project_specific/base_generic.html" %}
+
+
+{% block title %}
+{% load staticfiles %}
+<link rel='stylesheet' type='text/css' href="{% static 'project_specific/css/slider_switch.css'%}">
+<title>Profile</title>
+{% endblock %}
+
+{% block sidebar %}	
+{% endblock %}
+
+{% block navbar %}
+<nav class="nvbar navbar-inverse navbar-default">
+	<div class='container-fluid'>
+		<div class='navbar-header'>
+            <a class='navbar-brand' href="/main/">Switcheroo</a>
+        </div>
+        <ul class="nav navbar-nav">
+            <li><a href="/main/settings/">Settings</a></li>
+        </ul>
+		<ul class="nav navbar-nav navbar-right">
+				<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+		</ul>
+
+	<div class='container-fluid'>
+</nav>	
+{% endblock %}
+
+{% block content %}
+    <div class='row'>
+        <div class='col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3'>
+            <h2>Settings</h2>
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class='form-inline col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3'>
+            <div class='form-group'>
+                <label for="accept_swap" style='padding-right: 20px; font-size: 18px;' data-toggle='tooltip' data-placement='bottom' title='Accept swap is when you want to accept 
+                shifts from other employees, even though you are not actively swapping shifts'>Accept Swap</label>
+                <label class="switch">
+                    <input type="checkbox" id='accept_swap'>
+                    <span class="slider round"></span>
+                </label>
+                
+            </div>           
+        </div>
+    </div>
+
+    <div class='row'>
+        <div class='col-xs-12 col-sm-8 col-md-6 col-lg-4 col-md-offset-2 col-lg-offset-3'>
+            <button class='btn' style='margin-top:20px;' onclick=updateSettings()>Save</button>
+        </div>
+    </div>
+
+    {{ accept_swap|json_script:"old_accept_swap"}}
+{% endblock %}
+
+{% block javascript %}
+	{% load staticfiles %}
+    <script src="{% static 'project_specific/js/preference.js'%}"></script>
+	
+{% endblock %}

@@ -11,6 +11,7 @@ from . import views
 urlpatterns = [
         path('', views.profile_view, name='index'),
         path('logout/', views.logout_view, name='logout'),
+        path('settings/', views.preference_view, name='preference'),
         path('swap/', views.swap_view, name='swap'),
         path('group/', views.group_view, name='group'),
         path('schedule/', views.schedule_view, name='schedule_view'),

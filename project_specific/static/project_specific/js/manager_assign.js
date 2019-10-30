@@ -276,7 +276,6 @@ function submitAutoAssign() {
             },
             dataType: 'json',
             success: function(result) {
-                console.log(result)
                 displayAutoAssignStatus(result)
             },
             contentType:'application/json'
@@ -325,7 +324,7 @@ function displayAssignOverride(param, response) {
             for (o in overridable) {
                 let cur_o = document.createElement('li')
                 let cur_d = overridable[o]
-                cur_o.innerText = `${cur_d[0]} ${cur_d[1]}`
+                cur_o.innerText = `${cur_d[0].split(' ')[0]} ${cur_d[1]}`
                 override_list.appendChild(cur_o)
             }
             employee_list.appendChild(override_list)
@@ -336,7 +335,7 @@ function displayAssignOverride(param, response) {
             for (n in non_overridable) {
                 let cur_n = document.createElement('li')
                 let cur_d = non_overridable[n]
-                cur_n.innerText = `${cur_d[0]} ${cur_d[1]}`
+                cur_n.innerText = `${cur_d[0].split(' ')[0]} ${cur_d[1]}`
                 non_override_list.appendChild(cur_n)
             }
             employee_list.appendChild(non_override_list)
@@ -477,7 +476,7 @@ function displayAutoAssignStatus(response) {
             for (o_dates in cur_overridable) {
                 let overridable_d = document.createElement('li')
                 let cur_date = cur_overridable[o_dates]
-                overridable_d.innerText = `${cur_date[0]} ${cur_date[1]}`
+                overridable_d.innerText = `${cur_date[0].split(' ')[0]} ${cur_date[1]}`
                 cur_o_list.appendChild(overridable_d)
             }
             let override_button = document.createElement('button')
@@ -494,7 +493,8 @@ function displayAutoAssignStatus(response) {
             cur_n_list.innerText = 'Non-overridable'
             for (n_dates in cur_non_overridable) {
                 let non_overridable_d = document.createElement('li')
-                non_overridable_d.innerText = cur_non_overridable[n_dates]
+                cur_non_overridable[n_dates]
+                non_overridable_d.innerText = `${cur_non_overridable[n_dates][0].split(' ')[0]} ${cur_non_overridable[n_dates][1]}`
                 cur_n_list.appendChild(non_overridable_d)
             }
             employee_list.appendChild(cur_n_list)
