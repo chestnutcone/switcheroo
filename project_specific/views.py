@@ -54,11 +54,15 @@ def profile_view(request):
         else:
             if not current_user.group:
                 # cannot find group id because group doesnt exist yet
-                Group.objects.create(owner=current_user)
-                return HttpResponseRedirect('manager/')
-            elif current_user.employee_detail.is_manager:
-                # if not superuser and is manager, and has a group, redirect to admin
-                return HttpResponseRedirect('manager/')
+                if current_user.employee_detail.is_manager:
+                    _ , _ = Group.objects.create_or_create(owner=current_user)
+                    return HttpResponseRedirect('manager/')
+                else:
+                    pass
+            else:
+                if current_user.employee_detail.is_manager:
+                    # if not superuser and is manager, and has a group, redirect to admin
+                    return HttpResponseRedirect('manager/')
 
         # will throw index error if the user is not registered under Employee
         try:
@@ -76,9 +80,10 @@ def profile_view(request):
             context = {'dates': dates,
                        'shift_start': shift_start,
                        'shift_end': shift_end,
-                       'name': current_user.first_name}
+                       'name': current_user.first_name,
+                       'error':''}
         except IndexError:
-            context = {'name': 'Please register user in Employee'}
+            context = {'error': 'Please have your manager to register you as Employee'}
         return render(request, 'project_specific/index.html', context=context)
 
 

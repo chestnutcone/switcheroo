@@ -29,7 +29,12 @@
 {% endblock %}
 
 {% block content %}
+{% if error %}
+	<div class="alert alert-danger">
+		<strong>{{ error|escape }}</strong>
+	</div>
 
+{% endif %}
 	<div id='today-summary'>
 
 	</div>

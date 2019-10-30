@@ -6,9 +6,11 @@ from django.shortcuts import render, redirect
 def loginView(request):
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
+        print('herenothit ling')
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            print('logged in')
             return redirect('/main/')
     else:
         form = AuthenticationForm()
