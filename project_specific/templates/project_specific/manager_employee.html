@@ -2,29 +2,34 @@
 
 {% block navbar %}
 <nav class="nvbar navbar-inverse navbar-default">
-    <div class='container-fluid'>
-        <div class='navbar-header'>
-            <a class='navbar-brand' href="/main/manager/">Switcheroo</a>
+	<div class='container-fluid'>
+		<div class='navbar-header'>
+			<a class='navbar-brand' href="/main/manager/">Switcheroo</a>
         </div>
         <ul class="nav navbar-nav">
             <li><a href="/main/manager/assign">Assign</a></li>
             <li><a href="/main/manager/view">View</a></li>
-            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Setup<span class="caret"></span></a>
-                <ul class="dropdown-menu">
-                <li><a href="/main/manager/people">People</a></li>
-                <li><a href="/main/manager/schedule">Schedule</a></li>
-                </ul>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-option-horizontal"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="/main/manager/people"><span class="glyphicon glyphicon-user"></span> People</a></li>
+                <li><a href="/main/manager/schedule"><span class="glyphicon glyphicon-calendar"></span> Schedule</a></li>
+                <li><a href="/main/manager/settings"><span class="glyphicon glyphicon-cog"></span> Group Setting</a></li>
+              </ul>
             </li>
-            <li><a href="/main/manager/settings">Setting</a></li>
         </ul>
         
-        <ul class="nav navbar-nav navbar-right">
-            <li><a href="/main/profile/">Employee</a></li>
-            <li><a href="/main/settings/">Settings</a></li>
-            <li><a href="/main/logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+		<ul class="nav navbar-nav navbar-right">
+      <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-menu-hamburger"></span></a>
+        <ul class="dropdown-menu">
+          <li><a href="/main/profile/"><span class="glyphicon glyphicon-user"></span> Employee</a></li>
+          <li><a href="/main/settings/"><span class="glyphicon glyphicon-cog"></span> Settings</a></li>
+          <li><a href="/main/logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
         </ul>
+      </li>
+        
+		</ul>
 
-    <div class='container-fluid'>
-</nav>	
+	<div class='container-fluid'>
+</nav>
 {% endblock %}
 

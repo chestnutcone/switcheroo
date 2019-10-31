@@ -12,19 +12,27 @@
 
 {% block navbar %}
 <nav class="nvbar navbar-inverse navbar-default">
-	<div class='container-fluid'>
-		<div class='navbar-header'>
-            <a class='navbar-brand' href="/main/">Switcheroo</a>
-        </div>
-        <ul class="nav navbar-nav">
-            <li><a href="/main/settings/">Settings</a></li>
-        </ul>
-		<ul class="nav navbar-nav navbar-right">
-				<li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
-		</ul>
-
-	<div class='container-fluid'>
-</nav>	
+        <div class='container-fluid'>
+            <div class='navbar-header'>
+                <a class='navbar-brand' href="/main/">Switcheroo</a>
+                
+            </div>
+            <!-- <ul class="nav navbar-nav">
+                <li><a href="/main/settings/">Settings</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/main/logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+            </ul> -->
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-menu-hamburger"></span></a>
+                    <ul class="dropdown-menu">
+                    <li><a href="/main/settings/"><span class="glyphicon glyphicon-cog"></span> Settings</a></li>
+                    <li><a href="/main/logout/"><span class="glyphicon glyphicon-log-out"></span> Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        <div class='container-fluid'>
+    </nav>	
 {% endblock %}
 
 {% block content %}
