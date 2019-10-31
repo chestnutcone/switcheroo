@@ -127,7 +127,7 @@ function checkEvent () {
     let daily_schedules = monthSchedules[selected_dates]
     let daily_summary = document.getElementById('today-summary')
     let title = document.createElement('h1')
-    title.innerText = 'Daily Summary'
+    title.innerText = 'Dai Summary'
     daily_summary.appendChild(title)
 
     for (p in daily_schedules) {

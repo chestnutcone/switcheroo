@@ -74,11 +74,7 @@ function highlightCalendar() {
     let curMonth = parseInt(pageDate.dataset.month)
     let cellLookup = reverseCellDate(curYear, curMonth)
     for (date in monthSchedules) {
-        let separated_dates = date.split('-')
-        let new_month = parseInt(separated_dates[1])
-        let new_date = parseInt(separated_dates[2])
-        let formatted_date = [separated_dates[0], new_month, new_date].join('-')
-        let cellNum = cellLookup[formatted_date]
+        let cellNum = cellLookup[date]
 
         if (cellNum) {
             switch (monthSchedules[date]['daily_bin']) {
@@ -128,12 +124,12 @@ function selectDate(){
 function checkEvent () {
     // check on selected_dates. Only one date for now
     $("#today-summary").empty()
-
     let daily_schedules = monthSchedules[selected_dates]
     let daily_summary = document.getElementById('today-summary')
     let title = document.createElement('h1')
-    title.innerText = 'Daily Summary'
+    title.innerText = 'Dai Summary'
     daily_summary.appendChild(title)
+
     for (p in daily_schedules) {
         let person = daily_schedules[p]
 
@@ -142,13 +138,15 @@ function checkEvent () {
             let personName = document.createElement('h3')
             personName.innerText = `${person['first_name']} ${person['last_name']}`
             personList.appendChild(personName)
-    
-            let shift_start = person['shift_start']
-            let shift_end = person['shift_end']
-            for (shift in shift_start) {
+
+            let shifts = person['shift']
+
+            for (shift in shifts) {
                 
                 let shiftList = document.createElement('li')
-                shiftList.innerText = `From ${shift_start[shift]} to ${shift_end[shift]}`
+                let format_start = formatTime(shifts[shift][0])
+                let format_end = formatTime(shifts[shift][1])
+                shiftList.innerText = `From ${format_start} to ${format_end}`
                 personList.appendChild(shiftList)
             }
             daily_summary.appendChild(personList)
@@ -186,4 +184,3 @@ function getCookie (name) {
 }
 
 buildCalendar (year, month)
-
