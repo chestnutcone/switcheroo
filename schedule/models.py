@@ -410,7 +410,7 @@ def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=
 
     # register dates
     # check if there are any shift conflicts and vacation days
-    existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=start_day)
+    existing_schedule = Assign.objects.filter(employee=person).filter(start_date=start_day)
     vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(date__exact=start_day)
 
     workday_queryset = person.workday.all()
@@ -443,7 +443,8 @@ def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=
             overlap = True
         else:
             for exist_shift in existing_schedule:
-                overlap = exist_shift.shift_start <= shift_start < exist_shift.shift_end
+                overlap = (exist_shift.shift_start <= shift_start < exist_shift.shift_end) or\
+                          (exist_shift.shift_start <= shift_end < exist_shift.shift_end)
                 if overlap:
                     break
 
@@ -525,7 +526,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
 
         # register date
         # check if there are any shift conflicts
-        existing_schedule = Assign.objects.filter(employee__exact=person).filter(start_date__exact=date)
+        existing_schedule = Assign.objects.filter(employee=person).filter(start_date=date)
         vacation_schedule = Vacation.objects.filter(employee__exact=person).filter(date__exact=date)
 
         if not (existing_schedule or vacation_schedule):
@@ -543,7 +544,8 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
                 overlap = True
             else:
                 for exist_shift in existing_schedule:
-                    overlap = exist_shift.shift_start <= shift_start < exist_shift.shift_end
+                    overlap = (exist_shift.shift_start <= shift_start < exist_shift.shift_end) or \
+                              (exist_shift.shift_start <= shift_end < exist_shift.shift_end)
                     if overlap:
                         # if found an overlap
                         break
@@ -770,7 +772,6 @@ def swap(person, swap_shift_start):
     available_people = []
     error = False
     swap_shift_start = pytz.UTC.localize(swap_shift_start)
-    print('swap shift start', swap_shift_start)
     swap_day = Assign.objects.filter(employee__exact=person).filter(shift_start=swap_shift_start)
     error_detail = Assign.assure_one_and_same(swap_day, swap_shift_start, person)
     if error_detail:
