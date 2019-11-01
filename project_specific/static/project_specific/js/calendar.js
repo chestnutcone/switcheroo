@@ -381,14 +381,14 @@ function sendSwapDate (){
     for (date of filtered_dates) {
         shift_start_index = getShift(date)
         for (let i=0; i<shift_start_index.length; i++) {
-            request_dates.push(shift_start[shift_start_index])
+            request_dates.push(shift_start[shift_start_index[i]])
         }
     }
     if (request_dates.length != 0) {
 
         let send_data = JSON.stringify({"action": "swap", "data":request_dates})
         let csrftoken = getCookie('csrftoken')
-        alert(`Swapping the following shifts: ${request_dates}`)
+
         $.ajax({
             type: "POST",
             url: "/main/swap/",
@@ -406,7 +406,7 @@ function sendSwapDate (){
         if (filtered_dates.length != 0) {
             alert('no shifts to be swapped')
         } else {
-            alert('No dates selected')
+            alert('No dates selected (Cannot swap shifts in the past)')
         }
         
     }

@@ -141,6 +141,7 @@ function displaySwapResult (result, new_info=false) {
                     swaps.setAttribute("data-receiver_employee_id", `${employee['employee_id']}`)
                     swaps.setAttribute("data-datatype", "shift")
                     
+                    swaps.setAttribute('style', 'margin-top:20px; margin-bottom:20px;')
                     let info = document.createTextNode(`${employee_name} ${formatTime(shift_start)} to ${formatTime(shift_end)}`)
                     swaps.appendChild(info)
                     swaps = createAcceptRejectButton(swaps)
@@ -155,6 +156,8 @@ function displaySwapResult (result, new_info=false) {
                     swaps.setAttribute("data-receiver_last_name", `${person['receiver_last_name']}`)
                     swaps.setAttribute("data-receiver_employee_id", `${person['receiver_employee_id']}`)
                     swaps.setAttribute("data-datatype", "people")
+
+                    swaps.setAttribute('style', 'margin-top:20px; margin-bottom:20px;')
                     let info = document.createTextNode(`Available: ${person['receiver_first_name']} ${person['receiver_last_name']}`)
                     swaps.appendChild(info)
                     swaps = createAcceptRejectButton(swaps)

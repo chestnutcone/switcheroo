@@ -444,7 +444,7 @@ def set_schedule_day(person, start_day, shift_start=None, shift_end=None, shift=
         else:
             for exist_shift in existing_schedule:
                 overlap = (exist_shift.shift_start <= shift_start < exist_shift.shift_end) or\
-                          (exist_shift.shift_start <= shift_end < exist_shift.shift_end)
+                          (exist_shift.shift_start < shift_end < exist_shift.shift_end)
                 if overlap:
                     break
 
@@ -545,7 +545,7 @@ def set_schedule(person, start_date, shift_pattern, repeat=1, override=False):
             else:
                 for exist_shift in existing_schedule:
                     overlap = (exist_shift.shift_start <= shift_start < exist_shift.shift_end) or \
-                              (exist_shift.shift_start <= shift_end < exist_shift.shift_end)
+                              (exist_shift.shift_start < shift_end < exist_shift.shift_end)
                     if overlap:
                         # if found an overlap
                         break
@@ -803,6 +803,12 @@ def swap(person, swap_shift_start):
 
     person_schedule = Assign.objects.filter(employee__exact=person)
 
+    # get from people that are accepting shifts that are in the same group, unit, position
+    employees_working = Assign.objects.filter(
+        (Q(shift_start__gte=swap_day[0].shift_start) & Q(shift_start__lt=swap_day[0].shift_end)) |
+        (Q(shift_end__gt=swap_day[0].shift_start) & Q(shift_end__lte=swap_day[0].shift_end)))
+
+    employees_working = [e.employee for e in employees_working]
     # not itself, in the same group, of those swapping as well, those that dont have the same shift
     # filtering of group is included in filtering for position and unit since position and unit contain group info
     # currently filtering for exact position
@@ -811,7 +817,7 @@ def swap(person, swap_shift_start):
         person_position=person.person_position)
 
     swapper_shifts = Assign.objects.filter(employee__in=possible_swappers).exclude(employee=person).filter(
-        switch=True).exclude(shift_start=swap_shift_start)
+        switch=True).exclude(shift_start=swap_shift_start).exclude(employee__in=employees_working)
 
     # get shifts that are not in the person's schedule already
     for start, end in zip(person_schedule.values_list('shift_start'), person_schedule.values_list('shift_end')):
@@ -823,8 +829,7 @@ def swap(person, swap_shift_start):
         output = swapper_shifts
     else:
         # get from people that are accepting shifts that are in the same group, unit, position
-        employees_working = Assign.objects.filter(shift_start=swap_shift_start)
-        employees_working = [e.employee for e in employees_working]
+
         acceptors = Employee.objects.filter(
             person_unit=person.person_unit).filter(
             person_position=person.person_position).filter(accept_swap__exact=True)
@@ -854,7 +859,8 @@ def swap(person, swap_shift_start):
                 workdays = [workday.day for workday in acceptor.workday.all()]
 
                 if (not Assign.objects.filter(employee__exact=acceptor).filter(
-                        shift_start__exact=swap_shift_start).exists()) and swap_shift_start.weekday() in workdays:
+                        (Q(shift_start__gte=swap_day[0].shift_start) & Q(shift_start__lt=swap_day[0].shift_end)) |
+                        (Q(shift_end__gt=swap_day[0].shift_start) & Q(shift_end__lte=swap_day[0].shift_end))).exists()) and swap_shift_start.weekday() in workdays:
                     # if acceptor not working that day and is available to work
 
                     available_people.append(acceptor)

@@ -365,11 +365,16 @@ def receive_request_view(request):
                 request_instance.responded = True
                 request_instance.accept = True
                 request_instance.save()
+
+                if request_instance.receiver_schedule:
+                    acceptor_shift_start = request_instance.receiver_schedule.shift_start
+                else:
+                    acceptor_shift_start = None
                 if applicant_user.group.approve_all_swaps:
                     status, error_detail = Assign.finalize_swap(requester=request_instance.applicant,
                                                                 requester_shift_start=request_instance.applicant_schedule.shift_start,
                                                                 acceptor=request_instance.receiver,
-                                                                acceptor_shift_start=request_instance.receiver_schedule.shift_start,
+                                                                acceptor_shift_start=acceptor_shift_start,
                                                                 request_timestamp=request_instance.created)
             elif json_data['action'] == 'reject':
                 request_instance.responded = True
