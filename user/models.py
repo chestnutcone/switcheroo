@@ -44,8 +44,3 @@ class Group(models.Model):
                               null=True,
                               related_name='group_owner')
     approve_all_swaps = models.BooleanField(default=False)
-    # name = models.CharField(max_length=50)
-    # password = models.CharField(max_length=50)
-
-    # def __str__(self):
-    #     return self.name

@@ -28,8 +28,6 @@ class CustomUserAdmin(UserAdmin):
 
 
 class GroupAdmin(admin.ModelAdmin):
-    # form = GroupForm
-    # list_display = ('name', 'id', 'owner')
     list_display = ('id', 'owner')
     label = {'id': 'Group ID'}
 

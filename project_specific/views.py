@@ -10,7 +10,6 @@ from people.models import *
 from user.models import Group, EmployeeID, CustomUser
 from project_specific.models import VacationNotification, RecentActions
 from django.http import HttpResponseRedirect, HttpResponse
-from .forms import GroupCreateForm, GroupJoinForm
 import logging
 import os
 import json
@@ -31,15 +30,6 @@ if not logger.handlers:
     file_handler.setFormatter(formatter)
 
     logger.addHandler(file_handler)
-
-
-def handler500(request):
-    import sys, traceback
-    ltype, lvalue, ltraceback = sys.exc_info()
-    traceback.print_tb(ltraceback)
-    return render(request, 'project_specific/500.html', context={'type':ltype,
-                                                'value':lvalue,
-                                                'traceback':str(ltraceback)})
 
 @login_required
 def main_view(request):
@@ -70,23 +60,6 @@ def profile_view(request):
             return HttpResponseRedirect(reverse('swap'))
     else:
         current_user = request.user
-        # if current_user.is_superuser:
-        #     # if superuser, skip group join/create
-        #     # superuser is not manager, and will not have group assigned
-        #     return HttpResponseRedirect('/admin/')
-        # else:
-        #     if not current_user.group:
-        #         # cannot find group id because group doesnt exist yet
-        #         if current_user.employee_detail.is_manager:
-        #             _ , _ = Group.objects.create_or_create(owner=current_user)
-        #             return HttpResponseRedirect('manager/')
-        #         else:
-        #             pass
-        #     else:
-        #         if current_user.employee_detail.is_manager:
-        #             # if not superuser and is manager, and has a group, redirect to admin
-        #             return HttpResponseRedirect('manager/')
-
         # will throw index error if the user is not registered under Employee
         try:
             current_indv = Employee.objects.filter(user__exact=current_user)[0]
@@ -427,47 +400,6 @@ def receive_request_view(request):
             return HttpResponse('')
 
 
-# @login_required
-# def group_view(request):
-#     """this page is to register the group if the user is currently unregistered. Note superuser remains unregistered"""
-#     if request.method == 'POST':
-#         if request.POST.get('create_submit'):
-#             form = GroupCreateForm(request.POST)
-#             if form.is_valid():
-#                 password = form.cleaned_data['password']
-#                 name = form.cleaned_data['name']
-#                 group = Group(owner=request.user, name=name, password=password)
-#                 group.save()
-#                 request.user.group = group
-#                 request.user.save()
-#
-#                 # return to join group page
-#                 return HttpResponseRedirect(reverse('index'))
-#         elif request.POST.get('join_submit'):
-#             form = GroupJoinForm(request.POST)
-#             if form.is_valid():
-#                 group_id = form.cleaned_data['group_id']
-#
-#                 group = Group.objects.get(pk=group_id)
-#
-#                 request.user.group = group
-#                 request.user.save()
-#
-#                 return HttpResponseRedirect(reverse('index'))
-#
-#     else:
-#         if request.user.employee_detail.is_manager:
-#             # render a group creating form
-#             form = GroupCreateForm()
-#             context = {'form': form}
-#             return render(request, 'project_specific/group_create.html', context=context)
-#         else:
-#             # render a join group form
-#             form = GroupJoinForm()
-#             context = {'form': form}
-#             return render(request, 'project_specific/group_join.html', context=context)
-
-
 @login_required
 def vacation_view(request):
     if request.method == 'POST':
@@ -535,6 +467,7 @@ def vacation_view(request):
             return HttpResponse(json.dumps(total_response), content_type='application/json')
         except ObjectDoesNotExist:
             return HttpResponse('')
+
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def schedule_view(request):
@@ -970,6 +903,7 @@ def manager_people_view(request):
                                                                                 'users': json_unregistered_user,
                                                                                 'workdays': json_workday_pref,
                                                                                 'action_logs': short_action_logs})
+
 
 @user_passes_test(lambda u: u.groups.filter(name='Manager').exists())
 def manager_employee_view(request):

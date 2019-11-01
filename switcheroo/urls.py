@@ -17,7 +17,6 @@ from django.contrib import admin
 from . import views
 from django.conf.urls import url
 from django.urls import path, include
-from django.views.generic.base import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,6 +30,3 @@ urlpatterns += [
         path('users/', include('django.contrib.auth.urls')),
         url(r'^login/$', views.loginView, name='login'),
         ]
-
-import project_specific
-handler500 = project_specific.views.handler500
