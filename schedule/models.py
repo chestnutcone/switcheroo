@@ -903,36 +903,6 @@ def set_vacation(person, date):
     return status
 
 
-def clear_assign_and_swap():
-    """only a temporary function. Sets all assign schedule to switch=False and clear SwapResult"""
-    all_schedule = Assign.objects.all()
-    for a in all_schedule:
-        a.switch = False
-        a.save()
-    all_queue = SwapResult.objects.all()
-    all_queue.delete()
-    all_request = Request.objects.all()
-    all_request.delete()
-    print('reset done')
-
-
-def reset_employee_schedule():
-    """For testing only, temporary"""
-    clear_assign_and_swap()
-    all_schedule = Assign.objects.all()
-    all_schedule.delete()
-    group1 = Group.objects.get(pk=1)
-    group1_e = Employee.objects.filter(group=group1)
-    group1_schedule = Schedule.objects.filter(group=group1)[1]
-    sfu = group1_e[0]
-    third = group1_e[1]
-    third.accept_swap = True
-    third.save()
-    start_date = datetime.date(2019, 10, 22)
-    set_schedule(sfu, start_date=start_date, shift_pattern=group1_schedule)
-    print('reset done')
-
-
 def cancel_swap(person, shift_time):
     shift_instance = Assign.objects.filter(employee=person).filter(shift_start=shift_time)
     status = False

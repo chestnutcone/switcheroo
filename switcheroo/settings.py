@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
 ALLOWED_HOSTS = [".herokuapp.com", "oliverswitcheroo.herokuapp.com", "127.0.0.1", "localhost"]
-
+#
 
 # Application definition
 
@@ -138,6 +138,7 @@ STATICFILES_DIRS = (
 )
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 AUTH_USER_MODEL = 'user.CustomUser'
 ## Redirect to home URL after login (Default redirects to /accounts/profile/)

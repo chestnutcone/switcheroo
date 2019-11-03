@@ -1,11 +1,9 @@
 from django.contrib.auth import login
 from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
-from django.http import HttpResponseRedirect
-from user.models import Group
 
 
-def loginView(request):
+def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(data=request.POST)
 
@@ -19,7 +17,7 @@ def loginView(request):
     return render(request, 'registration/login.html', {'form': form})
 
 
-def mainView(request):
+def main_page_view(request):
     if request.method == "POST":
         pass
     elif request.method == "GET":
@@ -27,3 +25,11 @@ def mainView(request):
             return redirect('/main/')
         else:
             return render(request, 'home.html')
+
+def handler500(request):
+    import sys, traceback
+    ltype, lvalue, ltraceback = sys.exc_info()
+
+    return render(request, 'project_specific/500.html', context={'type':ltype,
+                                                'value':lvalue,
+                                                'traceback':str(traceback.print_tb(ltraceback))})

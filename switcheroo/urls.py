@@ -25,8 +25,11 @@ urlpatterns = [
 urlpatterns += [
         path('accounts/',include('django.contrib.auth.urls')),
         path('main/', include('project_specific.urls')),
-        path('', views.mainView, name='home'),
+        path('', views.main_page_view, name='home'),
         path('users/', include('user.urls')),
         path('users/', include('django.contrib.auth.urls')),
-        url(r'^login/$', views.loginView, name='login'),
+        url(r'^login/$', views.login_view, name='login'),
         ]
+
+from switcheroo import views
+handler500 = views.handler500
