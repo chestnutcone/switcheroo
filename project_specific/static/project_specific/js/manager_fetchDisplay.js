@@ -121,14 +121,14 @@ function displayRequests(response) {
         requester.innerText = `Requester: ${swap['requester_name']}`
         let requester_container = document.createElement('ul')
         let requester_shift = document.createElement('li')
-        requester_shift.innerText = `Original Schedule: ${swap['requester_shift_start']} to ${swap['requester_shift_end']}`
+        requester_shift.innerText = `Original Schedule: ${formatTime(swap['requester_shift_start'])} to ${formatTime(swap['requester_shift_end'])}`
         requester_container.appendChild(requester_shift)
 
         let acceptor = document.createElement('li')
         acceptor.innerText = `Acceptor: ${swap['acceptor_name']}`
         let acceptor_container = document.createElement('ul')
         let acceptor_shift = document.createElement('li')
-        acceptor_shift.innerText = `Original Schedule: ${swap['acceptor_shift_start']} to ${swap['acceptor_shift_end']}`
+        acceptor_shift.innerText = `Original Schedule: ${formatTime(swap['acceptor_shift_start'])} to ${formatTime(swap['acceptor_shift_end'])}`
         acceptor_container.appendChild(acceptor_shift)
 
         acceptor.appendChild(acceptor_container)
